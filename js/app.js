@@ -116,6 +116,7 @@
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (window.News && window.News.isOpen()) { window.News.close(); return; }
+    if (window.Gallery3D && window.Gallery3D.closeOverlay()) return;   // 先關白板
     closeMega(0);
     if (!document.body.classList.contains("locked") && location.hash.replace(/^#\/?/, "")) location.hash = "#/";
   });
@@ -130,7 +131,7 @@
   /* ---------- 畫作視差 ---------- */
   const layers = $$("#painting .layer");
   window.addEventListener("pointermove", (e) => {
-    if (document.body.classList.contains("dim") || (window.Gallery && window.Gallery.active)) return;
+    if (document.body.classList.contains("dim") || (window.Gallery && window.Gallery.active) || (window.Gallery3D && window.Gallery3D.active)) return;
     const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
     layers.forEach((l) => {
       const d = +l.dataset.depth || 0;
@@ -292,12 +293,7 @@
             <p class="zh">${esc(p.zh)}</p>
           </div>
           <div class="proj-grid">
-            <div class="panel">
-              <h2>進度紀錄</h2>
-              ${ups.length ? `<ul class="timeline">${ups.map((u) => `
-                <li><time>${fmt(u.date)}</time><h4>${esc(u.title)}</h4><p>${esc(u.text)}</p></li>`).join("")}</ul>`
-                : `<p class="empty">還沒有紀錄，到 data/projects.js 新增第一筆吧。</p>`}
-            </div>
+            <div class="jmount" data-jmount="${esc(p.id)}"></div>
             <aside class="panel side">
               <h2>專案資訊</h2>
               <div class="row"><span>狀態</span><span class="status"><i class="pill-dot" style="background:${st(p).color}"></i>${esc(st(p).label)}</span></div>
@@ -321,6 +317,7 @@
     const hash = location.hash.replace(/^#\/?/, "");
     const [seg, arg] = hash.split("/");
     if (window.Gallery) window.Gallery.unmount();
+    if (window.Gallery3D) window.Gallery3D.unmount();
     clearInterval(clockTimer);
     let html, home = false;
     if (!seg) { html = views.home(); home = true; }
@@ -333,9 +330,18 @@
     document.body.classList.toggle("dim", !home);
     if (home) layers.forEach((l) => (l.style.transform = ""));
     app.innerHTML = html + `<footer class="foot-note">© ${new Date().getFullYear()} David's Side Business</footer>`;
-    if (home && window.Gallery) window.Gallery.mount($("#gallery"), P, { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) });
-    if (seg === "p" && window.Gallery) window.Gallery.lastId = arg;
-    if (seg === "office" && window.Gallery) window.Gallery.lastId = "__office";
+    const GH = { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) };
+    if (home) {
+      let ok = false;
+      if (window.Gallery3D && window.Gallery3D.supported()) { try { ok = window.Gallery3D.mount($("#gallery"), P, GH); } catch (err) { console.error("3D 藝廊失敗，改用 2D：", err); window.Gallery3D.unmount(); } }
+      if (!ok && window.Gallery) window.Gallery.mount($("#gallery"), P, GH);
+    }
+    const lastId = seg === "p" ? arg : seg === "office" ? "__office" : null;
+    if (lastId) { if (window.Gallery) window.Gallery.lastId = lastId; if (window.Gallery3D) window.Gallery3D.lastId = lastId; }
+    if (seg === "p" && window.Journal) {
+      const jm = $("[data-jmount]", app), pi = P.findIndex((x) => x.id === arg);
+      if (jm && pi >= 0) { jm.innerHTML = window.Journal.card(P[pi], pi, GH, { page: true }); window.Journal.bind(jm, P[pi], pi, GH, { rerender: () => { const y = scrollY; render(); scrollTo(0, y); } }); }
+    }
     if (seg === "office") {
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
       tick(); clockTimer = setInterval(tick, 1000);
@@ -350,6 +356,7 @@
   function enter() {
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
+    if (window.Store) window.Store.init(P);
     buildMega();
     if (window.News) window.News.mount(P, {});
     render();

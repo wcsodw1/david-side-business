@@ -24,6 +24,9 @@
     close,
     unreadCount: (pid) => unread().filter((x) => !pid || x.p.id === pid).length,
     isUnread: (p, u) => !read.has(keyOf(p, u)),
+    // 自己記錄的更新不算「新消息」；在白板上按「看過了」可一次標記某專案
+    markRead: (p, u) => { load(); read.add(keyOf(p, u)); save(); if (mounted) refresh(); },
+    markProject: (pid) => { load(); items().filter((x) => x.p.id === pid).forEach((x) => read.add(x.key)); save(); if (mounted) refresh(); },
   });
 
   const PAPER = `
