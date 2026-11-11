@@ -76,19 +76,6 @@ window.PROJECTS = [
     ],
   },
   {
-    id: "summary",
-    name: "Summary",
-    zh: "總覽與彙整",
-    category: "Overview",
-    status: "building",
-    progress: 20,
-    summary: "所有 Side Business 的彙整與每週回顧。",
-    links: [],
-    updates: [
-      { date: "2026-11-12", title: "專案頁建立", text: "加入平台，之後放每週回顧。" },
-    ],
-  },
-  {
     id: "zinzino",
     name: "ZINZINO",
     zh: "健康產品事業",
@@ -112,19 +99,6 @@ window.PROJECTS = [
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充商品上架進度。" },
-    ],
-  },
-  {
-    id: "amd",
-    name: "AMD 建議",
-    zh: "AMD 投資觀察",
-    category: "Research",
-    status: "idea",
-    progress: 10,
-    summary: "AMD 相關的研究與筆記。",
-    links: [],
-    updates: [
-      { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充研究內容。" },
     ],
   },
   {

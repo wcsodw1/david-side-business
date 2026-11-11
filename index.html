@@ -52,7 +52,7 @@
       <rect width="1600" height="900" fill="url(#sky)"/>
 
       <g class="layer" data-depth="2">
-        <g fill="#fff" opacity=".85">
+        <g fill="#fff" opacity=".85" class="stars">
           <circle cx="140" cy="90" r="1.6"/><circle cx="330" cy="170" r="1.2"/><circle cx="520" cy="60" r="1.8"/>
           <circle cx="700" cy="140" r="1.1"/><circle cx="910" cy="70" r="1.6"/><circle cx="1090" cy="190" r="1.2"/>
           <circle cx="1270" cy="80" r="1.8"/><circle cx="1450" cy="150" r="1.3"/><circle cx="60" cy="230" r="1"/>
@@ -61,18 +61,33 @@
       </g>
 
       <g class="layer" data-depth="4">
-        <circle cx="800" cy="440" r="340" fill="url(#halo)"/>
-        <circle cx="800" cy="425" r="64" fill="#fff4d6"/>
+        <circle class="pulse" cx="800" cy="440" r="340" fill="url(#halo)"/>
+        <circle class="sun" cx="800" cy="425" r="64" fill="#fff4d6"/>
       </g>
 
       <g class="layer" data-depth="8" filter="url(#blur30)">
-        <ellipse cx="360"  cy="330" rx="240" ry="26" fill="#ff9fb0" opacity=".55"/>
-        <ellipse cx="1180" cy="300" rx="300" ry="30" fill="#ffb28a" opacity=".5"/>
-        <ellipse cx="900"  cy="420" rx="280" ry="18" fill="#ffd9a0" opacity=".6"/>
+        <g class="drift a">
+          <ellipse cx="360"  cy="330" rx="240" ry="26" fill="#ff9fb0" opacity=".55"/>
+          <ellipse cx="900"  cy="420" rx="280" ry="18" fill="#ffd9a0" opacity=".6"/>
+        </g>
+        <g class="drift b"><ellipse cx="1180" cy="300" rx="300" ry="30" fill="#ffb28a" opacity=".5"/></g>
       </g>
       <g class="layer" data-depth="10" filter="url(#blur6)" opacity=".7">
-        <ellipse cx="520"  cy="440" rx="170" ry="9" fill="#ffd0b8"/>
-        <ellipse cx="1210" cy="400" rx="210" ry="10" fill="#ffc9b0"/>
+        <g class="drift b"><ellipse cx="520"  cy="440" rx="170" ry="9" fill="#ffd0b8"/></g>
+        <g class="drift a"><ellipse cx="1210" cy="400" rx="210" ry="10" fill="#ffc9b0"/></g>
+      </g>
+
+      <!-- 飛過的小鳥 -->
+      <g class="layer" data-depth="6">
+        <g class="bird" style="--y:-30px;--d:34s;--delay:-6s">
+          <path d="M0 260 q7 -9 14 0 q7 -9 14 0" fill="none" stroke="#2a1f4a" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <g class="bird" style="--y:20px;--d:42s;--delay:-22s">
+          <path d="M0 300 q5 -7 10 0 q5 -7 10 0" fill="none" stroke="#2a1f4a" stroke-width="1.6" stroke-linecap="round"/>
+        </g>
+        <g class="bird" style="--y:-10px;--d:50s;--delay:-35s">
+          <path d="M0 215 q4 -6 8 0 q4 -6 8 0" fill="none" stroke="#3a2a5a" stroke-width="1.4" stroke-linecap="round"/>
+        </g>
       </g>
 
       <g class="layer" data-depth="12">
@@ -85,7 +100,7 @@
 
       <g class="layer" data-depth="10">
         <rect y="610" width="1600" height="300" fill="url(#sea)"/>
-        <g fill="#fff1c9">
+        <g fill="#fff1c9" class="shimmer">
           <ellipse cx="800" cy="640" rx="64" ry="3.5" opacity=".95"/>
           <ellipse cx="800" cy="656" rx="92" ry="3.5" opacity=".8"/>
           <ellipse cx="800" cy="674" rx="64" ry="3"   opacity=".65"/>
@@ -137,9 +152,11 @@
     <a class="brand" href="#/" aria-label="首頁"><span class="brand-dot"></span>David's</a>
 
     <nav class="nav-links" aria-label="主選單">
+      <a href="#/" class="nav-link">逛藝廊</a>
       <div class="has-mega" id="megaTrigger">
         <a href="#/overview" class="nav-link" id="megaLink" aria-haspopup="true" aria-expanded="false">Side Business</a>
       </div>
+      <a href="#/office" class="nav-link">辦公室</a>
       <a href="#/overview" class="nav-link">進度總覽</a>
       <a href="#/updates" class="nav-link">最新動態</a>
     </nav>
@@ -168,6 +185,7 @@
   <main id="app" hidden></main>
 
   <script src="data/projects.js"></script>
+  <script src="js/gallery.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

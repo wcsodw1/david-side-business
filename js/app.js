@@ -79,7 +79,12 @@
 
   /* ---------- Mega menu ---------- */
   function buildMega() {
-    $("#megaGrid").innerHTML = P.map((p, i) => `
+    $("#megaGrid").innerHTML = `
+      <a class="mega-item" role="menuitem" href="#/office">
+        <span class="mega-dot" style="background:#ffe9b8">▦</span>
+        <span class="mega-text"><span class="mega-name">辦公室 Office</span>
+        <span class="mega-meta"><i class="pill-dot" style="background:#6be3a4"></i>儀表板 · 總覽</span></span>
+      </a>` + P.map((p, i) => `
       <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}">
         <span class="mega-dot" style="background:${accent(i)}">${initial(p)}</span>
         <span class="mega-text">
@@ -108,7 +113,11 @@
   };
   [trig, mega].forEach((el) => { el.addEventListener("mouseenter", openMega); el.addEventListener("mouseleave", () => closeMega()); });
   trig.addEventListener("focusin", openMega);
-  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMega(0); });
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    closeMega(0);
+    if (!document.body.classList.contains("locked") && location.hash.replace(/^#\/?/, "")) location.hash = "#/";
+  });
   mega.addEventListener("click", (e) => { if (e.target.closest("a")) closeMega(0); });
 
   $("#burger").addEventListener("click", () => {
@@ -120,7 +129,7 @@
   /* ---------- 畫作視差 ---------- */
   const layers = $$("#painting .layer");
   window.addEventListener("pointermove", (e) => {
-    if (document.body.classList.contains("dim")) return;
+    if (document.body.classList.contains("dim") || (window.Gallery && window.Gallery.active)) return;
     const x = e.clientX / innerWidth - 0.5, y = e.clientY / innerHeight - 0.5;
     layers.forEach((l) => {
       const d = +l.dataset.depth || 0;
@@ -148,15 +157,78 @@
 
   const views = {
     home() {
+      return `<section class="gallery" id="gallery" aria-label="藝廊：用左右鍵走路"></section>`;
+    },
+
+
+    office() {
+      const n = P.length || 1;
+      const avg = Math.round(P.reduce((a, p) => a + (p.progress || 0), 0) / n);
+      const by = (k) => P.filter((p) => p.status === k);
+      const allUps = P.flatMap((p, i) => (p.updates || []).map((u) => ({ ...u, p, i })))
+                      .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 6);
+      const R = 34, C = 2 * Math.PI * R;
+      const gauge = (p, i) => `
+        <a class="gauge" href="#/p/${esc(p.id)}" style="--c:${accent(i)}">
+          <svg viewBox="0 0 80 80" aria-hidden="true">
+            <circle cx="40" cy="40" r="${R}" class="g-track"/>
+            <circle cx="40" cy="40" r="${R}" class="g-ring" data-ring="${p.progress ?? 0}" style="stroke-dasharray:${C.toFixed(2)};stroke-dashoffset:${C.toFixed(2)}"/>
+          </svg>
+          <b class="g-pct">${p.progress ?? 0}<small>%</small></b>
+          <span class="g-name">${esc(p.name)}</span>
+          <span class="g-meta"><i class="led" style="background:${st(p).color};color:${st(p).color}"></i>${esc(st(p).label)}</span>
+          <span class="g-last">${esc((latest(p) || {}).title || "—")}</span>
+        </a>`;
+      const cols = ["idea", "building", "live", "paused"];
+      const board = cols.map((k) => `
+        <div class="wb-col">
+          <h3><i class="pill-dot" style="background:${S[k].color}"></i>${esc(S[k].label)}<span>${by(k).length}</span></h3>
+          ${by(k).map((p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></a>`).join("") || `<p class="wb-empty">—</p>`}
+        </div>`).join("");
+      const seg = cols.map((k) => `<i style="flex:${by(k).length};background:${S[k].color}" title="${esc(S[k].label)} ${by(k).length}"></i>`).join("");
       return `
-        <section class="hero">
-          <div>
-            <h1>${esc(SITE.tagline || "A place where dreams come true").replace(/(dreams come true)/i, "<b>$1</b>")}</h1>
-            <p class="zh">${esc(SITE.taglineZh || "")}</p>
+        <section class="page office">
+          <a class="back-btn" href="#/" data-office-back>← 返回藝廊 <kbd>Esc</kbd></a>
+          <div class="page-head">
+            <p class="eyebrow">OFFICE</p>
+            <h1>David 的辦公室</h1>
+            <p>每個 Side Business 的即時現況，都貼在這間辦公室裡。</p>
           </div>
-          <div class="cta-row">
-            <a class="btn solid" href="#/overview">查看進度總覽</a>
-            <a class="btn glass" href="#/updates">最新動態</a>
+          <div class="office-room">
+            <aside class="whiteboard">
+              <h2>看板 · KANBAN</h2>
+              <div class="wb-cols">${board}</div>
+            </aside>
+
+            <div class="monitor">
+              <div class="bezel">
+                <div class="mon-top"><span><i class="led on"></i> SIDE BUSINESS 儀表板</span><time id="clock"></time></div>
+                <div class="kpis">
+                  <div><b>${P.length}</b><span>專案</span></div>
+                  <div><b>${by("live").length}</b><span>已上線</span></div>
+                  <div><b>${by("building").length}</b><span>進行中</span></div>
+                  <div><b>${by("idea").length}</b><span>發想中</span></div>
+                  <div><b>${avg}<small>%</small></b><span>平均進度</span></div>
+                </div>
+                <div class="gauges">${P.map(gauge).join("")}</div>
+                <div class="energy"><span>整體分布</span><div class="seg">${seg}</div></div>
+              </div>
+              <div class="stand"></div>
+              <div class="desk">
+                <svg class="mug" viewBox="0 0 40 40" aria-hidden="true"><path d="M8 12h20v14a8 8 0 0 1-8 8h-4a8 8 0 0 1-8-8z" fill="#f6f1ff"/><path d="M28 16h3a4 4 0 0 1 0 8h-3" fill="none" stroke="#f6f1ff" stroke-width="3"/><path class="steam" d="M14 8q2-3 0-6M20 8q2-3 0-6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".6"/></svg>
+                <span class="keyboard"></span>
+                <svg class="plant" viewBox="0 0 40 50" aria-hidden="true"><path d="M20 30C8 28 6 14 8 6c10 2 14 10 12 24zM20 30c12-2 14-16 12-24-10 2-14 10-12 24z" fill="#6be3a4"/><path d="M10 32h20l-3 16H13z" fill="#ff9b78"/></svg>
+              </div>
+            </div>
+
+            <aside class="bulletin">
+              <h2>公佈欄 · 最新動態</h2>
+              ${allUps.map((u) => `
+                <a class="note" href="#/p/${esc(u.p.id)}" style="--c:${accent(u.i)}">
+                  <time>${fmt(u.date)} · ${esc(u.p.name)}</time>
+                  <b>${esc(u.title)}</b>
+                </a>`).join("") || `<p class="empty">還沒有紀錄。</p>`}
+            </aside>
           </div>
         </section>`;
     },
@@ -211,7 +283,10 @@
       return `
         <section class="page" style="--c:${c}">
           <div class="proj-hero" style="--g:${grad(i)}">
-            <div class="crumb"><a href="#/overview">Side Business</a> / ${esc(p.category)}</div>
+            <div class="crumb">
+              <a class="back-btn" href="#/" id="backBtn">← 返回藝廊 <kbd>Esc</kbd></a><br>
+              <a href="#/overview">Side Business</a> / ${esc(p.category)}
+            </div>
             <h1>${esc(p.name)}</h1>
             <p class="zh">${esc(p.zh)}</p>
           </div>
@@ -240,22 +315,34 @@
     },
   };
 
+  let clockTimer;
   function render() {
     const hash = location.hash.replace(/^#\/?/, "");
     const [seg, arg] = hash.split("/");
+    if (window.Gallery) window.Gallery.unmount();
+    clearInterval(clockTimer);
     let html, home = false;
     if (!seg) { html = views.home(); home = true; }
     else if (seg === "overview") html = views.overview();
     else if (seg === "updates") html = views.updates();
+    else if (seg === "office") html = views.office();
     else if (seg === "p") html = views.project(decodeURIComponent(arg || ""));
     else { html = views.home(); home = true; }
 
     document.body.classList.toggle("dim", !home);
     if (home) layers.forEach((l) => (l.style.transform = ""));
     app.innerHTML = html + `<footer class="foot-note">© ${new Date().getFullYear()} David's Side Business</footer>`;
+    if (home && window.Gallery) window.Gallery.mount($("#gallery"), P, { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; } });
+    if (seg === "p" && window.Gallery) window.Gallery.lastId = arg;
+    if (seg === "office" && window.Gallery) window.Gallery.lastId = "__office";
+    if (seg === "office") {
+      const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
+      tick(); clockTimer = setInterval(tick, 1000);
+    }
+    requestAnimationFrame(() => requestAnimationFrame(() => $$("[data-ring]", app).forEach((r) => { const C = parseFloat(r.style.strokeDasharray); r.style.strokeDashoffset = (C * (1 - r.dataset.ring / 100)).toFixed(2); })));
     window.scrollTo(0, 0);
     requestAnimationFrame(() => requestAnimationFrame(() => $$("[data-w]", app).forEach((b) => (b.style.width = b.dataset.w + "%"))));
-    document.title = (seg === "p" && P.find((p) => p.id === arg) ? P.find((p) => p.id === arg).name + " · " : "") + (SITE.name || "David's Side Business");
+    document.title = (seg === "office" ? "辦公室 · " : "") + (seg === "p" && P.find((p) => p.id === arg) ? P.find((p) => p.id === arg).name + " · " : "") + (SITE.name || "David's Side Business");
   }
 
   /* ---------- 解鎖 / 鎖定 ---------- */
