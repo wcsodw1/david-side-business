@@ -115,6 +115,7 @@
   trig.addEventListener("focusin", openMega);
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
+    if (window.News && window.News.isOpen()) { window.News.close(); return; }
     closeMega(0);
     if (!document.body.classList.contains("locked") && location.hash.replace(/^#\/?/, "")) location.hash = "#/";
   });
@@ -226,7 +227,7 @@
               ${allUps.map((u) => `
                 <a class="note" href="#/p/${esc(u.p.id)}" style="--c:${accent(u.i)}">
                   <time>${fmt(u.date)} · ${esc(u.p.name)}</time>
-                  <b>${esc(u.title)}</b>
+                  <b>${esc(u.title)}</b>${window.News && window.News.isUnread(u.p, u) ? `<em class="new">NEW</em>` : ""}
                 </a>`).join("") || `<p class="empty">還沒有紀錄。</p>`}
             </aside>
           </div>
@@ -332,7 +333,7 @@
     document.body.classList.toggle("dim", !home);
     if (home) layers.forEach((l) => (l.style.transform = ""));
     app.innerHTML = html + `<footer class="foot-note">© ${new Date().getFullYear()} David's Side Business</footer>`;
-    if (home && window.Gallery) window.Gallery.mount($("#gallery"), P, { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; } });
+    if (home && window.Gallery) window.Gallery.mount($("#gallery"), P, { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) });
     if (seg === "p" && window.Gallery) window.Gallery.lastId = arg;
     if (seg === "office" && window.Gallery) window.Gallery.lastId = "__office";
     if (seg === "office") {
@@ -350,11 +351,13 @@
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
     buildMega();
+    if (window.News) window.News.mount(P, {});
     render();
   }
   function lock() {
     try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch (_) {}
     location.hash = "";
+    if (window.News) window.News.unmount();
     app.hidden = true; nav.hidden = true; app.innerHTML = "";
     document.body.classList.add("locked"); document.body.classList.remove("dim");
     $("#pw").value = ""; $("#gateError").textContent = "";

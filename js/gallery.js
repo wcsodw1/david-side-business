@@ -82,7 +82,7 @@
         </div>
         ${P.map((p, i) => `<div class="g-window" style="left:calc(var(--u)*${fx(i) + GAP / 2})"></div>`).join("")}
         <a class="g-office" href="#/office" data-s="0" style="left:calc(var(--u)*${FIRST})" aria-label="辦公室">
-          <span class="go-sign">OFFICE · 辦公室</span>
+          <span class="go-sign">OFFICE · 辦公室</span><span class="g-bang" hidden>!</span>
           <span class="go-room">
             <span class="go-screen">
               ${P.map((p, i) => `<i style="--w:${p.progress ?? 0}%;--c:hsl(${H.hue(i)} 90% 72%);--d:${(i * 0.35).toFixed(2)}s"></i>`).join("")}
@@ -94,7 +94,7 @@
         </a>
         ${P.map((p, i) => `
           <a class="g-frame" href="#/p/${H.esc(p.id)}" data-s="${i + 1}" style="left:calc(var(--u)*${fx(i)})" aria-label="${H.esc(p.name)}">
-            <span class="g-cone"></span><span class="g-lamp"></span>
+            <span class="g-cone"></span><span class="g-lamp"></span><span class="g-bang" hidden>!</span>
             <span class="g-fr">
               <span class="g-art">${art(i, H.hue(i))}</span>
               <span class="g-cap">
@@ -142,7 +142,7 @@
     const typing = (e) => /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     const onKey = (e) => {
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (document.body.classList.contains("locked")) return;
+      if (document.body.classList.contains("locked") || document.body.classList.contains("news-open")) return;
       const down = e.type === "keydown";
       run = e.shiftKey;
       switch (e.code) {
@@ -171,6 +171,14 @@
       el.addEventListener("pointerleave", off); el.addEventListener("pointercancel", off);
     };
     hold("#gL", -1); hold("#gR", 1);
+
+    /* ----- 新消息驚嘆號 ----- */
+    const refreshBangs = () => frames.forEach((f, s) => {
+      const b = f.querySelector(".g-bang");
+      if (b) b.hidden = !(H.unread ? H.unread(s === 0 ? null : P[s - 1].id) : 0);
+    });
+    window.addEventListener("news:change", refreshBangs);
+    refreshBangs();
 
     /* ----- 主迴圈 ----- */
     let raf = 0, last = performance.now();
@@ -224,7 +232,7 @@
     };
     raf = requestAnimationFrame(tick);
 
-    S = { root, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, onResize, layers };
+    S = { root, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, onResize, layers, refreshBangs };
     api.active = true;
   }
 
@@ -235,6 +243,7 @@
     window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys);
     window.removeEventListener("resize", S.onResize);
+    window.removeEventListener("news:change", S.refreshBangs);
     S.layers.forEach((l) => (l.style.transform = ""));
     S = null;
     api.active = false;

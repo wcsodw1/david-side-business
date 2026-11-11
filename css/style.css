@@ -400,3 +400,61 @@ body:not(.dim) footer.foot-note { display: none; }
   .monitor { order: -1; }
   .kpis { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ============================================================
+   NEWS 報紙
+   ============================================================ */
+.news-fab { position: fixed; right: 16px; top: 78px; z-index: 60; width: 66px; height: 74px; padding: 0; filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); transition: transform .25s; }
+.news-fab svg { width: 100%; height: 100%; overflow: visible; }
+.news-fab .paper-tilt { transform-box: fill-box; transform-origin: 50% 100%; transform: rotate(-5deg); transition: transform .3s; }
+.news-fab:hover { transform: translateY(-2px) scale(1.06); }
+.news-fab:hover .paper-tilt, .news-fab.is-open .paper-tilt { transform: rotate(0); }
+.news-fab.has-new .paper-tilt { animation: paperSwing 2.6s ease-in-out infinite; }
+@keyframes paperSwing { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(3deg); } }
+.news-bang { position: absolute; top: -6px; right: -6px; width: 26px; height: 26px; border-radius: 50%; display: none; place-items: center; background: #ff3b57; color: #fff; font: 800 16px/1 Georgia, serif; border: 2px solid #fff; box-shadow: 0 0 0 0 rgba(255,59,87,.6); }
+.news-fab.has-new .news-bang { display: grid; animation: bangPop 1.4s ease-in-out infinite; }
+@keyframes bangPop { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,59,87,.55); } 50% { transform: scale(1.18); box-shadow: 0 0 0 9px rgba(255,59,87,0); } }
+.news-tip { position: absolute; right: 74px; top: 50%; transform: translateY(-50%); padding: 5px 10px; border-radius: 6px; background: rgba(15,13,36,.85); font-size: 12px; font-weight: 600; letter-spacing: .12em; opacity: 0; pointer-events: none; transition: opacity .2s; white-space: nowrap; }
+.news-fab:hover .news-tip { opacity: 1; }
+body.locked .news-fab { display: none; }
+
+.news-scrim { position: fixed; inset: 0; z-index: 70; background: rgba(8,6,20,.5); opacity: 0; pointer-events: none; transition: opacity .3s; }
+.news-scrim.on { opacity: 1; pointer-events: auto; }
+.news-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 80; width: min(440px, 94vw); display: flex; flex-direction: column;
+  background: #f4ecd8 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 .4 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  color: #1c1a17; font-family: Georgia, "Noto Serif TC", "Songti TC", "PMingLiU", serif; box-shadow: -20px 0 60px rgba(0,0,0,.5);
+  transform: translateX(105%); transition: transform .4s cubic-bezier(.2,.8,.2,1); }
+.news-panel.open { transform: none; }
+.paper-head { position: relative; text-align: center; padding: 22px 24px 10px; flex: none; }
+.paper-head small { display: block; font-size: 11px; letter-spacing: .12em; color: #6a5d48; }
+.paper-head h2 { font-size: clamp(30px, 8vw, 40px); font-weight: 900; letter-spacing: .02em; line-height: 1.1; margin: 6px 0 8px; }
+.paper-head .rule { height: 6px; border-block: 1px solid #1c1a17; border-top-width: 3px; }
+.paper-head .sub { font-size: 13px; color: #4a3f2e; margin-top: 8px; }
+.paper-head .sub b { color: #d92a47; font-size: 16px; }
+.paper-x { position: absolute; top: 14px; right: 16px; width: 32px; height: 32px; border-radius: 50%; font-size: 14px; color: #1c1a17; border: 1px solid #1c1a17; }
+.paper-x:hover { background: #1c1a17; color: #f4ecd8; }
+.paper-body { flex: 1; overflow-y: auto; padding: 6px 24px 20px; }
+.sec { margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #1c1a17; font: 800 12px var(--font); letter-spacing: .24em; }
+.sec.dim { color: #8a7a60; border-color: #b9ab8c; margin-top: 26px; }
+.art { position: relative; padding: 12px 0 14px; border-bottom: 1px dotted #9a8c70; }
+.art .kicker { font: 600 11px var(--font); letter-spacing: .12em; color: #8a3a2a; text-transform: uppercase; }
+.art h3 { font-size: 21px; line-height: 1.25; margin: 4px 0 5px; font-weight: 800; }
+.art h3 a:hover { text-decoration: underline; }
+.art .body { font-size: 14.5px; line-height: 1.6; color: #3a3226; white-space: pre-line; }
+.art.seen { opacity: .55; }
+.art.seen h3 { font-size: 17px; font-weight: 700; }
+.stamp { position: absolute; top: 10px; right: 0; padding: 1px 8px; font: 800 11px var(--font); letter-spacing: .14em; color: #d92a47; border: 2px solid #d92a47; border-radius: 4px; transform: rotate(6deg); }
+.seen-btn { margin-top: 10px; padding: 6px 14px; border-radius: 99px; border: 1.5px solid #1c1a17; font: 700 12px var(--font); transition: background .2s, color .2s; }
+.seen-btn:hover { background: #1c1a17; color: #f4ecd8; }
+.empty-paper { padding: 30px 0; text-align: center; color: #8a7a60; }
+.news-panel footer { flex: none; padding: 12px 24px calc(14px + env(safe-area-inset-bottom)); border-top: 3px double #1c1a17; text-align: center; font: 600 13px var(--font); color: #6a5d48; }
+.read-all { width: 100%; padding: 11px; border-radius: 8px; background: #1c1a17; color: #f4ecd8; font: 700 14px var(--font); letter-spacing: .08em; transition: transform .15s; }
+.read-all:hover { transform: translateY(-1px); }
+
+/* 藝廊畫框 / 辦公室上的驚嘆號 */
+.g-bang { position: absolute; top: calc(var(--u) * 2.4); right: calc(var(--u) * 2); z-index: 3; width: calc(var(--u) * 3.6); height: calc(var(--u) * 3.6); border-radius: 50%; display: grid; place-items: center; background: #ff3b57; color: #fff; font: 800 calc(var(--u) * 2.4)/1 Georgia, serif; border: 2px solid #fff; animation: bangPop 1.4s ease-in-out infinite; pointer-events: none; }
+.g-bang[hidden] { display: none; }
+.go-sign + .g-bang { top: calc(var(--u) * 1); right: calc(var(--u) * 1); }
+.note .new { position: absolute; top: 8px; right: 10px; font: 800 10px var(--font); letter-spacing: .14em; color: #d92a47; border: 1.5px solid #d92a47; border-radius: 3px; padding: 0 5px; font-style: normal; transform: rotate(5deg); }
+
+@media (max-width: 960px) { .news-fab { width: 54px; height: 61px; top: 70px; right: 10px; } .news-tip { display: none; } }
