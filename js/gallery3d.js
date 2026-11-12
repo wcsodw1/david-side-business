@@ -780,7 +780,7 @@
       if (window.Journal) { ov.innerHTML = window.Journal.card(p, i, H); window.Journal.bind(ov, p, i, H, { close: closeBoard, rerender: renderBoard }); }
       else ov.innerHTML = `<div class="wb-card"><button class="wb-x" data-x>✕</button><h2>${H.esc(p.name)}</h2></div>`;
     };
-    const openBoard = (s) => { boardS = s; renderBoard(); ov.hidden = false; document.body.classList.add("board-open"); };
+    const openBoard = (s) => { boardS = s; if (typeof clearKeys === "function") clearKeys(); renderBoard(); ov.hidden = false; document.body.classList.add("board-open"); };
     ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) closeBoard(); });
     const refreshBoardTexture = (s) => {
       const p = P[s - 1]; if (!p) return;
@@ -827,6 +827,18 @@
         const n = performance.now(), second = n - lastDown < 350; lastDown = n;
         if (second && dblBackExit()) { lastDown = 0; keys.l = 0; dbl.l = 0; e.preventDefault(); e.__dsbHandled = true; return; }
       }
+      if (e.type === "keyup") {            // 放開鍵一律處理，避免白板彈出時按鍵「卡住」讓小人自己走去撞牆
+        run = e.shiftKey;
+        switch (e.code) {
+          case "ArrowLeft": case "KeyA": keys.l = 0; dbl.l = 0; break;
+          case "ArrowRight": case "KeyD": keys.r = 0; dbl.r = 0; break;
+          case "ArrowUp": case "KeyW": keys.u = 0; dbl.u = 0; break;
+          case "ArrowDown": case "KeyS": keys.d = 0; dbl.d = 0; break;
+          case "KeyQ": keys.q = 0; break;
+          case "KeyE": keys.e = 0; break;
+        }
+        return;
+      }
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || blocked()) return;
       const down = e.type === "keydown"; run = e.shiftKey;
       const set = (k) => { keys[k] = down ? 1 : 0; if (down) { cancelRoute(); if (!e.repeat) { const n = performance.now(); if (n - (lastTap[k] || 0) < 320) dbl[k] = 1; lastTap[k] = n; } } else dbl[k] = 0; e.preventDefault(); };
@@ -842,7 +854,7 @@
       }
     };
     const clearKeys = () => { dbl.l = dbl.r = dbl.u = dbl.d = 0; keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }; run = false; touch = { l: 0, r: 0, u: 0, d: 0 }; rotHold = 0; };
-    window.addEventListener("keydown", onKey); window.addEventListener("keyup", onKey); window.addEventListener("blur", clearKeys);
+    window.addEventListener("keydown", onKey); window.addEventListener("keyup", onKey); window.addEventListener("blur", clearKeys); document.addEventListener("visibilitychange", clearKeys);
 
     // 滑鼠 / 觸控：拖曳轉 360°、滾輪（門口：上滑進門 / 下滑出門；其他：縮放）、點擊
     const ptrs = new Map(); let dragMoved = 0, pinch = 0;
@@ -912,7 +924,7 @@
 
     /* ----- 主迴圈 ----- */
     const fwd = new THREE.Vector3(), rgt = new THREE.Vector3();
-    let raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality = 2;
+    let raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality = 2, stuckT = 0, stuckX = 0, stuckZ = 0;
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const rawDt = (now - last) / 1000; last = now;
@@ -929,6 +941,11 @@
         }
       }
 
+      if (blocked() && (keys.l | keys.r | keys.u | keys.d | keys.q | keys.e | dbl.l | dbl.r | dbl.u | dbl.d | touch.l | touch.r | touch.u | touch.d)) clearKeys();
+      if (route.length) {
+        stuckT += dt;
+        if (stuckT > 0.8) { if (Math.hypot(pos.x - stuckX, pos.z - stuckZ) < 0.1) cancelRoute(); stuckT = 0; stuckX = pos.x; stuckZ = pos.z; }
+      } else { stuckT = 0; stuckX = pos.x; stuckZ = pos.z; }
       const rot = (keys.e - keys.q) + rotHold;
       if (rot) { yaw += rot * 1.6 * dt; stopAuto(); }
       if (auto) yaw += 0.16 * dt;
@@ -1032,7 +1049,7 @@
     if (!S) return;
     S.raf();
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
-    window.removeEventListener("blur", S.clearKeys); window.removeEventListener("resize", S.resize);
+    window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
     if (window.Director) window.Director.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
