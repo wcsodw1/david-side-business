@@ -12,6 +12,7 @@
 
   /* ---------- 版面常數（單位：公尺） ---------- */
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
+  const HOUSE = { x0: 0.5, x1: 7.4, z0: -5.0, z1: 0.4 };
   const SPACING = 7.5, OFFICE_X = ENTRY + 15, FIRST_X = ENTRY + 29;
   const DECK_HD = 5.4;                                  // 露台半寬（z）
   const ROOM_HW = 3.2, ROOM_Z0 = -5.3, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
@@ -264,9 +265,10 @@
       const el = new THREE.Group(); el.position.set(0, -0.3, 0); sh.add(el);
       mesh(tube(0.046, 0.037, 0.26), cloth, el, 0, -0.13, 0);
       mesh(tube(0.04, 0.04, 0.03), shirt, el, 0, -0.262, 0);
-      mesh(sph(0.039, 14, 10), skin, el, 0, -0.315, 0.004).scale.set(0.85, 1.35, 0.6);
-      mesh(sph(0.015, 8, 6), skin, el, side * -0.03, -0.29, 0.012);
-      return { sh, el };
+      const wr = new THREE.Group(); wr.position.set(0, -0.3, 0); el.add(wr);          // 手腕關節：球拍掛在這裡
+      mesh(sph(0.039, 14, 10), skin, wr, 0, -0.015, 0.004).scale.set(0.85, 1.35, 0.6);
+      mesh(sph(0.015, 8, 6), skin, wr, side * -0.03, 0.01, 0.012);
+      return { sh, el, wr };
     };
     const armL = arm(-1), armR = arm(1);
 
@@ -402,8 +404,8 @@
       g.fillStyle = "#b4562c"; g.font = "500 44px 'Noto Sans TC', sans-serif"; g.fillText("走向前方，逛逛我的夢想  →", 20, 575);
     }), aniso);
     const decalMat = (map, op = 1) => new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -2 });
-    const intro = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 2.69), decalMat(introTex));
-    intro.rotation.x = -Math.PI / 2; intro.position.set(ENTRY + 6.2, 0.012, -0.9); scene.add(intro);
+    const intro = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 2.0), decalMat(introTex));
+    intro.rotation.x = -Math.PI / 2; intro.position.set(ENTRY + 7.0, 0.012, -0.9); scene.add(intro);
 
     const poolTex = mkTex(THREE, poolCanvas(), aniso);
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
@@ -412,7 +414,7 @@
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [];
 
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
-    let courtUpdate = null; const chairSpots = [];
+    let courtUpdate = null; const chairSpots = [], roofs = [], shells = [];
     {
       const CX = COURT_CX, CZ = 0, CL = 13.41, CW = 6.1, PADL = 19.3, PADW = 9.7, K = 2.13;
       const ppm = 90, cw = Math.round(PADL * ppm), ch = Math.round(PADW * ppm), cvs = mkCanvas(cw, ch), g = cvs.getContext("2d"), rnd = mulberry(77);
@@ -481,37 +483,36 @@
       }), aniso);
       const sg2 = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.29), decalMat(signTex, 0.95)); sg2.rotation.x = -Math.PI / 2; sg2.position.set(CX - HX - 3.2, 0.013, 0); scene.add(sg2);
 
-      // ===== 休息區（北牆邊）：椅子（椅背披毛巾）、地上的水瓶與運動包 =====
+      // ===== 休息區（球場最後方：東牆邊 + 東北角）：椅子（椅背披毛巾）、水瓶、運動包 =====
       {
         const fm = new THREE.MeshStandardMaterial({ color: 0x2a2d36, roughness: 0.5, metalness: 0.5 }), seatM = new THREE.MeshStandardMaterial({ color: 0xcfd3dc, roughness: 0.6 });
-        const mk = (geo, mat, x, y, z, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m; };
         const towelCols = [0xffffff, 0x1fa39a, 0xf2d23a, 0xf28a3a];
-        [-3.9, -1.3, 1.3, 3.9].forEach((dx, i) => {
-          const x = CX + dx, z = -4.45;
-          mk(new THREE.BoxGeometry(0.46, 0.04, 0.44), seatM, x, 0.46, z);
-          mk(new THREE.BoxGeometry(0.46, 0.44, 0.03), seatM, x, 0.7, z - 0.21);
-          for (const [lx, lz] of [[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]]) mk(new THREE.BoxGeometry(0.03, 0.46, 0.03), fm, x + lx, 0.23, z + lz);
+        // [離球場中心的 x、z、朝向]：朝向 -π/2 = 面向西（球場）、0 = 面向南（球場）
+        [[9.3, -2.9, -Math.PI / 2], [9.3, -3.7, -Math.PI / 2], [9.3, -4.5, -Math.PI / 2], [7.4, -4.5, 0]].forEach(([dx, z, fa], i) => {
+          const x = CX + dx, cg = new THREE.Group(); cg.position.set(x, 0, z); cg.rotation.y = fa; scene.add(cg);
+          const mc = (geo, mat, lx, ly, lz, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(lx, ly, lz); m.castShadow = cast; m.receiveShadow = true; cg.add(m); return m; };
+          mc(new THREE.BoxGeometry(0.46, 0.04, 0.44), seatM, 0, 0.46, 0);
+          mc(new THREE.BoxGeometry(0.46, 0.44, 0.03), seatM, 0, 0.7, -0.21);
+          for (const [lx, lz] of [[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]]) mc(new THREE.BoxGeometry(0.03, 0.46, 0.03), fm, lx, 0.23, lz);
           const tc = new THREE.MeshStandardMaterial({ color: towelCols[i], roughness: 0.95 });
-          mk(new THREE.BoxGeometry(0.4, 0.035, 0.12), tc, x, 0.935, z - 0.2);            // 毛巾：搭在椅背上方
-          mk(new THREE.BoxGeometry(0.38, 0.3, 0.014), tc, x, 0.78, z - 0.17 + 0.0, false); // 垂在椅背前
-          chairSpots.push({ x, z, front: { x, z: z + 0.75 } });
-          addObs(x, z, 0.3, 0.28);
+          mc(new THREE.BoxGeometry(0.4, 0.035, 0.12), tc, 0, 0.935, -0.2);                 // 毛巾：搭在椅背上方
+          mc(new THREE.BoxGeometry(0.38, 0.3, 0.014), tc, 0, 0.78, -0.17, false);          // 垂在椅背前
+          chairSpots.push({ x, z, face: fa, front: { x: x + Math.sin(fa) * 0.75, z: z + Math.cos(fa) * 0.75 } });
+          addObs(x, z, 0.3, 0.3);
         });
-        // 水瓶（有的躺著）
         const bottleM = new THREE.MeshStandardMaterial({ color: 0x6ec6ff, roughness: 0.2, transparent: true, opacity: 0.82 }), capM = new THREE.MeshStandardMaterial({ color: 0xf4f4ee, roughness: 0.5 });
-        [[-3.4, -4.05, 0], [-1.9, -4.15, 0], [-0.4, -4.0, 1], [0.7, -4.15, 0], [2.4, -4.05, 0], [4.5, -4.0, 1], [-2.6, -3.9, 0]].forEach(([dx, dz, lie]) => {
+        [[8.7, -2.4, 0], [8.4, -3.3, 1], [8.5, -4.25, 0], [7.9, -4.0, 0], [8.9, -4.8, 0], [6.6, -4.6, 1], [6.1, -4.2, 0]].forEach(([dx, dz, lie]) => {
           const g2 = new THREE.Group(); g2.position.set(CX + dx, lie ? 0.035 : 0.11, dz);
           const b = new THREE.Mesh(new THREE.CylinderGeometry(0.033, 0.033, 0.22, 12), bottleM); b.castShadow = true;
           const cp = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.03, 10), capM); cp.position.y = 0.125;
           g2.add(b, cp); if (lie) { g2.rotation.z = Math.PI / 2; g2.rotation.y = dx; } scene.add(g2);
         });
-        // 運動包
-        [[-2.6, -4.45, 0x1d2a44, 0xff5a4a], [2.7, -4.4, 0x2a2d36, 0x1fa39a]].forEach(([dx, dz, c1, c2]) => {
+        [[8.1, -2.3, 0x1d2a44, 0xff5a4a], [6.4, -4.4, 0x2a2d36, 0x1fa39a]].forEach(([dx, dz, c1, c2]) => {
           const g2 = new THREE.Group(); g2.position.set(CX + dx, 0.15, dz); g2.rotation.y = dx * 0.4;
           const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.14, 0.42, 6, 14), new THREE.MeshStandardMaterial({ color: c1, roughness: 0.8 })); body.rotation.z = Math.PI / 2; body.castShadow = true; g2.add(body);
-          const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.05, 0.285), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.7 })); stripe.position.y = 0.0; g2.add(stripe);
+          const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.05, 0.285), new THREE.MeshStandardMaterial({ color: c2, roughness: 0.7 })); g2.add(stripe);
           for (const sx of [-0.14, 0.14]) { const st = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.012, 6, 16, Math.PI), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.7 })); st.position.set(sx, 0.12, 0); st.rotation.y = Math.PI / 2; g2.add(st); }
-          scene.add(g2); addObs(CX + dx, dz, 0.4, 0.22);
+          scene.add(g2);
         });
       }
 
@@ -534,10 +535,10 @@
         const pd = new THREE.Group();
         const face = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.014), new THREE.MeshStandardMaterial({ color: k.paddle, roughness: 0.5 })); face.position.y = -0.21; face.castShadow = true;
         const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.12, 8), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.6 })); handle.position.y = -0.04;
-        pd.add(face, handle); pd.position.set(0, -0.3, 0.03); pd.rotation.x = -1.35; av2.armR.el.add(pd);
+        pd.add(face, handle); pd.position.set(0, 0, 0.03); pd.rotation.x = -1.35; av2.armR.wr.add(pd);
         scene.add(av2.root);
         const drink = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 10), new THREE.MeshStandardMaterial({ color: 0x6ec6ff, roughness: 0.2, transparent: true, opacity: 0.85 })); drink.position.set(0, -0.33, 0.03); drink.visible = false; av2.armR.el.add(drink);
-        return { av: av2, drink, sitA: 0, idx: i, team: i < 2 ? 0 : 1, court: i % 2 === 0 ? "R" : "L", role: "", x: 0, z: 0, face: 0, yawOff: 0, swing: 0, swingType: "dink", swingDur: 0.5, spd: 0, crouch: 0.2, route: [] };
+        return { av: av2, drink, pd, hand: "F", aimZ: null, W: { open: 0, yaw: 0 }, sitA: 0, idx: i, team: i < 2 ? 0 : 1, court: i % 2 === 0 ? "R" : "L", role: "", x: 0, z: 0, face: 0, yawOff: 0, swing: 0, swingType: "dink", swingDur: 0.5, spd: 0, crouch: 0.2, route: [] };
       });
       const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd8ee3a, roughness: 0.5, emissive: 0x7a8a10, emissiveIntensity: 0.5 }));
       ball.castShadow = true; scene.add(ball);
@@ -617,7 +618,14 @@
         volley: { back: -0.7, fwd: -1.3,  end: -0.9, turn: -0.3,  over: 0.1,  cr: 0.7 },
         smash:  { back: -2.6, fwd: -1.0,  end: -0.4, turn: -0.6,  over: 0.35, cr: 0.0 },
       };
-      const startSwing = (p, type) => { p.swing = 1; p.swingType = type; p.swingDur = SWDUR[type] || 0.5; };
+      // 擊球角度：開面(+)=球拍面朝上（高吊/ dink）、閉面(-)=前壓（抽球/殺球）；yaw = 球拍面依目標左右偏轉
+      const OPEN = { lob: 0.95, dink: 0.55, drop: 0.5, serve: 0.35, return: -0.05, drive: -0.35, volley: 0.0, smash: -0.9, out: -0.3, net: -0.2 };
+      const startSwing = (p, type, hand) => {
+        p.swing = 1; p.swingType = type; p.swingDur = SWDUR[type] || 0.5; p.hand = hand || "F";
+        if (type !== "serve" || p.aimZ == null) p.aimZ = clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35);
+        const side = half[p.team] === 0 ? 1 : -1, lr = (p.aimZ - p.z) * side;      // 目標在持拍者右側(+)或左側(-)
+        p.W = { open: (OPEN[type] ?? 0) + rr(-0.12, 0.12), yaw: clamp(lr * 0.3 + rr(-0.08, 0.08), -0.9, 0.9) };
+      };
       const pickPlayer = (team, z) => { const a = players[team * 2], b = players[team * 2 + 1]; return Math.abs(a.z - z) < Math.abs(b.z - z) ? a : b; };
       const chooseType = (k) => {
         if (k === 0) return "serve"; if (k === 1) return "return"; if (k === 2) return "drop";
@@ -639,8 +647,9 @@
           segs.push({ x0: CX, y0: 0.62, z0: zn, x1: CX - dir * 0.35, y1: 0.05, z1: zn, dur: 0.3, apex: 0.05 });
           end = true; winner = opp; recv = players[opp * 2];
         } else {
-          if (type === "serve") { const rc = inCourt(opp, p.court); recv = rc; z1 = Math.sign(courtZ(opp, rc.court)) * rr(0.7, 2.5); }
-          else { z1 = clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35); recv = pickPlayer(opp, z1); }
+          if (type === "serve") { const rc = inCourt(opp, p.court); recv = rc; z1 = p.aimZ != null ? p.aimZ : Math.sign(courtZ(opp, rc.court)) * rr(0.7, 2.5); }
+          else { z1 = p.aimZ != null ? p.aimZ : clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35); recv = pickPlayer(opp, z1); }
+          p.aimZ = null;
           const dep1 = rr(S.depth[0], S.depth[1]), d1 = rr(S.d1[0], S.d1[1]);
           const lastY = S.bounce ? 0.04 : 0.95;
           const bx = wx(opp, dep1);
@@ -652,7 +661,7 @@
           if (type === "smash" || type === "out") { segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 1.6, y1: 0.05, z1: z1 + rr(-0.6, 0.6), dur: 0.5, apex: 0.9 }); end = true; winner = type === "smash" ? team : opp; }
           else if (S.bounce) segs.push({ x0: bx, y0: 0.04, z0: z1, x1: contact.x, y1: 0.85, z1, dur: rr(S.d2[0], S.d2[1]), apex: 0.22 + (type === "lob" || type === "serve" ? 0.35 : 0) });
         }
-        flight = { segs, i: 0, t: 0, recv, recvType: end ? null : chooseType(rally.k), end, winner, swung: false, contact: contact || { x: CX, z: 0 }, hitDir: dir };
+        flight = { segs, i: 0, t: 0, recv, recvType: end ? null : chooseType(rally.k), recvHand: Math.random() < 0.68 ? "F" : "B", end, winner, swung: false, contact: contact || { x: CX, z: 0 }, hitDir: dir };
         // 站位（第 4 拍起進入網前對攻）
         if (k >= 3) {
           if (type === "dink") { depthT[team] = Math.max(2.6, depthT[team] - 0.7); depthT[opp] = Math.max(2.6, depthT[opp] - 0.4); }
@@ -680,7 +689,7 @@
       const startPoint = () => {
         rally = { k: 0, max: Math.round(rr(5, 14)), finish: (() => { const r = Math.random(); return r < 0.6 ? "smash" : r < 0.8 ? "net" : "out"; })() };
         depthT[0] = depthT[1] = 3.6; lastType = ""; setupPoint();
-        startSwing(players[serverP], "serve"); serveT = SWDUR.serve * 0.5; mode = "serve"; drawBoard();
+        { const sv = players[serverP], rc0 = inCourt(1 - srv, sv.court); sv.aimZ = Math.sign(courtZ(1 - srv, rc0.court)) * rr(0.7, 2.5); } startSwing(players[serverP], "serve", "F"); serveT = SWDUR.serve * 0.5; mode = "serve"; drawBoard();
       };
       const endIntermission = () => {            // 局間：雙方對調場地，下一局換對方先發球
         banner = ""; half[0] = 1 - half[0]; half[1] = 1 - half[1]; gameNo++; firstSrv = 1 - firstSrv; startGame();
@@ -690,7 +699,7 @@
       startGame(); setupPoint(); drawBoard();
       let courtTS = 1;
       api.setCourtSpeed = (n) => { courtTS = n; };
-      api.courtState = () => ({ mode, score: score.slice(), games: games.slice(), srv, serverNo, gameNo, half: half.slice(), k: rally ? rally.k : -1, fetch: fetch ? fetch.stage : null, ball: [+ball.position.x.toFixed(1), +ball.position.y.toFixed(2), +ball.position.z.toFixed(1)], players: players.map((p) => ({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), court: p.court, role: p.role, sit: +p.sitA.toFixed(2) })) });
+      api.courtState = () => ({ mode, score: score.slice(), games: games.slice(), srv, serverNo, gameNo, half: half.slice(), k: rally ? rally.k : -1, fetch: fetch ? fetch.stage : null, ball: [+ball.position.x.toFixed(1), +ball.position.y.toFixed(2), +ball.position.z.toFixed(1)], players: players.map((p) => ({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), court: p.court, role: p.role, sit: +p.sitA.toFixed(2), hand: p.hand, wr: p.av.armR.wr.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)) })) });
       players.forEach((p) => { const d = { server: 6.9, sPartner: 6.4, receiver: 6.7, rPartner: 2.7 }[p.role]; p.x = wx(p.team, d); p.z = courtZ(p.team, p.court); p.face = half[p.team] === 0 ? Math.PI / 2 : -Math.PI / 2; });
 
       const startFetch = () => {
@@ -733,7 +742,7 @@
           const sg2 = flight.segs[flight.i]; flight.t += dt / sg2.dur; const u = Math.min(1, flight.t);
           ball.position.set(lerp(sg2.x0, sg2.x1, u), lerp(sg2.y0, sg2.y1, u) + sg2.apex * 4 * u * (1 - u), lerp(sg2.z0, sg2.z1, u));
           const last = flight.i === flight.segs.length - 1;
-          if (last && !flight.end && !flight.swung && sg2.dur * (1 - flight.t) <= (SWDUR[flight.recvType] || 0.5) * 0.5) { flight.swung = true; startSwing(flight.recv, flight.recvType); }
+          if (last && !flight.end && !flight.swung && sg2.dur * (1 - flight.t) <= (SWDUR[flight.recvType] || 0.5) * 0.5) { flight.swung = true; startSwing(flight.recv, flight.recvType, flight.recvHand); }
           if (flight.t >= 1) {
             if (!last) { flight.i++; flight.t = 0; }
             else if (flight.end) { const w = flight.winner; flight = null; awardPoint(w); }
@@ -748,11 +757,11 @@
           const moving = mode === "change" && p.route.length;
           let tg = moving ? p.route[0] : targetOf(p), sp, urgent = 0;
           const resting = (mode === "rest" || mode === "over") && chairSpots[p.idx];
-          if (resting) tg = { x: chairSpots[p.idx].x, z: chairSpots[p.idx].z - 0.02 };
+          if (resting) tg = { x: chairSpots[p.idx].x, z: chairSpots[p.idx].z };
           const fpo = mode === "fetch" && fetch && fetch.p === p ? fetch : null;
           if (fpo) { if (fpo.stage === "go") tg = { x: ball.position.x, z: ball.position.z }; else if (fpo.stage === "back") { const sv = players[serverP]; tg = { x: sv.x - dirT(sv.team) * 0.9, z: sv.z }; } else tg = { x: p.x, z: p.z }; }
           if (!moving && !resting && !fpo && flight && flight.recv === p && !flight.end) {
-            tg = { x: flight.contact.x - flight.hitDir * 0.3, z: flight.contact.z };
+            tg = { x: flight.contact.x - flight.hitDir * 0.3, z: flight.contact.z + (half[p.team] === 0 ? 1 : -1) * (flight.recvHand === "F" ? -0.45 : 0.45) };
             const sg2 = flight.segs[flight.segs.length - 1], remain = (flight.segs.length - 1 - flight.i) * 0.4 + sg2.dur * (flight.i === flight.segs.length - 1 ? 1 - flight.t : 1);
             urgent = Math.hypot(tg.x - p.x, tg.z - p.z) / Math.max(0.25, remain);
           }
@@ -770,7 +779,7 @@
           // 面向：比賽中看球；準備 / 發球時面向球網
           const nd = half[p.team] === 0 ? Math.PI / 2 : -Math.PI / 2;
           const lookBall = (mode === "flight" && flight) || mode === "dead";
-          const sitting = resting && d < 0.15, want = sitting ? 0 : moving || fpo || resting ? Math.atan2(dx, dz) : lookBall ? Math.atan2(ball.position.x - p.x, ball.position.z - p.z) * 0.75 + nd * 0.25 : nd;
+          const sitting = resting && d < 0.15, want = sitting ? chairSpots[p.idx].face : moving || fpo || resting ? Math.atan2(dx, dz) : lookBall ? Math.atan2(ball.position.x - p.x, ball.position.z - p.z) * 0.75 + nd * 0.25 : nd;
           p.face += angDiff(p.face, want) * Math.min(1, dt * 6);
           const lateral = Math.abs(dz) > Math.abs(dx) * 1.2;
           p.av.update(dt, p.spd * (lateral ? 0.75 : 1), t + p.idx);
@@ -787,6 +796,7 @@
           // 撿球：彎腰伸手
           if (fpo && fpo.stage === "pick") { A.torso.rotation.x += 0.65; A.armR.sh.rotation.x = -0.1; A.armR.el.rotation.x = -0.2; A.legL.hip.rotation.x -= 0.25; A.legL.knee.rotation.x += 0.45; }
           // 準備姿勢：球拍舉在身前
+          if (!(p.swing > 0)) { A.armR.wr.rotation.set(0.25, 0, 0); p.pd.rotation.x = -1.35; }
           if (!p.swing && !fpo && p.sitA < 0.5) { A.armR.sh.rotation.x = -0.65 - c * 0.5; A.armR.el.rotation.x = -0.9; A.armL.sh.rotation.x = -0.35 - c * 0.3; }
           // ---- 揮拍：引拍 → 側身蓄力 → 轉身發力 → 收拍 ----
           let off = 0;
@@ -796,6 +806,12 @@
             if (u < 0.4) { const s = ease(u / 0.4); ax = lerp(-0.65, Q.back, s); tv = lerp(0, Q.turn, s); }
             else if (u < 0.62) { const s = ease((u - 0.4) / 0.22); ax = lerp(Q.back, Q.fwd, s); tv = lerp(Q.turn, Q.over, s); }
             else { const s = ease((u - 0.62) / 0.38); ax = lerp(Q.fwd, Q.end, s); tv = lerp(Q.over, 0, s); }
+            const bh = p.hand === "B" ? -1 : 1; tv *= bh;                                  // 反手：向另一側轉身
+            const Wp = p.W, rc2 = u < 0.4 ? ease(u / 0.4) * 0.45 : u < 0.62 ? lerp(0.45, 1, ease((u - 0.4) / 0.22)) : lerp(1, 0.55, (u - 0.62) / 0.38);
+            const fc = -0.15 - 0.55 * Wp.open;                                              // 擊球瞬間的手腕屈伸（開面 / 閉面）
+            const cock = u < 0.4 ? lerp(0.1, 0.55, ease(u / 0.4)) : u < 0.62 ? lerp(0.55, fc, ease((u - 0.4) / 0.22)) : lerp(fc, fc - 0.25, (u - 0.62) / 0.38);
+            A.armR.wr.rotation.set(cock, Wp.yaw * rc2 * bh, (bh > 0 ? 0.22 : -0.35) * rc2);   // 屈伸 / 前臂旋轉(拍面朝向) / 尺橈偏
+            A.armR.sh.rotation.z = bh > 0 ? 0.1 : -0.7 * rc2; p.pd.rotation.x = -1.35 - Wp.open * 0.3 * rc2;
             A.armR.sh.rotation.x = ax; A.armR.el.rotation.x = -0.35 - 0.35 * Math.sin(u * Math.PI);
             A.armL.sh.rotation.x = -0.5 - tv * 0.6; A.torso.rotation.y += -tv * 0.45; A.torso.rotation.x += Math.sin(u * Math.PI) * 0.12; off = tv;
           }
@@ -840,12 +856,13 @@
 
       // ===== David 的家 =====
       const plasterH = M(0xf3ece0, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
+      const shellBox = (w, h, d, x, z, mat, grp, low) => { const g0 = new THREE.BoxGeometry(w, h, d); g0.translate(0, h / 2, 0); const m = new THREE.Mesh(g0, mat); m.position.set(x, 0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); shells.push({ m, grp, low }); return m; };
       const X0 = 0.5, X1 = 7.4, Z0 = -5.0, Z1 = 0.4, ZC = (Z0 + Z1) / 2, DW0 = -3.0, DW1 = -1.4;
       const ft = floorTex.clone(); ft.needsUpdate = true; ft.repeat.set(1, 0.8);
       const hf = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Z1 - Z0), new THREE.MeshStandardMaterial({ map: ft, roughness: 0.5, color: 0xe6d3b0 })); hf.rotation.x = -PI / 2; hf.position.set((X0 + X1) / 2, 0.018, ZC); hf.receiveShadow = true; scene.add(hf);
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, 2.7, 0.14), plasterH, (X0 + X1) / 2, 1.35, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);                      // 北牆
-      mk(new THREE.BoxGeometry(0.14, 1.3, Z1 - Z0), plasterH, X0, 0.65, ZC); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2);                                                      // 西牆（矮）
-      mk(new THREE.BoxGeometry(X1 - X0 + 0.14, 1.3, 0.14), plasterH, (X0 + X1) / 2, 0.65, Z1); addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1);                         // 南牆（矮）
+      shellBox(0.14, 2.7, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2);                                                      // 西牆（矮）
+      shellBox(X1 - X0 + 0.14, 2.7, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1);                         // 南牆（矮）
       mk(new THREE.BoxGeometry(0.14, 2.7, DW0 - Z0), plasterH, X1, 1.35, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);                            // 東牆（門北側）
       mk(new THREE.BoxGeometry(0.14, 2.7, Z1 - DW1), plasterH, X1, 1.35, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);                            // 東牆（門南側）
       mk(new THREE.BoxGeometry(0.14, 0.6, DW1 - DW0), plasterH, X1, 2.4, (DW0 + DW1) / 2);                                                                            // 門楣
@@ -894,8 +911,8 @@
 
       // ===== 美術館門面（入口）=====
       const FW = 0.5, GZ = 1.9;
-      mk(new THREE.BoxGeometry(FW, 4.2, DECK_HD - GZ + 0.2), plasterH, ENTRY, 2.1, -(DECK_HD + GZ) / 2); addObs(ENTRY, -(DECK_HD + GZ) / 2, FW / 2 + 0.05, (DECK_HD - GZ) / 2 + 0.1);
-      mk(new THREE.BoxGeometry(FW, 4.2, DECK_HD - GZ + 0.2), plasterH, ENTRY, 2.1, (DECK_HD + GZ) / 2); addObs(ENTRY, (DECK_HD + GZ) / 2, FW / 2 + 0.05, (DECK_HD - GZ) / 2 + 0.1);
+      shellBox(FW, 4.2, DECK_HD - GZ + 0.2, ENTRY, -(DECK_HD + GZ) / 2, plasterH, "M", 0.45); addObs(ENTRY, -(DECK_HD + GZ) / 2, FW / 2 + 0.05, (DECK_HD - GZ) / 2 + 0.1);
+      shellBox(FW, 4.2, DECK_HD - GZ + 0.2, ENTRY, (DECK_HD + GZ) / 2, plasterH, "M", 0.45); addObs(ENTRY, (DECK_HD + GZ) / 2, FW / 2 + 0.05, (DECK_HD - GZ) / 2 + 0.1);
       mk(new THREE.BoxGeometry(FW, 1.3, GZ * 2 + 0.2), plasterH, ENTRY, 3.55, 0);
       for (const z of [-GZ, GZ]) { mk(new THREE.CylinderGeometry(0.2, 0.2, 3.0, 16), bronze, ENTRY - 0.05, 1.5, z); mk(new THREE.BoxGeometry(0.62, 0.12, 0.62), bronze, ENTRY - 0.05, 3.05, z); }
       const facT = mkTex(THREE, decalCanvas(2048, 400, (c, w, h) => {
@@ -906,9 +923,24 @@
       const facSign = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.76), new THREE.MeshStandardMaterial({ map: facT, roughness: 0.6, metalness: 0.2, emissive: 0xffffff, emissiveMap: facT, emissiveIntensity: 0.12 }));
       facSign.position.set(ENTRY - FW / 2 - 0.02, 3.3, 0); facSign.rotation.y = -PI / 2; scene.add(facSign);
       const welT = mkTex(THREE, decalCanvas(1024, 300, (c, w, h) => { c.textAlign = "center"; c.fillStyle = "#3a2e24"; c.font = "800 120px Georgia, serif"; if ("letterSpacing" in c) c.letterSpacing = "10px"; c.fillText("WELCOME", w / 2, 130); c.fillStyle = "rgba(58,46,36,.75)"; c.font = "500 54px 'Noto Sans TC', sans-serif"; c.fillText("歡迎光臨　→", w / 2, 220); }), aniso);
-      const wel = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.23), decalMat(welT, 0.95)); wel.rotation.x = -PI / 2; wel.position.set(ENTRY + 3.0, 0.014, 0); scene.add(wel);
+      const wel = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 0.88), decalMat(welT, 0.95)); wel.rotation.x = -PI / 2; wel.position.set(ENTRY + 1.8, 0.014, 0); scene.add(wel);
       // 讓小徑看起來接到門口的門墊
       const wm = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.4), new THREE.MeshStandardMaterial({ color: 0x7a2230, roughness: 1 })); wm.rotation.x = -PI / 2; wm.position.set(ENTRY + 0.3, 0.02, 0); wm.receiveShadow = true; scene.add(wm);
+
+      // ===== 屋頂與外牆：從外面看是有屋頂的建築，走進去才切到室內視角 =====
+      const addRoof = (geo, mat, x, y, z, grp, ry = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.y = ry; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat, grp }); return m; };
+      const MW = WORLD_W - ENTRY;
+      const roofM = new THREE.MeshStandardMaterial({ color: 0x3a3640, roughness: 0.75, metalness: 0.1, transparent: true }), skyM = new THREE.MeshStandardMaterial({ color: 0x9cc4ff, roughness: 0.2, metalness: 0.3, transparent: true, emissive: 0x6a8fd0, emissiveIntensity: 0.5 });
+      addRoof(new THREE.BoxGeometry(MW + 0.8, 0.35, DECK_HD * 2 + 0.8), roofM, ENTRY + MW / 2, 4.38, 0, "M");
+      for (let x = ENTRY + 9; x < WORLD_W - 6; x += 12) addRoof(new THREE.BoxGeometry(6, 0.08, 3), skyM, x, 4.6, 0, "M");
+      const ext = new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.92 });
+      shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, -DECK_HD, ext, "M", 0.27); shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, DECK_HD, ext, "M", 0.27); shellBox(0.3, 4.2, DECK_HD * 2, WORLD_W, 0, ext, "M", 0.27);
+      // 家：斜屋頂
+      const roofH = new THREE.MeshStandardMaterial({ color: 0xa3492f, roughness: 0.8, transparent: true });
+      const hw = (Z1 - Z0 + 0.8) / 2, rshape = new THREE.Shape(); rshape.moveTo(-hw, 0); rshape.lineTo(hw, 0); rshape.lineTo(0, 1.7); rshape.closePath();
+      const roofGeo = new THREE.ExtrudeGeometry(rshape, { depth: X1 - X0 + 0.8, bevelEnabled: false });
+      addRoof(roofGeo, roofH, X0 - 0.4, 2.7, ZC, "H", Math.PI / 2);
+      addRoof(new THREE.BoxGeometry(0.5, 1.0, 0.5), roofH, X1 - 1.4, 3.7, ZC - 0.6, "H");
     }
 
     /* ----- 辦公室（玻璃隔間） ----- */
@@ -1092,12 +1124,13 @@
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
+    const inHouseNow = () => pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1;
     const camT = new THREE.Vector3(pos.x, 0.9, pos.z), bias = { x: 0, z: 0 };
     const lastTap = {}, dbl = { l: 0, r: 0, u: 0, d: 0 };
     let lastDown = 0;
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
-    let sitting = -1, sitA = 0;
+    let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
     const tickHooks = [];
 
@@ -1138,7 +1171,7 @@
     };
     const chairNearIdx = () => { if (sitting >= 0 || inside !== sPB || sPB <= 0) return -1; for (let c = 0; c < chairSpots.length; c++) { const f = chairSpots[c].front; if (Math.hypot(pos.x - f.x, pos.z - f.z) < 1.3) return c; } return -1; };
     const stand = () => { if (sitting < 0) return; const c = chairSpots[sitting]; pos.x = c.front.x; pos.z = c.front.z; sitting = -1; };
-    const sitDown = (c) => { sitting = c; pos.x = chairSpots[c].x; pos.z = chairSpots[c].z - 0.02; facing = 0; cancelRoute(); };
+    const sitDown = (c) => { sitting = c; pos.x = chairSpots[c].x; pos.z = chairSpots[c].z; facing = chairSpots[c].face; cancelRoute(); };
     const activate = () => {
       if (!ov.hidden) return;
       if (sitting >= 0) return stand();
@@ -1375,6 +1408,10 @@
       for (const h of tickHooks) h(dt, time);
       if (courtUpdate) courtUpdate(dt, time);
 
+      // 屋頂 / 外牆：在外面是完整的建築，走進門才淡出屋頂、牆降低成室內視角
+      insM = lerp(insM, pos.x > ENTRY + 0.4 ? 1 : 0, Math.min(1, dt * 4)); insH = lerp(insH, inHouseNow() ? 1 : 0, Math.min(1, dt * 4));
+      for (const r of roofs) { const k = r.grp === "M" ? insM : insH; r.mat.opacity = 1 - k; r.mat.depthWrite = k < 0.02; r.m.visible = k < 0.97; }
+      for (const w of shells) { const k = w.grp === "M" ? insM : insH; w.m.scale.y = lerp(1, w.low, k); }
       renderer.render(scene, camera);
     };
     raf = requestAnimationFrame(tick);
