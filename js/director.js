@@ -47,7 +47,7 @@
       let s = 1 + Math.floor(Math.random() * N); if (N > 1) while (s === focus) s = 1 + Math.floor(Math.random() * N);
       focus = s;
       const pts = [];
-      if (inRoom >= 0) pts.push(...exitPts(inRoom));
+      if (inRoom >= 0) pts.push(...exitPts(inRoom, npc));
       pts.push({ x: npc.x, z: lane }, { x: anchor(s).x, z: lane });
       const visitRoom = Math.random() < 0.5;
       if (visitRoom) { pts.push({ x: ctx.doorX(s), z: 0.4 }, ...enterPts(s)); route = pts; state = "walk"; D.entering = s; }

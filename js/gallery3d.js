@@ -300,8 +300,12 @@
     unmount();
     if (!root || !supported()) return false;
     const THREE = window.THREE, N = P.length;
-    const COURT_CX = FIRST_X + N * SPACING + 11, WORLD_W = COURT_CX + 12.5;
-    const stationsX = [OFFICE_X, ...P.map((_, i) => FIRST_X + i * SPACING)];
+    const isPB = (p) => /pickle/i.test(p.id + p.name);
+    let slotN = 0; const slots = P.map((p) => (isPB(p) ? -1 : slotN++));
+    const sPB = P.findIndex(isPB) + 1;                       // 匹克球「房間」= 室內球場（0 = 沒有）
+    const COURT_CX = FIRST_X + slotN * SPACING + 12, WORLD_W = COURT_CX + 13.5;
+    const HX = 9.8, HZ = 5.0;
+    const stationsX = [OFFICE_X, ...P.map((p, i) => (slots[i] < 0 ? COURT_CX : FIRST_X + slots[i] * SPACING))];
 
     root.innerHTML = `
       <div class="g-hud">
@@ -370,6 +374,7 @@
     // 路燈
     const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 2.2 });
     for (let x = 4; x < WORLD_W; x += SPACING) {
+      if (x > COURT_CX - 12 && x < COURT_CX + 12) continue;
       for (const z of [-DECK_HD + 0.35, DECK_HD - 0.35]) {
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.6, 10), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.5, metalness: 0.5 }));
         pole.position.set(x, 1.3, z); scene.add(pole);
@@ -400,7 +405,7 @@
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
     let courtUpdate = null;
     {
-      const CX = COURT_CX, CZ = 0, CL = 13.41, CW = 6.1, PADL = 15.4, PADW = 7.4, K = 2.13;
+      const CX = COURT_CX, CZ = 0, CL = 13.41, CW = 6.1, PADL = 19.3, PADW = 9.7, K = 2.13;
       const ppm = 90, cw = Math.round(PADL * ppm), ch = Math.round(PADW * ppm), cvs = mkCanvas(cw, ch), g = cvs.getContext("2d"), rnd = mulberry(77);
       const X = (m) => (m + PADL / 2) * ppm, Z = (m) => (m + PADW / 2) * ppm;
       g.fillStyle = "#2f6b5a"; g.fillRect(0, 0, cw, ch);
@@ -432,11 +437,26 @@
       addObs(CX, CZ, CL / 2 + 0.1, CW / 2 + 0.1);   // 球場本身不能走進去，沿邊走
 
       // ===== 室內球場：四面圍起來（下半白牆、上半玻璃），西側留門，球不會跑出去 =====
-      const HX = 8.6, HZ = 4.6, DZ = 1.2;
+      const DZ = 1.2;
       const hallWall = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 0.92, envMapIntensity: 0.4 });
       const wb = (w, h, d, x, y, z, mat, cast = true) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m; };
       for (const z of [-HZ, HZ]) { wb(2 * HX, 1.3, 0.14, CX, 0.65, z, hallWall); wb(2 * HX, 2.3, 0.05, CX, 2.45, z, glass, false); addObs(CX, z, HX, 0.1); }
-      wb(0.14, 1.3, 2 * HZ, CX + HX, 0.65, 0, hallWall); wb(0.05, 2.3, 2 * HZ, CX + HX, 2.45, 0, glass, false); addObs(CX + HX, 0, 0.1, HZ);
+      wb(0.14, 3.6, 2 * HZ, CX + HX, 1.8, 0, hallWall); addObs(CX + HX, 0, 0.1, HZ);
+      if (sPB > 0) {
+        const pp = P[sPB - 1], bw = 4.2, bh = bw * 900 / 1400;
+        const alu2 = new THREE.MeshStandardMaterial({ color: 0xb9bcc7, roughness: 0.35, metalness: 0.8 });
+        const btex = mkTex(THREE, boardCanvas(pp, sPB - 1, H), aniso);
+        const bmat = new THREE.MeshStandardMaterial({ map: btex, roughness: 0.35, emissive: 0xffffff, emissiveMap: btex, emissiveIntensity: 0.1 });
+        const wg = new THREE.Group(); wg.position.set(CX + HX - 0.1, 1.95, 0); wg.rotation.y = -Math.PI / 2; scene.add(wg);
+        const fr = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.14, bh + 0.14, 0.06), alu2); fr.castShadow = true; wg.add(fr);
+        const art = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); art.position.z = 0.035; wg.add(art);
+        const tray = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.9, 0.05, 0.12), alu2); tray.position.set(0, -bh / 2 - 0.1, 0.06); wg.add(tray);
+        for (const dx of [-1.2, 1.2]) { const lt = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.1), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffd9a0, emissiveIntensity: 1.8 })); lt.position.set(dx, bh / 2 + 0.28, 0.14); wg.add(lt); }
+        for (const m of [fr, art]) { m.userData = { station: sPB, kind: "board" }; pickables.push(m); }
+        boardMats[sPB] = bmat; boardTex[sPB] = btex; panelMats[sPB] = { emissiveIntensity: 0 }; pools[sPB] = { material: { opacity: 0 } };
+        const dm = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3, 2 * DZ), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); dm.position.set(CX - HX, 1.5, 0); dm.userData = { station: sPB, kind: "door" }; pickables.push(dm); scene.add(dm);
+        const bg2 = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); bg2.position.set(CX - HX, 3.0, 0); bg2.scale.set(0.6, 0.6, 1); bg2.renderOrder = 10; scene.add(bg2); bangs[sPB] = bg2;
+      }
       for (const sg of [-1, 1]) {
         const len = HZ - DZ, zc = sg * (DZ + len / 2);
         wb(0.14, 1.3, len, CX - HX, 0.65, zc, hallWall); wb(0.05, 2.3, len, CX - HX, 2.45, zc, glass, false); addObs(CX - HX, zc, 0.1, len / 2);
@@ -451,13 +471,17 @@
       }), aniso);
       const sg2 = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.29), decalMat(signTex, 0.95)); sg2.rotation.x = -Math.PI / 2; sg2.position.set(CX - HX - 3.2, 0.013, 0); scene.add(sg2);
 
-      // 四位球員：左隊 2 人、右隊 2 人
+      // 四位球員：左隊 2 人、右隊 2 人（雙打）
       const kit = [
         { top: 0x1fa39a, pants: 0x2a2d3a, hair: 0x1c1613, skin: 0xe0ac8a, paddle: 0xff5a4a },
         { top: 0xf28a3a, pants: 0xdad8d0, hair: 0x5a3a22, skin: 0xc58a68, paddle: 0x2a2a31 },
         { top: 0xf2f2f2, pants: 0x22304a, hair: 0x2a2018, skin: 0xe8b999, paddle: 0x3a7be0 },
         { top: 0xf2d23a, pants: 0x2a2d3a, hair: 0x7a5a30, skin: 0xd9a07c, paddle: 0x1fa39a },
       ];
+      const HALF = CL / 2, NET_H = 0.88, rr = (a, b) => a + Math.random() * (b - a);
+      const dirOf = (team) => (team === 0 ? 1 : -1);               // 左隊(x<網)朝 +x 擊球
+      const wx = (team, depth) => CX + (team === 0 ? -depth : depth); // depth = 距離球網的公尺數
+      const depthT = [6.4, 6.4];                                      // 每隊目前的站位深度（6.4≈底線，2.6≈廚房線）
       const players = kit.map((k, i) => {
         const team = i < 2 ? 0 : 1, lane = i % 2 === 0 ? -1 : 1;
         const av2 = buildAvatar(THREE, { blazer: k.top, shirt: k.top, pants: k.pants, hair: k.hair, skin: k.skin });
@@ -466,39 +490,92 @@
         const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.12, 8), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.6 })); handle.position.y = -0.04;
         pd.add(face, handle); pd.position.set(0, -0.3, 0.03); pd.rotation.x = -1.35; av2.armR.el.add(pd);
         scene.add(av2.root);
-        const base = { x: CX + (team ? 1 : -1) * 3.2, z: lane * 1.5 };
-        return { av: av2, team, lane, base, x: base.x, z: base.z, face: team ? -Math.PI / 2 : Math.PI / 2, swing: 0, spd: 0 };
+        return { av: av2, team, lane, x: wx(team, 6.4), z: lane * 1.5, face: team ? -Math.PI / 2 : Math.PI / 2, swing: 0, swingK: 1, swingDur: 0.4, spd: 0 };
       });
       const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd8ee3a, roughness: 0.5, emissive: 0x7a8a10, emissiveIntensity: 0.5 }));
-      ball.castShadow = true; scene.add(ball);
-      let flight = null, hitter = 0, wait = 0.8;
-      const rr = (a, b) => a + Math.random() * (b - a);
-      const startFlight = (h) => {
-        const p = players[h], opp = players.filter((q) => q.team !== p.team), r = opp[Math.random() < 0.5 ? 0 : 1], dink = Math.random() < 0.5, dir = r.team ? 1 : -1;
-        const x1 = CX + dir * (dink ? rr(0.7, K - 0.2) : rr(K + 0.4, CL / 2 - 0.8)), z1 = clamp(r.lane * rr(0.4, 1.9), -CW / 2 + 0.4, CW / 2 - 0.4);
-        flight = { x0: p.x - dir * 0.4, z0: p.z, y0: 0.95, x1, z1, y1: 0.8, t: 0, dur: dink ? rr(0.95, 1.2) : rr(0.75, 1.0), apex: dink ? 1.25 : 1.9, r, ri: players.indexOf(r) };
-        p.swing = 1;
+      ball.castShadow = true; ball.position.set(CX, 0.9, 0); scene.add(ball);
+
+      // ---- 比賽：發球 → 回球 → 第三拍吊球 → 網前 dink 對攻，穿插抽球 / 高吊 / 截擊 / 殺球 ----
+      let flight = null, rally = null, wait = 1.2, serverTeam = 0, dead = 0, lastType = "";
+      const pickPlayer = (team, z) => { const a = players[team * 2], b = players[team * 2 + 1]; return Math.abs(a.lane * 1.5 - z) < Math.abs(b.lane * 1.5 - z) ? a : b; };
+      const SHOT = {
+        serve:  { d1: [0.95, 1.1],  d2: [0.55, 0.7],  apex: 1.5,  depth: [4.8, 6.2], y0: 0.85, bounce: true },
+        return: { d1: [0.8, 0.95],  d2: [0.45, 0.6],  apex: 1.8,  depth: [5.0, 6.2], y0: 0.8,  bounce: true },
+        drop:   { d1: [1.0, 1.2],   d2: [0.3, 0.38],  apex: 1.55, depth: [1.0, 1.9], y0: 0.8,  bounce: true },
+        dink:   { d1: [0.85, 1.15], d2: [0.28, 0.36], apex: 1.15, depth: [0.7, 1.9], y0: 0.8,  bounce: true },
+        drive:  { d1: [0.4, 0.55],  d2: [0.22, 0.3],  apex: 0.35, depth: [3.6, 6.0], y0: 1.0,  bounce: true },
+        volley: { d1: [0.45, 0.6],  d2: [0.2, 0.25],  apex: 0.4,  depth: [3.4, 5.2], y0: 1.0,  bounce: false },
+        lob:    { d1: [1.5, 1.8],   d2: [0.55, 0.7],  apex: 3.6,  depth: [5.2, 6.3], y0: 0.6,  bounce: true },
+        smash:  { d1: [0.3, 0.4],   d2: [0.5, 0.5],   apex: 0.2,  depth: [2.8, 4.5], y0: 1.7,  bounce: true, end: true },
       };
+      const nextShot = (hi) => {
+        const p = players[hi], team = p.team, opp = 1 - team, dir = dirOf(team), k = rally.k++;
+        let type;
+        if (k === 0) type = "serve"; else if (k === 1) type = "return"; else if (k === 2) type = "drop";
+        else if (k >= rally.max) type = "smash";
+        else { const r = Math.random(), atNet = depthT[team] < 3.2 && depthT[opp] < 3.2; type = atNet ? (r < 0.5 ? "dink" : r < 0.68 ? "drive" : r < 0.82 ? "volley" : r < 0.92 ? "lob" : "dink") : (r < 0.4 ? "dink" : r < 0.66 ? "drive" : r < 0.82 ? "lob" : r < 0.92 ? "volley" : "dink"); if (type === lastType && type !== "dink") type = "dink"; }
+        lastType = type;
+        const S = SHOT[type];
+        const z1 = type === "serve" ? -p.lane * 1.5 : clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35);
+        const dep1 = rr(S.depth[0], S.depth[1]);
+        const recv = pickPlayer(opp, z1);
+        const sx = p.x + dir * 0.35, sz = p.z, y0 = S.y0 + rr(-0.05, 0.08);
+        const d1 = rr(S.d1[0], S.d1[1]);
+        const segs = [];
+        if (S.bounce) {
+          const bx = wx(opp, dep1);
+          // 確保過網（網高 0.88m）：必要時墊高弧線
+          const dep0 = Math.abs(sx - CX), un = dep0 / (dep0 + dep1), yn = lerp(y0, 0.04, un) + S.apex * 4 * un * (1 - un);
+          let apex = S.apex; if (yn < NET_H + 0.14) apex += (NET_H + 0.14 - yn) / Math.max(0.2, 4 * un * (1 - un));
+          segs.push({ x0: sx, y0, z0: sz, x1: bx, y1: 0.04, z1, dur: d1, apex });
+          const cd = Math.max(2.3, dep1 + 0.5), cx = wx(opp, cd);
+          if (S.end) segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 1.6, y1: 0.05, z1: z1 + rr(-0.6, 0.6), dur: 0.5, apex: 0.9 });
+          else segs.push({ x0: bx, y0: 0.04, z0: z1, x1: cx, y1: 0.85, z1, dur: rr(S.d2[0], S.d2[1]), apex: 0.22 + (type === "lob" || type === "serve" ? 0.35 : 0) });
+          flight = { segs, i: 0, t: 0, recv, end: !!S.end, hitDir: dir, contact: { x: cx, z: z1 } };
+        } else {
+          const cx = wx(opp, dep1), y1 = 0.95;
+          const dep0 = Math.abs(sx - CX), un = dep0 / (dep0 + dep1), yn = lerp(y0, y1, un) + S.apex * 4 * un * (1 - un);
+          let apex = S.apex; if (yn < NET_H + 0.14) apex += (NET_H + 0.14 - yn) / Math.max(0.2, 4 * un * (1 - un));
+          segs.push({ x0: sx, y0, z0: sz, x1: cx, y1, z1, dur: d1, apex });
+          flight = { segs, i: 0, t: 0, recv, end: false, hitDir: dir, contact: { x: cx, z: z1 } };
+        }
+        p.swing = 1; p.swingK = type === "dink" || type === "drop" ? 0.45 : type === "drive" || type === "smash" ? 1.25 : 0.85; p.swingDur = type === "drive" || type === "smash" || type === "volley" ? 0.26 : 0.45;
+        // 站位：發球隊在底線、回球後上網、被吊高就後退、對攻時逐步逼近廚房線
+        if (type === "serve") { depthT[team] = 6.5; depthT[opp] = 6.3; }
+        else if (type === "return") { depthT[team] = 4.4; depthT[opp] = 5.0; }
+        else if (type === "drop") { depthT[team] = 3.6; depthT[opp] = 4.2; }
+        else if (type === "dink") { depthT[team] = Math.max(2.6, depthT[team] - 0.7); depthT[opp] = Math.max(2.6, depthT[opp] - 0.4); }
+        else if (type === "lob") { depthT[opp] = 5.8; }
+        else if (type === "drive" || type === "volley") { depthT[team] = Math.max(2.8, depthT[team] - 0.5); depthT[opp] = Math.max(3.2, depthT[opp]); }
+      };
+      const startPoint = () => { rally = { k: 0, max: Math.round(rr(5, 14)) }; depthT[0] = depthT[1] = 6.4; lastType = ""; nextShot(serverTeam * 2 + 1); };
+
       courtUpdate = (dt, t) => {
-        if (!flight) { wait -= dt; if (wait <= 0) startFlight(hitter); }
-        else {
-          flight.t += dt / flight.dur; const u = Math.min(1, flight.t);
-          ball.position.set(lerp(flight.x0, flight.x1, u), lerp(flight.y0, flight.y1, u) + flight.apex * 4 * u * (1 - u), lerp(flight.z0, flight.z1, u));
-          if (flight.t >= 1) { hitter = flight.ri; flight = null; wait = 0.05; }
+        if (dead > 0) { dead -= dt; if (dead <= 0) { dead = 0; serverTeam = 1 - serverTeam; rally = null; depthT[0] = depthT[1] = 6.4; wait = 0.8; ball.position.y = 0.9; } }
+        else if (!flight) { wait -= dt; if (wait <= 0) startPoint(); }
+        if (flight) {
+          const sg = flight.segs[flight.i]; flight.t += dt / sg.dur; const u = Math.min(1, flight.t);
+          ball.position.set(lerp(sg.x0, sg.x1, u), lerp(sg.y0, sg.y1, u) + sg.apex * 4 * u * (1 - u), lerp(sg.z0, sg.z1, u));
+          if (flight.t >= 1) {
+            if (flight.i < flight.segs.length - 1) { flight.i++; flight.t = 0; }
+            else if (flight.end) { flight = null; dead = 1.8; }
+            else { const hi = players.indexOf(flight.recv); flight = null; nextShot(hi); }
+          }
         }
         players.forEach((p) => {
-          let tx = p.base.x, tz = p.base.z * 0.7 + (flight ? flight.z1 * 0.3 : 0);
-          if (flight && flight.r === p) { tx = flight.x1 - (p.team ? -0.3 : 0.3); tz = flight.z1; }
-          const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), sp = Math.min(3.3, d * 4);
+          const bz = ball.position.z;
+          let tx = wx(p.team, depthT[p.team] + (p.lane > 0 ? 0.3 : 0)), tz = clamp(p.lane * 1.5 + bz * 0.3, -CW / 2 - 0.6, CW / 2 + 0.6);
+          if (flight && flight.recv === p) { tx = flight.contact.x - flight.hitDir * 0.3; tz = flight.contact.z; }
+          const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), sp = Math.min(4.3, d * 5);
           if (d > 0.03) { p.x += (dx / d) * sp * dt; p.z += (dz / d) * sp * dt; }
-          p.x = clamp(p.x, p.team ? CX + 0.8 : CX - CL / 2 - 0.2, p.team ? CX + CL / 2 + 0.2 : CX - 0.8);
-          p.z = clamp(p.z, -CW / 2 - 0.2, CW / 2 + 0.2);
-          p.spd = lerp(p.spd, d > 0.12 ? sp : 0, Math.min(1, dt * 8));
-          const bx = ball.position.x - p.x, bz = ball.position.z - p.z, want = Math.atan2(bx, bz);
+          p.x = clamp(p.x, p.team ? CX + 0.7 : CX - HALF - 1.6, p.team ? CX + HALF + 1.6 : CX - 0.7);
+          p.z = clamp(p.z, -CW / 2 - 1.1, CW / 2 + 1.1);
+          p.spd = lerp(p.spd, d > 0.1 ? sp : 0, Math.min(1, dt * 8));
+          const want = Math.atan2(ball.position.x - p.x, bz - p.z);
           p.face += angDiff(p.face, want) * Math.min(1, dt * 6);
           p.av.root.position.set(p.x, 0, p.z); p.av.root.rotation.y = p.face;
           p.av.update(dt, p.spd, t + p.lane);
-          if (p.swing > 0) { p.swing = Math.max(0, p.swing - dt / 0.4); const k = Math.sin((1 - p.swing) * Math.PI); p.av.armR.sh.rotation.x = -0.5 - 1.5 * k; p.av.armR.el.rotation.x = -0.4 - 0.2 * k; }
+          if (p.swing > 0) { p.swing = Math.max(0, p.swing - dt / p.swingDur); const k = Math.sin((1 - p.swing) * Math.PI); p.av.armR.sh.rotation.x = -0.5 - 1.5 * k * p.swingK; p.av.armR.el.rotation.x = -0.4 - 0.2 * k * p.swingK; }
           else { p.av.armR.sh.rotation.x = -0.45; p.av.armR.el.rotation.x = -0.5; }
         });
       };
@@ -567,7 +644,8 @@
     /* ----- 專案房間：玻璃隔間 + 門 + 房內白板；門外展台放畫 ----- */
     const plaster = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 0.92, envMapIntensity: 0.4 });
     P.forEach((p, i) => {
-      const s = i + 1, sx = FIRST_X + i * SPACING, hue = H.hue(i);
+      const s = i + 1, sx = stationsX[s], hue = H.hue(i);
+      if (slots[i] < 0) return;   // 匹克球 = 室內球場，不另蓋房間
       const g = new THREE.Group(); g.position.set(sx, 0, 0); scene.add(g);
       const M = (c, r = 0.6, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
       const add = (geo, mat, x, y, z, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; g.add(m); return m; };
@@ -644,6 +722,7 @@
     });
     // 隔著露台的盆景與長椅（寫實點綴）
     for (let x = FIRST_X - 3.75; x < WORLD_W - 2; x += SPACING) {
+      if (x > COURT_CX - 12 && x < COURT_CX + 12) continue;
       const bench = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), new THREE.MeshStandardMaterial({ color: 0x7a5a3c, roughness: 0.6 }));
       bench.position.set(x, 0.45, DECK_HD - 1.3); bench.castShadow = true; scene.add(bench);
       for (const dx of [-0.75, 0.75]) { const lg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), new THREE.MeshStandardMaterial({ color: 0x15121f, metalness: 0.5, roughness: 0.4 })); lg.position.set(x + dx, 0.22, DECK_HD - 1.3); lg.castShadow = true; scene.add(lg); }
@@ -656,12 +735,27 @@
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
-    const doorX = (s) => sxOf(s) + DOOR_DX;
-    const anchor = (s) => (s === 0 ? { x: OFFICE_X, z: OFFICE_Z } : { x: sxOf(s) - 0.2, z: STAND_Z });
-    const boardAnchor = (s) => ({ x: sxOf(s) - 0.4, z: -2.9 });
-    const roomAt = (x, z) => { if (z > ROOM_Z1 + 0.15) return -1; for (let s = 1; s <= N; s++) if (Math.abs(x - sxOf(s)) < ROOM_HW - 0.25) return s; return -1; };
-    const enterPts = (s) => [{ x: doorX(s), z: 0.1 }, { x: doorX(s), z: -2.4 }, boardAnchor(s)];
-    const exitPts = (s) => [{ x: doorX(s), z: -2.3 }, { x: doorX(s), z: 0.4 }];
+    const inHall = (x, z) => sPB > 0 && x > COURT_CX - HX + 0.3 && x < COURT_CX + HX - 0.3 && Math.abs(z) < HZ - 0.2;
+    const doorX = (s) => (s === sPB ? COURT_CX - HX - 1.0 : sxOf(s) + DOOR_DX);
+    const anchor = (s) => (s === 0 ? { x: OFFICE_X, z: OFFICE_Z } : s === sPB ? { x: COURT_CX - HX - 2.0, z: 0.2 } : { x: sxOf(s) - 0.2, z: STAND_Z });
+    const boardAnchor = (s) => (s === sPB ? { x: COURT_CX + HX - 1.8, z: 0 } : { x: sxOf(s) - 0.4, z: -2.9 });
+    const roomAt = (x, z) => {
+      if (inHall(x, z)) return sPB;
+      if (z > ROOM_Z1 + 0.15) return -1;
+      for (let s = 1; s <= N; s++) { if (s === sPB) continue; if (Math.abs(x - sxOf(s)) < ROOM_HW - 0.25) return s; }
+      return -1;
+    };
+    // 球場內不能穿過場地：沿南側走道（z≈4）繞到對面牆的白板
+    const enterPts = (s) => (s === sPB
+      ? [{ x: COURT_CX - HX - 1.0, z: 0 }, { x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX + 1.3, z: 4.0 }, { x: COURT_CX + HX - 1.8, z: 4.0 }, boardAnchor(s)]
+      : [{ x: doorX(s), z: 0.1 }, { x: doorX(s), z: -2.4 }, boardAnchor(s)]);
+    const exitPts = (s, from = pos) => {
+      if (s !== sPB) return [{ x: doorX(s), z: -2.3 }, { x: doorX(s), z: 0.4 }];
+      if (from.x < COURT_CX - HX + 2.6) return [{ x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX - 1.0, z: 0 }];
+      const pts = []; if (Math.abs(from.z) < 3.6) pts.push({ x: from.x, z: 4.0 });
+      pts.push({ x: COURT_CX - HX + 1.3, z: 4.0 }, { x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX - 1.0, z: 0 });
+      return pts;
+    };
 
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 6, z: 2.2 };
@@ -869,7 +963,7 @@
         const od = Math.hypot(pos.x - OFFICE_X, pos.z - (-1.75));
         if (od < 1.5 && officeArmed) { officeArmed = false; H.office(); } else if (od > 3.2) officeArmed = true;
       }
-      const bx = inside >= 0 ? (sxOf(inside) - pos.x) * 0.4 : 0, bz = inside >= 0 ? (-3.2 - pos.z) * 0.4 : 0;
+      const bx = inside >= 0 ? (sxOf(inside) - pos.x) * 0.4 : 0, bz = inside >= 0 ? ((inside === sPB ? 0 : -3.2) - pos.z) * 0.4 : 0;
       bias.x = lerp(bias.x, bx, Math.min(1, dt * 3)); bias.z = lerp(bias.z, bz, Math.min(1, dt * 3));
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5));
       const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * (1 - 0.3 * zoomK), hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
