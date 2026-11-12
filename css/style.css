@@ -548,3 +548,8 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 
 .esc-hint { position: absolute; top: 20px; right: 60px; font-size: 12px; color: #8a7a98; }
 .esc-hint kbd { font: 700 11px var(--font); padding: 1px 7px; border: 1px solid #b9b0a0; border-bottom-width: 2px; border-radius: 5px; background: #fff; color: #5b4c70; }
+
+/* 輸入框在深色網站裡也要白底深字（避免瀏覽器自動變成深灰底、看不到打的字） */
+.dir-bubble, .wb-card, .news-panel { color-scheme: light; }
+.dir-form input, .inline-form input { background: #fff !important; color: #1f1a33 !important; caret-color: #1f1a33; -webkit-text-fill-color: #1f1a33; }
+.dir-form input::placeholder, .inline-form input::placeholder { color: #9a90a8; -webkit-text-fill-color: #9a90a8; }
