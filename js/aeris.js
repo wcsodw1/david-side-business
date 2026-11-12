@@ -37,7 +37,7 @@
 
     // 長髮：後髮（包住後腦一路垂到背中）、兩側垂到胸前的髮束、瀏海
     const h = av.head;
-    const back = add(new THREE.CylinderGeometry(0.122, 0.165, 0.6, 24, 6, true, PI / 2, PI), hairM, h, 0, -0.2, -0.015);
+    const back = add(new THREE.CylinderGeometry(0.122, 0.145, 0.5, 24, 6, true, PI / 2, PI), hairM, h, 0, -0.15, -0.03);
     back.scale.set(1, 1, 0.8);
     { // 讓髮尾微微捲起、不規則
       const p = back.geometry.attributes.position;
@@ -49,11 +49,6 @@
     add(new THREE.SphereGeometry(0.124, 26, 12, 0, PI * 2, 0, PI * 0.36), hairM, h, 0, 0.092, -0.004).scale.set(0.98, 1.12, 1.08);   // 頭頂
     add(new THREE.SphereGeometry(0.126, 26, 14, PI * 0.82, PI * 1.36, PI * 0.3, PI * 0.42), hairM, h, 0, 0.092, -0.008).scale.set(0.98, 1.12, 1.06);  // 後腦 + 兩側
     const strands = [];
-    for (const sx of [-1, 1]) {
-      const st = new THREE.Group(); st.position.set(sx * 0.098, 0.06, 0.02); h.add(st);
-      add(new THREE.CylinderGeometry(0.03, 0.022, 0.42, 10, 4), hairM, st, 0, -0.2, 0).scale.set(1, 1, 0.7);
-      st.rotation.z = sx * 0.1; st.rotation.x = -0.08; strands.push(st);
-    }
     const bang = add(new THREE.SphereGeometry(0.118, 24, 12, PI * 0.15, PI * 0.7, PI * 0.18, PI * 0.2), hairM, h, 0.006, 0.105, 0.012);
     bang.scale.set(1, 1.05, 1.08); bang.rotation.y = -0.08;
     // 髮夾小花（左側）
@@ -63,12 +58,12 @@
     // 腮紅、睫毛、粉色嘴唇
     for (const sx of [-1, 1]) {
       add(new THREE.SphereGeometry(0.016, 10, 8), blushM, h, sx * 0.055, 0.058, 0.088).scale.set(1.3, 0.7, 0.35);
-      const lash = add(new THREE.BoxGeometry(0.03, 0.005, 0.006), M(0x1b1210, 0.6), h, sx * 0.039, 0.101, 0.103); lash.rotation.z = sx * 0.18;
+      const lash = add(new THREE.BoxGeometry(0.03, 0.003, 0.004), M(0x3a2218, 0.6), h, sx * 0.039, 0.104, 0.1); lash.rotation.z = sx * 0.18; lash.scale.set(0.8, 0.6, 1);
     }
     // 可愛化：眉毛改成溫柔上揚的弧度、眼睛放大一點、拿掉通用款的直線嘴改成微笑、洋裝拿掉 V 領
     for (const m of h.children) {
       if (!m.geometry) continue; const gp = m.geometry.parameters;
-      if (m.geometry.type === "BoxGeometry" && gp.width === 0.04 && gp.height === 0.007) { const sx = Math.sign(m.position.x); m.rotation.z = sx * 0.16; m.position.y += 0.006; m.scale.set(0.85, 0.8, 1); }
+      if (m.geometry.type === "BoxGeometry" && gp.width === 0.04 && gp.height === 0.007) { const sx = Math.sign(m.position.x); m.rotation.z = sx * -0.14; m.position.y += 0.004; m.scale.set(0.85, 0.8, 1); }
       if (m.geometry.type === "BoxGeometry" && gp.width === 0.04 && gp.height === 0.006) m.visible = false;
       if (m.geometry.type === "SphereGeometry" && (gp.radius === 0.015 || gp.radius === 0.0085)) m.scale.multiplyScalar(1.22);
     }
