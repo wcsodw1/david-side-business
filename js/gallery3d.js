@@ -322,7 +322,7 @@
       <div class="g-hud">
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
-        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 或雙擊方向鍵 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> / 雙擊 <kbd>←</kbd> 退出</p>
+        <p class="g-keys">按住左鍵：往指標方向走　單擊：走過去　右鍵拖曳：轉視角　<kbd>WASD</kbd> 走路　雙擊方向鍵：跑　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> 退出</p>
       </div>
       <div class="g-camctl">
         <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
@@ -650,6 +650,7 @@
         out:    { d1: [0.45, 0.6],  d2: [0.4, 0.4],   apex: 0.35, depth: [7.1, 8.0], bounce: true },
         net:    { d1: [0.4, 0.5],   d2: [0.3, 0.3],   apex: 0.1,  depth: [0, 0], bounce: false },
       };
+      const SPD = { serve: [8, 10], return: [9, 12], drop: [4.5, 6], dink: [3.5, 5], drive: [15, 19], volley: [11, 14], lob: [6, 7.5], smash: [18, 23], out: [13, 16], net: [10, 13] };
       const SWDUR = { serve: 0.62, return: 0.5, drop: 0.55, dink: 0.5, drive: 0.5, volley: 0.38, lob: 0.56, smash: 0.56, out: 0.5, net: 0.5 };
       // 揮拍姿勢：back=引拍、fwd=擊球、end=收拍；turn=側身蓄力（負=向持拍側轉）、over=擊球後轉過去的量
       const POSE = {
@@ -666,9 +667,9 @@
       };
       // 擊球角度：開面(+)=球拍面朝上（高吊/ dink）、閉面(-)=前壓（抽球/殺球）；yaw = 球拍面依目標左右偏轉
       const OPEN = { lob: 0.95, dink: 0.55, drop: 0.5, serve: 0.35, return: -0.05, drive: -0.35, volley: 0.0, smash: -0.9, out: -0.3, net: -0.2 };
-      const startSwing = (p, type, hand) => {
+      const startSwing = (p, type, hand, keepAim) => {
         p.swing = 1; p.swingType = type; p.swingDur = SWDUR[type] || 0.5; p.hand = hand || "F";
-        if (type !== "serve" || p.aimZ == null) p.aimZ = clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35);
+        if (!keepAim && (type !== "serve" || p.aimZ == null)) p.aimZ = clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35);
         const side = half[p.team] === 0 ? 1 : -1, lr = (p.aimZ - p.z) * side;      // 目標在持拍者右側(+)或左側(-)
         p.W = { open: (OPEN[type] ?? 0) + rr(-0.12, 0.12), yaw: clamp(lr * 0.3 + rr(-0.08, 0.08), -0.9, 0.9) };
       };
@@ -689,23 +690,27 @@
         const segs = []; let end = false, winner = -1, recv, z1, contact;
         if (type === "net") {
           const zn = clamp(sz, -2.6, 2.6);
-          segs.push({ x0: sx, y0, z0: sz, x1: CX, y1: 0.62, z1: zn, dur: rr(...S.d1), apex: 0.1 });
+          segs.push({ x0: sx, y0, z0: sz, x1: CX, y1: 0.62, z1: zn, dur: clamp(Math.hypot(CX - sx, zn - sz) / rr(...SPD.net), 0.22, 1.0), apex: 0.1 });
           segs.push({ x0: CX, y0: 0.62, z0: zn, x1: CX - dir * 0.35, y1: 0.05, z1: zn, dur: 0.3, apex: 0.05 });
           end = true; winner = opp; recv = players[opp * 2];
         } else {
           if (type === "serve") { const rc = inCourt(opp, p.court); recv = rc; z1 = p.aimZ != null ? p.aimZ : Math.sign(courtZ(opp, rc.court)) * rr(0.7, 2.5); }
           else { z1 = p.aimZ != null ? p.aimZ : clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35); recv = pickPlayer(opp, z1); }
           p.aimZ = null;
-          const dep1 = rr(S.depth[0], S.depth[1]), d1 = rr(S.d1[0], S.d1[1]);
+          const dep1 = rr(S.depth[0], S.depth[1]);
           const lastY = S.bounce ? 0.04 : 0.95;
           const bx = wx(opp, dep1);
-          const dep0 = Math.abs(sx - CX), un = dep0 / (dep0 + dep1), yn = lerp(y0, lastY, un) + S.apex * 4 * un * (1 - un);
-          let apex = S.apex; if (type !== "out" && yn < NET_H + 0.14) apex += (NET_H + 0.14 - yn) / Math.max(0.2, 4 * un * (1 - un));
+          const dh = Math.hypot(bx - sx, z1 - sz), vh = rr(...SPD[type]);
+          let d1 = clamp(dh / vh, 0.28, 2.0), apex = 9.8 * d1 * d1 / 8;                     // 重力決定弧線高度
+          if (type === "lob") apex = Math.max(apex, 2.8);
+          const dep0 = Math.abs(sx - CX), un = dep0 / (dep0 + dep1), yn = lerp(y0, lastY, un) + apex * 4 * un * (1 - un);
+          if (type !== "out" && yn < NET_H + 0.14) apex += (NET_H + 0.14 - yn) / Math.max(0.2, 4 * un * (1 - un));   // 要過網就得抬高
+          d1 = Math.max(d1, Math.sqrt(8 * apex / 9.8));                                    // 弧線越高，飛行時間越長
           segs.push({ x0: sx, y0, z0: sz, x1: bx, y1: lastY, z1, dur: d1, apex });
           const cd = Math.max(2.3, dep1 + 0.5);
           contact = { x: S.bounce ? wx(opp, cd) : bx, z: z1 };
           if (type === "smash" || type === "out") { segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 1.6, y1: 0.05, z1: z1 + rr(-0.6, 0.6), dur: 0.5, apex: 0.9 }); end = true; winner = type === "smash" ? team : opp; }
-          else if (S.bounce) segs.push({ x0: bx, y0: 0.04, z0: z1, x1: contact.x, y1: 0.85, z1, dur: rr(S.d2[0], S.d2[1]), apex: 0.22 + (type === "lob" || type === "serve" ? 0.35 : 0) });
+          else if (S.bounce) { const d2 = clamp(Math.abs(contact.x - bx) / (vh * 0.45), 0.25, 0.55); segs.push({ x0: bx, y0: 0.04, z0: z1, x1: contact.x, y1: 0.85, z1, dur: d2, apex: 9.8 * d2 * d2 / 8 }); }
         }
         flight = { segs, i: 0, t: 0, recv, recvType: end ? null : chooseType(rally.k), recvHand: Math.random() < 0.68 ? "F" : "B", end, winner, swung: false, contact: contact || { x: CX, z: 0 }, hitDir: dir };
         // 站位（第 4 拍起進入網前對攻）
@@ -783,9 +788,16 @@
         else if (mode === "fetch" && fetch) {
           const fp = fetch.p, hx = fp.x + Math.sin(fp.face) * 0.28, hz = fp.z + Math.cos(fp.face) * 0.28;
           if (fetch.stage === "go") { if (Math.hypot(fp.x - ball.position.x, fp.z - ball.position.z) < 0.45) { fetch.stage = "pick"; fetch.t = 0.9; } }
-          else if (fetch.stage === "pick") { fetch.t -= dt; if (fetch.t < 0.5) ball.position.set(hx, lerp(0.8, 0.12, clamp((fetch.t) / 0.5, 0, 1)), hz); if (fetch.t <= 0) fetch.stage = fp === players[serverP] ? "done" : "back"; }
-          else if (fetch.stage === "back") { ball.position.set(hx, 0.8, hz); const sv = players[serverP]; if (Math.hypot(fp.x - sv.x, fp.z - sv.z) < 1.3) { fetch.stage = "hand"; fetch.t = 0.5; } }
-          else if (fetch.stage === "hand") { fetch.t -= dt; const sv = players[serverP]; ball.position.set(lerp(ball.position.x, sv.x + dirT(sv.team) * 0.3, 0.2), lerp(ball.position.y, 0.85, 0.2), lerp(ball.position.z, sv.z, 0.2)); if (fetch.t <= 0) fetch.stage = "done"; }
+          else if (fetch.stage === "pick") { fetch.t -= dt; if (fetch.t < 0.5) ball.position.set(hx, lerp(0.8, 0.12, clamp((fetch.t) / 0.5, 0, 1)), hz); if (fetch.t <= 0) { if (fp === players[serverP]) fetch.stage = "done"; else { fetch.stage = "feed"; fetch.t = SWDUR.dink * 0.5; const sv0 = players[serverP]; fp.aimZ = sv0.z; startSwing(fp, "dink", "F", true); } } }
+          else if (fetch.stage === "feed") {                                              // 用球拍把球輕輕「推」給發球員（不走過去）
+            ball.position.set(hx, 0.78, hz); fetch.t -= dt;
+            if (fetch.t <= 0) { const sv = players[serverP], x1 = sv.x + dirT(sv.team) * 0.3, dist0 = Math.hypot(x1 - ball.position.x, sv.z - ball.position.z); fetch.fly = { x0: ball.position.x, y0: ball.position.y, z0: ball.position.z, x1, y1: 0.85, z1: sv.z, t: 0, dur: clamp(dist0 / 4.5, 0.55, 1.7) }; fetch.stage = "fly"; }
+          }
+          else if (fetch.stage === "fly") {
+            const f = fetch.fly; f.t += dt / f.dur; const u = Math.min(1, f.t);
+            ball.position.set(lerp(f.x0, f.x1, u), lerp(f.y0, f.y1, u) + 9.8 * f.dur * f.dur / 8 * 4 * u * (1 - u), lerp(f.z0, f.z1, u));
+            if (f.t >= 1) fetch.stage = "done";
+          }
           if (fetch.stage === "done") { mode = "wait"; wait = rr(2.0, 3.2); fetch = null; }
         }
         else if (mode === "over") { bannerT -= dt; if (bannerT <= 0) endIntermission(); }
@@ -795,11 +807,21 @@
           const sg2 = flight.segs[flight.i]; flight.t += dt / sg2.dur; const u = Math.min(1, flight.t);
           ball.position.set(lerp(sg2.x0, sg2.x1, u), lerp(sg2.y0, sg2.y1, u) + sg2.apex * 4 * u * (1 - u), lerp(sg2.z0, sg2.z1, u));
           const last = flight.i === flight.segs.length - 1;
-          if (last && !flight.end && !flight.swung && sg2.dur * (1 - flight.t) <= (SWDUR[flight.recvType] || 0.5) * 0.5) { flight.swung = true; startSwing(flight.recv, flight.recvType, flight.recvHand); }
+          if (last && !flight.end && !flight.swung && sg2.dur * (1 - flight.t) <= (SWDUR[flight.recvType] || 0.5) * 0.5) {
+            flight.swung = true; const rcv = flight.recv, sd = half[rcv.team] === 0 ? 1 : -1;
+            const tx0 = flight.contact.x + flight.hitDir * 0.5, tz0 = flight.contact.z + sd * (flight.recvHand === "F" ? -0.4 : 0.4), lead0 = (SWDUR[flight.recvType] || 0.5) * 0.5;
+            const deficit = Math.max(0, Math.hypot(tx0 - rcv.x, tz0 - rcv.z) - 5.2 * lead0 * 0.9);
+            startSwing(rcv, flight.recvType, flight.recvHand);
+            rcv.stretch = clamp((deficit - 0.1) / 0.7, 0, 1); rcv.latSign = Math.sign((flight.contact.z - rcv.z) * sd) || 1;
+          }
           if (flight.t >= 1) {
             if (!last) { flight.i++; flight.t = 0; }
             else if (flight.end) { const w = flight.winner; flight = null; awardPoint(w); }
-            else { const hi = flight.recv.idx, ty = flight.recvType; flight = null; nextShot(hi, ty); }
+            else {
+              const rc = flight.recv, dd = Math.hypot(flight.contact.x - rc.x, flight.contact.z - rc.z);
+              if (dd > 1.35) { const w = 1 - rc.team; flight = null; awardPoint(w); }          // 手搆不到 → 漏接，對方得分
+              else { const hi = rc.idx, ty = flight.recvType; flight = null; nextShot(hi, ty); }
+            }
           }
         } else if (mode === "wait" || mode === "serve") {
           const sp = players[serverP], bounce = mode === "wait" && wait > 0.7;
@@ -815,7 +837,7 @@
           if (!moving) tg = viaGate(p, tg);
           if (fpo) { if (fpo.stage === "go") tg = { x: ball.position.x, z: ball.position.z }; else if (fpo.stage === "back") { const sv = players[serverP]; tg = { x: sv.x - dirT(sv.team) * 0.9, z: sv.z }; } else tg = { x: p.x, z: p.z }; }
           if (!moving && !resting && !fpo && flight && flight.recv === p && !flight.end) {
-            tg = { x: flight.contact.x - flight.hitDir * 0.3, z: flight.contact.z + (half[p.team] === 0 ? 1 : -1) * (flight.recvHand === "F" ? -0.45 : 0.45) };
+            tg = { x: flight.contact.x + flight.hitDir * 0.5, z: flight.contact.z + (half[p.team] === 0 ? 1 : -1) * (flight.recvHand === "F" ? -0.4 : 0.4) };
             const sg2 = flight.segs[flight.segs.length - 1], remain = (flight.segs.length - 1 - flight.i) * 0.4 + sg2.dur * (flight.i === flight.segs.length - 1 ? 1 - flight.t : 1);
             urgent = Math.hypot(tg.x - p.x, tg.z - p.z) / Math.max(0.25, remain);
           }
@@ -833,7 +855,7 @@
           // 面向：比賽中看球；準備 / 發球時面向球網
           const nd = half[p.team] === 0 ? Math.PI / 2 : -Math.PI / 2;
           const lookBall = (mode === "flight" && flight) || mode === "dead";
-          const sitting = resting && d < 0.15, want = sitting ? chairSpots[p.idx].face : moving || fpo || resting ? Math.atan2(dx, dz) : lookBall ? Math.atan2(ball.position.x - p.x, ball.position.z - p.z) * 0.75 + nd * 0.25 : nd;
+          const sitting = resting && d < 0.15, want = sitting ? chairSpots[p.idx].face : fpo && (fpo.stage === "feed" || fpo.stage === "fly") ? Math.atan2(players[serverP].x - p.x, players[serverP].z - p.z) : moving || fpo || resting ? Math.atan2(dx, dz) : lookBall ? Math.atan2(ball.position.x - p.x, ball.position.z - p.z) * 0.75 + nd * 0.25 : nd;
           p.face += angDiff(p.face, want) * Math.min(1, dt * 6);
           const lateral = Math.abs(dz) > Math.abs(dx) * 1.2;
           p.av.update(dt, p.spd * (lateral ? 0.75 : 1), t + p.idx);
@@ -849,8 +871,9 @@
           A.body.position.y -= drop; A.torso.rotation.x += c * 0.4 + (p.spd > 3.2 ? 0.2 : 0);
           // 撿球：彎腰伸手
           if (fpo && fpo.stage === "pick") { A.torso.rotation.x += 0.65; A.armR.sh.rotation.x = -0.1; A.armR.el.rotation.x = -0.2; A.legL.hip.rotation.x -= 0.25; A.legL.knee.rotation.x += 0.45; }
+          if (mode === "fetch" && fetch && (fetch.stage === "feed" || fetch.stage === "fly") && p === players[serverP]) { A.armL.sh.rotation.x = -1.25; A.armR.sh.rotation.x = -1.1; A.armR.el.rotation.x = -0.6; }   // 發球員伸手接球
           // 準備姿勢：球拍舉在身前
-          if (!(p.swing > 0)) { A.armR.wr.rotation.set(0.25, 0, 0); p.pd.rotation.x = -1.35; }
+          if (!(p.swing > 0)) { A.armR.wr.rotation.set(0.25, 0, 0); p.pd.rotation.x = -1.35; A.torso.rotation.z = 0; p.stretch = 0; }
           if (!p.swing && !fpo && p.sitA < 0.5) { A.armR.sh.rotation.x = -0.65 - c * 0.5; A.armR.el.rotation.x = -0.9; A.armL.sh.rotation.x = -0.35 - c * 0.3; }
           // ---- 揮拍：引拍 → 側身蓄力 → 轉身發力 → 收拍 ----
           let off = 0;
@@ -867,6 +890,11 @@
             A.armR.wr.rotation.set(cock, Wp.yaw * rc2 * bh, (bh > 0 ? 0.22 : -0.35) * rc2);   // 屈伸 / 前臂旋轉(拍面朝向) / 尺橈偏
             A.armR.sh.rotation.z = bh > 0 ? 0.1 : -0.7 * rc2; p.pd.rotation.x = -1.35 - Wp.open * 0.3 * rc2;
             A.armR.sh.rotation.x = ax; A.armR.el.rotation.x = -0.35 - 0.35 * Math.sin(u * Math.PI);
+            const sk = p.stretch || 0;
+            if (sk > 0.02) {                                                                // 來不及站好位：手臂伸直、身體側傾，用手腕勾回來
+              A.armR.el.rotation.x = lerp(A.armR.el.rotation.x, -0.12, sk); A.armR.sh.rotation.z += (p.latSign || 1) * 0.55 * sk * (bh > 0 ? 1 : -0.6);
+              A.torso.rotation.z = (p.latSign || 1) * -0.28 * sk; A.armR.wr.rotation.x += 0.35 * sk; A.armR.wr.rotation.z += 0.3 * sk * (p.latSign || 1);
+            }
             A.armL.sh.rotation.x = -0.5 - tv * 0.6; A.torso.rotation.y += -tv * 0.45; A.torso.rotation.x += Math.sin(u * Math.PI) * 0.12; off = tv;
           }
           // 坐下休息（可喝水）
@@ -1290,25 +1318,44 @@
     };
     const autoBtn = root.querySelector("#gAuto");
     const stopAuto = () => { auto = false; autoBtn.setAttribute("aria-pressed", "false"); };
-    cv.addEventListener("pointerdown", (e) => { cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); dragMoved = 0; stopAuto(); });
+    // 按住左鍵 → David 往指標指的地面方向走；單擊空地 → 走過去；右鍵拖曳 / Alt+左鍵 / 雙指 → 轉視角
+    const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), gp = new THREE.Vector3();
+    const groundAt = (ev) => { const r = cv.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray.intersectPlane(groundPlane, gp) ? { x: gp.x, z: gp.z } : null; };
+    const marker = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 32), new THREE.MeshBasicMaterial({ color: 0xffe9b8, transparent: true, opacity: 0.9, depthTest: false })); marker.rotation.x = -Math.PI / 2; marker.renderOrder = 12; marker.visible = false; scene.add(marker);
+    let mouse = null, markT = 0;
+    cv.addEventListener("contextmenu", (e) => e.preventDefault());
+    cv.addEventListener("pointerdown", (e) => {
+      cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); stopAuto();
+      if (ptrs.size === 2) { mouse = null; pinch = 0; return; }
+      const orbit = e.button === 2 || e.button === 1 || (e.altKey && e.button === 0);
+      mouse = { id: e.pointerId, x: e.clientX, y: e.clientY, t0: performance.now(), moved: 0, mode: orbit ? "orbit" : null, pickU: orbit ? null : pickHit(e), steer: null };
+    });
     cv.addEventListener("pointermove", (e) => {
       const p = ptrs.get(e.pointerId);
-      if (!p) { cv.style.cursor = pickHit(e) ? "pointer" : "grab"; return; }
-      const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; dragMoved += Math.abs(dx) + Math.abs(dy);
-      if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) dist = clamp(dist * (pinch / d), 4.5, 40); pinch = d; return; }
-      yaw -= dx * 0.006; elev = clamp(elev + dy * 0.004, 16 * Math.PI / 180, 84 * Math.PI / 180); cv.style.cursor = "grabbing";
+      if (!p) { cv.style.cursor = pickHit(e) ? "pointer" : "crosshair"; return; }
+      const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+      if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) dist = clamp(dist * (pinch / d), 4.5, 40); pinch = d; yaw -= dx * 0.003; return; }
+      if (!mouse || mouse.id !== e.pointerId) return;
+      mouse.moved += Math.abs(dx) + Math.abs(dy); mouse.x = e.clientX; mouse.y = e.clientY;
+      if (mouse.mode === "orbit") { yaw -= dx * 0.006; elev = clamp(elev + dy * 0.004, 16 * Math.PI / 180, 84 * Math.PI / 180); cv.style.cursor = "grabbing"; return; }
+      if (!mouse.pickU && (mouse.moved > 6 || performance.now() - mouse.t0 > 160)) mouse.mode = "steer";
+      if (mouse.mode === "steer") { const g = groundAt(e); if (g) mouse.steer = g; }
     });
     const up = (e) => {
-      if (ptrs.has(e.pointerId) && ptrs.size === 1 && dragMoved < 7) {
-        const u = pickHit(e);
-        if (u) {
-          if (u.kind === "office") toStation(0, true);
-          else if (u.kind === "board") toBoard(u.station);
-          else if (u.kind === "door") (inside === u.station ? exitRoom() : enterRoom(u.station));
-          else if (u.kind === "room" && inside !== u.station) enterRoom(u.station);
+      if (ptrs.has(e.pointerId) && ptrs.size === 1 && mouse && mouse.id === e.pointerId) {
+        const quick = mouse.moved < 7 && (mouse.pickU || (performance.now() - mouse.t0 < 260 && !mouse.mode));
+        if (quick) {
+          const u = mouse.pickU || pickHit(e);
+          if (u) {
+            if (u.kind === "office") toStation(0, true);
+            else if (u.kind === "board") toBoard(u.station);
+            else if (u.kind === "door") (inside === u.station ? exitRoom() : enterRoom(u.station));
+            else if (u.kind === "room" && inside !== u.station) enterRoom(u.station);
+          } else { const g = groundAt(e); if (g) { sitting >= 0 && stand(); goRoute([{ x: g.x, z: g.z }]); marker.position.set(g.x, 0.05, g.z); marker.visible = true; markT = 1.2; } }
         }
       }
-      ptrs.delete(e.pointerId); pinch = 0; cv.style.cursor = "grab";
+      if (mouse && mouse.id === e.pointerId) mouse = null;
+      ptrs.delete(e.pointerId); pinch = 0; cv.style.cursor = "crosshair";
     };
     cv.addEventListener("pointerup", up); cv.addEventListener("pointercancel", up);
     cv.addEventListener("wheel", (e) => {
@@ -1323,7 +1370,7 @@
       }
       dist = clamp(dist * Math.exp(e.deltaY * (e.ctrlKey ? 0.012 : 0.0012)), 4.5, 40);
     }, { passive: false });
-    cv.style.cursor = "grab"; cv.style.touchAction = "none";
+    cv.style.cursor = "crosshair"; cv.style.touchAction = "none";
 
     const holdBtn = (el, on, off) => { el.addEventListener("pointerdown", (e) => { e.preventDefault(); on(); }); for (const t of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(t, off); };
     holdBtn(root.querySelector("#gRotL"), () => (rotHold = -1), () => (rotHold = 0));
@@ -1377,7 +1424,11 @@
 
       const ix = (keys.r | touch.r) - (keys.l | touch.l), iz = (keys.u | touch.u) - (keys.d | touch.d);
       let sp = 0, lmx = 0, lmz = 0;
-      if (sitting >= 0 && (ix || iz)) stand();
+      if (mouse && !mouse.mode && !mouse.pickU && performance.now() - mouse.t0 > 160) { mouse.mode = "steer"; mouse.steer = groundAt({ clientX: mouse.x, clientY: mouse.y }); }
+      const steering = mouse && mouse.mode === "steer" && mouse.steer;
+      if (steering) { cancelRoute(); marker.position.set(mouse.steer.x, 0.05, mouse.steer.z); marker.visible = true; markT = 0.4; }
+      else if (markT > 0) { markT -= dt; if (markT <= 0 && !route.length) marker.visible = false; }
+      if (sitting >= 0 && (ix || iz || steering)) stand();
       const steps = Math.max(1, Math.ceil(dt / 0.04)), sdt = dt / steps;
       for (let k = 0; k < (sitting >= 0 ? 0 : steps); k++) {
         let mx = 0, mz = 0; sp = 0;
@@ -1385,6 +1436,9 @@
           cancelRoute();
           fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw)); rgt.set(Math.cos(yaw), 0, -Math.sin(yaw));
           mx = rgt.x * ix + fwd.x * iz; mz = rgt.z * ix + fwd.z * iz; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; sp = (run || dbl.l || dbl.r || dbl.u || dbl.d) ? RUN : WALK;
+        } else if (steering) {
+          const dx = mouse.steer.x - pos.x, dz = mouse.steer.z - pos.z, d = Math.hypot(dx, dz);
+          if (d > 0.4) { mx = dx / d; mz = dz / d; sp = d > 11 ? RUN : clamp(d * 1.5, 1.4, WALK * 1.4); }
         } else if (route.length) {
           const t = route[0], dx = t.x - pos.x, dz = t.z - pos.z, d = Math.hypot(dx, dz);
           if (d < 0.2) { route.shift(); if (!route.length) { const f = afterFn; afterFn = null; if (f) f(); } }
