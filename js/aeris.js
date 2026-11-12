@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Aeris = { mount, unmount, buildPlayer: (THREE, fn) => makeLook(THREE, fn).av, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
+  const api = (window.Aeris = { mount, unmount, buildPlayer: (THREE, fn) => makeLook(THREE, fn).av, hide: (on) => { if (A) A.hideNpc(on); }, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
   let A = null;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -172,6 +172,7 @@
     };
 
     const hook = (dt, t) => {
+      if (A.off) return;
       const dx = pos.x - npc.x, dz = pos.z - npc.z, dist = Math.hypot(dx, dz);
       const blocked = document.body.classList.contains("board-open") || document.body.classList.contains("news-open") || document.body.classList.contains("locked");
       greetCool -= dt; A.lineT -= dt;
@@ -235,7 +236,8 @@
       if (bub.visible) { bub.position.set(npc.x, top + 0.42, npc.z); const w = camera.position.distanceTo(bub.position) * 0.085; bub.scale.set(w, w * 0.389, 1); }
     };
     hooks.push(hook);
-    A = { box, seek, goVisit, dismiss: () => { if (box.hidden) return false; endChat("掰掰～"); return true; }, seeking: false, route: () => route.length, visit: -1, av, tag, bub, hook, hooks, npc, mode: "pause", line: "", lineT: 0, lookAt: null, atArt: false };
+    const hideNpc = (on) => { A.off = on; for (const o of [av.root, tag, bub]) o.visible = !on && (o !== bub); if (on) { box.hidden = true; A.seeking = false; } };
+    A = { hideNpc, off: false, box, seek, goVisit, dismiss: () => { if (box.hidden) return false; endChat("掰掰～"); return true; }, seeking: false, route: () => route.length, visit: -1, av, tag, bub, hook, hooks, npc, mode: "pause", line: "", lineT: 0, lookAt: null, atArt: false };
   }
 
   function unmount() {

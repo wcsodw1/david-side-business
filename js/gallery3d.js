@@ -1109,6 +1109,9 @@
       mk(new THREE.BoxGeometry(2.1, 0.3, 1.6), bedF, 1.75, 0.15, -4.0); mk(new THREE.BoxGeometry(2.0, 0.2, 1.5), white, 1.78, 0.4, -4.0); mk(new THREE.BoxGeometry(1.2, 0.07, 1.52), teal, 2.2, 0.53, -4.0);
       mk(new THREE.BoxGeometry(0.1, 0.9, 1.7), bedF, 0.78, 0.45, -4.0); for (const dz of [-0.4, 0.4]) mk(new THREE.BoxGeometry(0.42, 0.12, 0.55), white, 1.0, 0.56, -4.0 + dz);
       addObs(1.75, -4.0, 1.15, 0.85);
+      { const pinkB = M(0xd9a0b8, 0.9);   // Aeris 的床（同一個家）
+        mk(new THREE.BoxGeometry(2.1, 0.3, 1.0), bedF, 1.75, 0.15, -1.95); mk(new THREE.BoxGeometry(2.0, 0.2, 0.92), white, 1.78, 0.4, -1.95); mk(new THREE.BoxGeometry(1.2, 0.07, 0.94), pinkB, 2.2, 0.53, -1.95);
+        mk(new THREE.BoxGeometry(0.1, 0.8, 1.1), bedF, 0.78, 0.4, -1.95); mk(new THREE.BoxGeometry(0.42, 0.12, 0.55), white, 1.0, 0.56, -1.95); addObs(1.75, -1.95, 1.15, 0.55); }
       mk(new THREE.BoxGeometry(1.3, 2.1, 0.55), bedF, 4.4, 1.05, -4.65); addObs(4.4, -4.65, 0.7, 0.3);                                  // 衣櫃
       mk(new THREE.BoxGeometry(1.5, 0.05, 0.75), wood, 6.2, 0.75, -4.55); for (const dx of [-0.65, 0.65]) mk(new THREE.BoxGeometry(0.05, 0.75, 0.05), M(0x1a1630, 0.4, 0.4), 6.2 + dx, 0.37, -4.55);
       mk(new THREE.BoxGeometry(0.5, 0.03, 0.34), M(0x2a2550, 0.4, 0.4), 6.2, 0.79, -4.4); { const lt = mk(new THREE.BoxGeometry(0.46, 0.3, 0.02), M(0x101018, 0.4, 0.3), 6.2, 0.95, -4.6); lt.rotation.x = -0.2; }
@@ -1566,7 +1569,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, f: facing, sp: speedNow, sit: sitA }) };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1708,6 +1711,7 @@
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
     if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
       root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
@@ -1722,7 +1726,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
