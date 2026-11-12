@@ -11,7 +11,7 @@
   let S = null;
 
   /* ---------- 版面常數（單位：公尺） ---------- */
-  const SPACING = 7.5, OFFICE_X = 15, FIRST_X = 29;
+  const SPACING = 7.5, OFFICE_X = 31, FIRST_X = 45;
   const DECK_HD = 5.4;                                  // 露台半寬（z）
   const ROOM_HW = 3.2, ROOM_Z0 = -5.3, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
   const PL_W = 2.5, PL_D = 1.25, PL_Z = -0.25, PL_DX = -1.7;         // 門外展台
@@ -290,7 +290,7 @@
       head.rotation.y = -s * 0.06 * mv + Math.sin(t * 0.6) * 0.06 * (1 - mv);
       body.position.y = Math.abs(c) * (0.03 + 0.03 * run) * mv + Math.sin(t * 1.7) * 0.004 * (1 - mv);
     }
-    return { root, update, head };
+    return { root, update, head, armR, armL };
   }
 
   /* ============================================================
@@ -384,18 +384,104 @@
       g.fillStyle = "#2c241d"; g.font = "300 150px -apple-system, 'Helvetica Neue', sans-serif"; g.fillText("A place where", 14, 230);
       g.font = "700 150px -apple-system, 'Helvetica Neue', sans-serif"; g.fillText("dreams come true", 14, 390);
       g.fillStyle = "rgba(44,36,29,.85)"; g.font = "400 50px 'Noto Sans TC', -apple-system, sans-serif"; if ("letterSpacing" in g) g.letterSpacing = "14px";
-      g.fillText(window.SITE?.taglineZh || "", 20, 480); if ("letterSpacing" in g) g.letterSpacing = "0px";
+      { const zh = window.SITE?.taglineZh || "", parts = zh.split('"'); if (parts.length === 3) { g.fillText(parts[0], 20, 480); const w = g.measureText(parts[0]).width; g.fillStyle = "#b4562c"; g.font = "800 64px Georgia, serif"; if ("letterSpacing" in g) g.letterSpacing = "3px"; g.fillText('"' + parts[1] + '"', 20 + w, 482); } else g.fillText(zh, 20, 480); } if ("letterSpacing" in g) g.letterSpacing = "0px";
       g.fillStyle = "#b4562c"; g.font = "500 44px 'Noto Sans TC', sans-serif"; g.fillText("走向前方，逛逛我的夢想  →", 20, 575);
     }), aniso);
     const decalMat = (map, op = 1) => new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -2 });
     const intro = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 2.69), decalMat(introTex));
-    intro.rotation.x = -Math.PI / 2; intro.position.set(8.4, 0.012, -0.9); scene.add(intro);
+    intro.rotation.x = -Math.PI / 2; intro.position.set(4.7, 0.012, -0.9); scene.add(intro);
 
     const poolTex = mkTex(THREE, poolCanvas(), aniso);
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd });
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [];
+
+    /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
+    let courtUpdate = null;
+    {
+      const CX = 16.7, CZ = 0, CL = 13.41, CW = 6.1, PADL = 15.4, PADW = 7.4, K = 2.13;
+      const ppm = 90, cw = Math.round(PADL * ppm), ch = Math.round(PADW * ppm), cvs = mkCanvas(cw, ch), g = cvs.getContext("2d"), rnd = mulberry(77);
+      const X = (m) => (m + PADL / 2) * ppm, Z = (m) => (m + PADW / 2) * ppm;
+      g.fillStyle = "#2f6b5a"; g.fillRect(0, 0, cw, ch);
+      g.fillStyle = "#2c6fa3"; g.fillRect(X(-CL / 2), Z(-CW / 2), CL * ppm, CW * ppm);
+      g.fillStyle = "#4aa08f"; g.fillRect(X(-K), Z(-CW / 2), 2 * K * ppm, CW * ppm);
+      for (let i = 0; i < 9000; i++) { g.fillStyle = `rgba(${rnd() < 0.5 ? "255,255,255" : "0,0,0"},${rnd() * 0.05})`; g.fillRect(rnd() * cw, rnd() * ch, 2, 2); }
+      g.strokeStyle = "#f4f4ee"; g.lineWidth = 5; g.lineCap = "square";
+      g.strokeRect(X(-CL / 2), Z(-CW / 2), CL * ppm, CW * ppm);
+      for (const m of [-K, K]) { g.beginPath(); g.moveTo(X(m), Z(-CW / 2)); g.lineTo(X(m), Z(CW / 2)); g.stroke(); }
+      for (const [a, b] of [[-CL / 2, -K], [K, CL / 2]]) { g.beginPath(); g.moveTo(X(a), Z(0)); g.lineTo(X(b), Z(0)); g.stroke(); }
+      g.fillStyle = "rgba(255,255,255,.85)"; g.font = "700 34px -apple-system, 'Noto Sans TC', sans-serif"; g.textAlign = "center";
+      if ("letterSpacing" in g) g.letterSpacing = "10px"; g.fillText("PICKLEBALL · 匹克球場", X(0), Z(CW / 2 + 0.42)); if ("letterSpacing" in g) g.letterSpacing = "0px";
+      const pad = new THREE.Mesh(new THREE.PlaneGeometry(PADL, PADW), new THREE.MeshStandardMaterial({ map: mkTex(THREE, cvs, aniso), roughness: 0.82, envMapIntensity: 0.3 }));
+      pad.rotation.x = -Math.PI / 2; pad.position.set(CX, 0.016, CZ); pad.receiveShadow = true; scene.add(pad);
+      const pbIdx = P.findIndex((p) => /pickle/i.test(p.id + p.name));
+      if (pbIdx >= 0) { pad.userData = { station: pbIdx + 1, kind: "room" }; pickables.push(pad); }
+
+      // 球網
+      const netTex = new THREE.CanvasTexture(decalCanvas(512, 128, (c, w, h) => {
+        c.strokeStyle = "rgba(20,20,26,.8)"; c.lineWidth = 1.4;
+        for (let x = 0; x <= w; x += 10) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, h); c.stroke(); }
+        for (let y = 0; y <= h; y += 10) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+      }));
+      const net = new THREE.Mesh(new THREE.PlaneGeometry(CW + 0.7, 0.86), new THREE.MeshBasicMaterial({ map: netTex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+      net.rotation.y = Math.PI / 2; net.position.set(CX, 0.5, CZ); scene.add(net);
+      const tape = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, CW + 0.7), new THREE.MeshStandardMaterial({ color: 0xf4f4ee, roughness: 0.6 })); tape.position.set(CX, 0.93, CZ); tape.castShadow = true; scene.add(tape);
+      for (const z of [-(CW / 2 + 0.35), CW / 2 + 0.35]) { const po = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.0, 10), new THREE.MeshStandardMaterial({ color: 0x2a2a31, metalness: 0.6, roughness: 0.4 })); po.position.set(CX, 0.5, z); po.castShadow = true; scene.add(po); }
+      addObs(CX, CZ, 0.1, CW / 2 + 0.5);
+
+      // 四位球員：左隊 2 人、右隊 2 人
+      const kit = [
+        { top: 0x1fa39a, pants: 0x2a2d3a, hair: 0x1c1613, skin: 0xe0ac8a, paddle: 0xff5a4a },
+        { top: 0xf28a3a, pants: 0xdad8d0, hair: 0x5a3a22, skin: 0xc58a68, paddle: 0x2a2a31 },
+        { top: 0xf2f2f2, pants: 0x22304a, hair: 0x2a2018, skin: 0xe8b999, paddle: 0x3a7be0 },
+        { top: 0xf2d23a, pants: 0x2a2d3a, hair: 0x7a5a30, skin: 0xd9a07c, paddle: 0x1fa39a },
+      ];
+      const players = kit.map((k, i) => {
+        const team = i < 2 ? 0 : 1, lane = i % 2 === 0 ? -1 : 1;
+        const av2 = buildAvatar(THREE, { blazer: k.top, shirt: k.top, pants: k.pants, hair: k.hair, skin: k.skin });
+        const pd = new THREE.Group();
+        const face = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.25, 0.014), new THREE.MeshStandardMaterial({ color: k.paddle, roughness: 0.5 })); face.position.y = -0.21; face.castShadow = true;
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.12, 8), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.6 })); handle.position.y = -0.04;
+        pd.add(face, handle); pd.position.set(0, -0.3, 0.03); pd.rotation.x = -1.35; av2.armR.el.add(pd);
+        scene.add(av2.root);
+        const base = { x: CX + (team ? 1 : -1) * 3.2, z: lane * 1.5 };
+        return { av: av2, team, lane, base, x: base.x, z: base.z, face: team ? -Math.PI / 2 : Math.PI / 2, swing: 0, spd: 0 };
+      });
+      const ball = new THREE.Mesh(new THREE.SphereGeometry(0.06, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd8ee3a, roughness: 0.5, emissive: 0x7a8a10, emissiveIntensity: 0.5 }));
+      ball.castShadow = true; scene.add(ball);
+      let flight = null, hitter = 0, wait = 0.8;
+      const rr = (a, b) => a + Math.random() * (b - a);
+      const startFlight = (h) => {
+        const p = players[h], opp = players.filter((q) => q.team !== p.team), r = opp[Math.random() < 0.5 ? 0 : 1], dink = Math.random() < 0.5, dir = r.team ? 1 : -1;
+        const x1 = CX + dir * (dink ? rr(0.7, K - 0.2) : rr(K + 0.4, CL / 2 - 0.8)), z1 = clamp(r.lane * rr(0.4, 1.9), -CW / 2 + 0.4, CW / 2 - 0.4);
+        flight = { x0: p.x - dir * 0.4, z0: p.z, y0: 0.95, x1, z1, y1: 0.8, t: 0, dur: dink ? rr(0.95, 1.2) : rr(0.75, 1.0), apex: dink ? 1.25 : 1.9, r, ri: players.indexOf(r) };
+        p.swing = 1;
+      };
+      courtUpdate = (dt, t) => {
+        if (!flight) { wait -= dt; if (wait <= 0) startFlight(hitter); }
+        else {
+          flight.t += dt / flight.dur; const u = Math.min(1, flight.t);
+          ball.position.set(lerp(flight.x0, flight.x1, u), lerp(flight.y0, flight.y1, u) + flight.apex * 4 * u * (1 - u), lerp(flight.z0, flight.z1, u));
+          if (flight.t >= 1) { hitter = flight.ri; flight = null; wait = 0.05; }
+        }
+        players.forEach((p) => {
+          let tx = p.base.x, tz = p.base.z * 0.7 + (flight ? flight.z1 * 0.3 : 0);
+          if (flight && flight.r === p) { tx = flight.x1 - (p.team ? -0.3 : 0.3); tz = flight.z1; }
+          const dx = tx - p.x, dz = tz - p.z, d = Math.hypot(dx, dz), sp = Math.min(3.3, d * 4);
+          if (d > 0.03) { p.x += (dx / d) * sp * dt; p.z += (dz / d) * sp * dt; }
+          p.x = clamp(p.x, p.team ? CX + 0.8 : CX - CL / 2 - 0.2, p.team ? CX + CL / 2 + 0.2 : CX - 0.8);
+          p.z = clamp(p.z, -CW / 2 - 0.2, CW / 2 + 0.2);
+          p.spd = lerp(p.spd, d > 0.12 ? sp : 0, Math.min(1, dt * 8));
+          const bx = ball.position.x - p.x, bz = ball.position.z - p.z, want = Math.atan2(bx, bz);
+          p.face += angDiff(p.face, want) * Math.min(1, dt * 6);
+          p.av.root.position.set(p.x, 0, p.z); p.av.root.rotation.y = p.face;
+          p.av.update(dt, p.spd, t + p.lane);
+          if (p.swing > 0) { p.swing = Math.max(0, p.swing - dt / 0.4); const k = Math.sin((1 - p.swing) * Math.PI); p.av.armR.sh.rotation.x = -0.5 - 1.5 * k; p.av.armR.el.rotation.x = -0.4 - 0.2 * k; }
+          else { p.av.armR.sh.rotation.x = -0.45; p.av.armR.el.rotation.x = -0.5; }
+        });
+      };
+    }
 
     /* ----- 辦公室（玻璃隔間） ----- */
     (() => {
@@ -558,7 +644,7 @@
 
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 6, z: 2.2 };
-    let yaw = 0.5, elev = 50 * Math.PI / 180, dist = 9.5, facing = Math.PI;
+    let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     const camT = new THREE.Vector3(pos.x, 0.9, pos.z), bias = { x: 0, z: 0 };
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
@@ -645,7 +731,7 @@
       if (!p) { cv.style.cursor = pickHit(e) ? "pointer" : "grab"; return; }
       const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY; dragMoved += Math.abs(dx) + Math.abs(dy);
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) dist = clamp(dist * (pinch / d), 4.5, 40); pinch = d; return; }
-      yaw -= dx * 0.006; elev = clamp(elev + dy * 0.004, 28 * Math.PI / 180, 84 * Math.PI / 180); cv.style.cursor = "grabbing";
+      yaw -= dx * 0.006; elev = clamp(elev + dy * 0.004, 16 * Math.PI / 180, 84 * Math.PI / 180); cv.style.cursor = "grabbing";
     });
     const up = (e) => {
       if (ptrs.has(e.pointerId) && ptrs.size === 1 && dragMoved < 7) {
@@ -800,6 +886,7 @@
       }
       bangs.forEach((b, s) => { if (b && b.visible) { const k = 1 + Math.sin(time * 5 + s) * 0.12, sc = camera.position.distanceTo(b.position) * 0.05 * k; b.scale.set(sc, sc, 1); b.position.y = (s === 0 ? 3.3 : 2.9) + Math.sin(time * 2.4 + s) * 0.08; } });
       for (const h of tickHooks) h(dt, time);
+      if (courtUpdate) courtUpdate(dt, time);
 
       renderer.render(scene, camera);
     };

@@ -12,7 +12,7 @@
 window.SITE = {
   name: "David's Side Business",
   tagline: "A place where dreams come true",
-  taglineZh: "把每一個夢想，變成現實",
+  taglineZh: '把夢想變成 "Real"',
 };
 
 window.STATUS = {
