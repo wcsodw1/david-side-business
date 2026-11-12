@@ -35,14 +35,14 @@
     g.fillStyle = "#ffe9b8"; g.font = "700 32px 'Noto Sans TC', sans-serif"; g.textAlign = "center"; g.fillText("館長 Director", 128, 52);
     const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false })); tag.scale.set(1.3, 0.4, 1); tag.renderOrder = 11; av.root.add(tag); tag.position.y = 2.25;
 
-    const npc = { x: anchor(Math.min(3, N)).x, z: 2.4, face: Math.PI, speed: 0 };
+    const npc = { x: anchor(Math.min(3, N)).x, z: 0.2, face: Math.PI, speed: 0 };
     let route = [], state = "pause", timer = 2, focus = 1, inRoom = -1, cool = 6, speed = 0, talk = null;
     const snooze = {};
 
     const bubble = document.createElement("div"); bubble.className = "dir-bubble"; bubble.hidden = true; document.body.appendChild(bubble);
 
     /* ----- 巡邏 ----- */
-    const lane = 2.4;
+    const lane = 0;
     const planVisit = () => {
       let s = 1 + Math.floor(Math.random() * N); if (N > 1) while (s === focus) s = 1 + Math.floor(Math.random() * N);
       focus = s;

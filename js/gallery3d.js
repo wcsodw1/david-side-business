@@ -13,9 +13,10 @@
   /* ---------- 版面常數（單位：公尺） ---------- */
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 7.4, z0: -5.0, z1: 0.4 };
-  const SPACING = 7.5, OFFICE_X = ENTRY + 15, FIRST_X = ENTRY + 29;
-  const DECK_HD = 5.4;                                  // 露台半寬（z）
-  const ROOM_HW = 3.2, ROOM_Z0 = -5.3, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
+  const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
+  const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
+  const DECK_HD = 8.1;                                  // 露台半寬（z）
+  const ROOM_HW = 3.2, ROOM_Z0 = -6.2, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
   const PL_W = 2.5, PL_D = 1.25, PL_Z = -0.25, PL_DX = -1.7;         // 門外展台
   const TILT = 35 * Math.PI / 180;
   const STAND_Z = 1.1, OFFICE_Z = 0.4;
@@ -315,8 +316,12 @@
     let slotN = 0; const slots = P.map((p) => (isPB(p) ? -1 : slotN++));
     const sPB = P.findIndex(isPB) + 1;                       // 匹克球「房間」= 室內球場（0 = 沒有）
     const HX = 9.8, HXE = 15.0, HZ = 5.0;                         // 場館：西半長 / 東半長（含休息區）/ 半寬
-    const COURT_CX = FIRST_X + slotN * SPACING + 12, WORLD_W = COURT_CX + HXE + 3.7;
-    const stationsX = [OFFICE_X, ...P.map((p, i) => (slots[i] < 0 ? COURT_CX : FIRST_X + slots[i] * SPACING))];
+    const NC = Math.max(1, Math.ceil((slotN + 1) / 2));            // 欄數：辦公室在北排第 0 欄，其餘專案先填北排再填南排
+    const COURT_CX = OFFICE_X + (NC - 1) * SPACING + 19.5, WORLD_W = COURT_CX + HXE + 3.7;
+    const rowOf = []; rowOf[0] = { sx: OFFICE_X, zoff: -ROW_DZ, rot: 0 };
+    P.forEach((p, i) => { if (slots[i] < 0) return; const j = slots[i], north = j < NC - 1, c = north ? j + 1 : j - (NC - 1); rowOf[i + 1] = { sx: OFFICE_X + c * SPACING, zoff: north ? -ROW_DZ : ROW_DZ, rot: north ? 0 : 1 }; });
+    const L2W = (s, lx, lz) => { const r = rowOf[s]; return r.rot ? { x: r.sx - lx, z: r.zoff - lz } : { x: r.sx + lx, z: r.zoff + lz }; };   // 房間座標 → 世界座標（南排旋轉 180°）
+    const stationsX = [OFFICE_X, ...P.map((p, i) => (slots[i] < 0 ? COURT_CX : rowOf[i + 1].sx))];
 
     root.innerHTML = `
       <div class="g-hud">
@@ -455,6 +460,11 @@
       wb(HL, 1.3, 0.14, HC, 0.65, HZ, hallWall); wb(HL, 2.3, 0.05, HC, 2.45, HZ, glass, false); addObs(HC, HZ, HL / 2, 0.1);   // 南牆：矮牆 + 玻璃
       wb(HL, 2.8, 0.14, HC, 1.4, -HZ, hallWall); wb(HL, 0.8, 0.05, HC, 3.2, -HZ, glass, false); addObs(HC, -HZ, HL / 2, 0.1);  // 北牆：實牆（掛計分牌）
       wb(0.14, 3.6, 2 * HZ, CX + HXE, 1.8, 0, hallWall); addObs(CX + HXE, 0, 0.1, HZ);
+      for (const sg3 of [-1, 1]) {        // 場館兩側多出來的露台：圍起來做成花園（不能進入）
+        const zc3 = sg3 * (HZ + (DECK_HD - HZ) / 2); addObs(HC, zc3, HL / 2, (DECK_HD - HZ) / 2 + 0.05);
+        const gp3 = new THREE.Mesh(new THREE.PlaneGeometry(HL + 0.3, DECK_HD - HZ - 0.15), new THREE.MeshStandardMaterial({ color: 0x2f5a3a, roughness: 1 })); gp3.rotation.x = -Math.PI / 2; gp3.position.set(HC, 0.03, zc3); gp3.receiveShadow = true; scene.add(gp3);
+        for (let bx3 = HC - HL / 2 + 1.5; bx3 < HC + HL / 2 - 1; bx3 += 3.4) { const bs = new THREE.Mesh(new THREE.SphereGeometry(0.55 + ((bx3 * 7) % 3) * 0.12, 12, 9), new THREE.MeshStandardMaterial({ color: 0x2f6a34, roughness: 0.95 })); bs.position.set(bx3, 0.5, zc3 + sg3 * 0.3); bs.castShadow = true; scene.add(bs); }
+      }
       if (sPB > 0) {
         const pp = P[sPB - 1], bw = 4.2, bh = bw * 900 / 1400;
         const alu2 = new THREE.MeshStandardMaterial({ color: 0xb9bcc7, roughness: 0.35, metalness: 0.8 });
@@ -1027,14 +1037,14 @@
 
     /* ----- 辦公室（玻璃隔間） ----- */
     (() => {
-      const g = new THREE.Group(); g.position.set(OFFICE_X, 0, 0); scene.add(g);
+      const OZ = -ROW_DZ - 1.0; const g = new THREE.Group(); g.position.set(OFFICE_X, 0, OZ); scene.add(g);
       const M = (c, r = 0.6, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
       const add = (geo, mat, x, y, z, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; g.add(m); return m; };
-      add(new THREE.PlaneGeometry(8.6, 5.8), M(0x2b2740, 1), 0, 0.014, -2.4, false).rotation.x = -Math.PI / 2;
-      const gw = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.6, 6.2), glass); gw.position.set(-4.4, 1.3, -2.2); g.add(gw);
+      add(new THREE.PlaneGeometry(8.6, 4.2), M(0x2b2740, 1), 0, 0.014, -3.1, false).rotation.x = -Math.PI / 2;
+      const gw = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.6, 4.2), glass); gw.position.set(-4.4, 1.3, -3.1); g.add(gw);
       const gw2 = gw.clone(); gw2.position.x = 4.4; g.add(gw2);
       const gb = new THREE.Mesh(new THREE.BoxGeometry(8.8, 2.6, 0.04), glass); gb.position.set(0, 1.3, -5.2); g.add(gb);
-      for (const [x, z] of [[-4.4, 0.9], [4.4, 0.9], [-4.4, -5.2], [4.4, -5.2]]) add(new THREE.BoxGeometry(0.1, 2.65, 0.1), brass, x, 1.32, z);
+      for (const [x, z] of [[-4.4, -1.0], [4.4, -1.0], [-4.4, -5.2], [4.4, -5.2]]) add(new THREE.BoxGeometry(0.1, 2.65, 0.1), brass, x, 1.32, z);
       // 辦公桌
       const wood = M(0xc9a36a, 0.55);
       const desk = add(new THREE.BoxGeometry(3.2, 0.06, 1.3), wood, 0, 0.76, -3.0);
@@ -1067,22 +1077,22 @@
       const shelf = add(new THREE.BoxGeometry(2.4, 2.3, 0.4), M(0x3b2a22, 0.7), -2.2, 1.15, -4.95);
       for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) add(new THREE.BoxGeometry(0.1, 0.38, 0.28), M(new THREE.Color().setHSL((k * 0.11 + r * 0.2) % 1, 0.32, 0.4), 0.8), -3.1 + k * 0.23, 0.35 + r * 0.52, -4.72);
       // 盆栽
-      for (const [px, pz] of [[3.4, -1.0], [-3.7, -0.8]]) {
+      for (const [px, pz] of [[3.4, -1.8], [-3.7, -1.9]]) {
         add(new THREE.CylinderGeometry(0.28, 0.2, 0.42, 16), M(0xff9b78, 0.7), px, 0.21, pz);
         for (let k = 0; k < 9; k++) { const a = k * 2.4; add(new THREE.SphereGeometry(0.2, 12, 10), M(0x3f9a6a, 0.8), px + Math.cos(a) * 0.14, 0.7 + k * 0.07, pz + Math.sin(a) * 0.14); }
-        addObs(OFFICE_X + px, pz, 0.45, 0.45);
+        addObs(OFFICE_X + px, pz + OZ, 0.45, 0.45);
       }
       // 吊燈
       const pl = new THREE.PointLight(0xffd9a0, 1.1, 9); pl.position.set(0, 2.3, -2.6); g.add(pl);
       for (const m of [desk, screen]) { m.userData = { station: 0, kind: "office" }; pickables.push(m); }
-      addObs(OFFICE_X, -3.0, 1.75, 0.8); addObs(OFFICE_X - 2.2, -4.9, 1.3, 0.35);
+      addObs(OFFICE_X, -3.0 + OZ, 1.75, 0.8); addObs(OFFICE_X - 2.2, -4.9 + OZ, 1.3, 0.35);
       // 地面標示
       const t = mkTex(THREE, decalCanvas(1024, 256, (c, w, h) => {
         c.textAlign = "center"; c.fillStyle = "#3a2e24"; c.font = "800 120px Georgia, serif"; if ("letterSpacing" in c) c.letterSpacing = "14px"; c.fillText("OFFICE", w / 2, 130);
         c.fillStyle = "rgba(58,46,36,.75)"; c.font = "500 54px 'Noto Sans TC', sans-serif"; if ("letterSpacing" in c) c.letterSpacing = "10px"; c.fillText("辦公室 · 儀表板", w / 2, 220);
       }), aniso);
-      const d = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), decalMat(t)); d.rotation.x = -Math.PI / 2; d.position.set(OFFICE_X, 0.013, 2.6); scene.add(d);
-      const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); bang.position.set(OFFICE_X, 3.3, -2.6); bang.scale.set(0.9, 0.9, 1); bang.renderOrder = 10; scene.add(bang); bangs[0] = bang;
+      const d = new THREE.Mesh(new THREE.PlaneGeometry(6, 1.5), decalMat(t)); d.rotation.x = -Math.PI / 2; d.position.set(OFFICE_X, 0.013, -0.9); scene.add(d);
+      const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); bang.position.set(OFFICE_X, 3.3, -2.6 + OZ); bang.scale.set(0.9, 0.9, 1); bang.renderOrder = 10; scene.add(bang); bangs[0] = bang;
     })();
 
     /* ----- 專案房間：玻璃隔間 + 門 + 房內白板；門外展台放畫 ----- */
@@ -1090,7 +1100,8 @@
     P.forEach((p, i) => {
       const s = i + 1, sx = stationsX[s], hue = H.hue(i);
       if (slots[i] < 0) return;   // 匹克球 = 室內球場，不另蓋房間
-      const g = new THREE.Group(); g.position.set(sx, 0, 0); scene.add(g);
+      const rw = rowOf[s], g = new THREE.Group(); g.position.set(rw.sx, 0, rw.zoff); g.rotation.y = rw.rot ? Math.PI : 0; scene.add(g);
+      const toW = (lx, lz) => L2W(s, lx, lz), obsL = (lx, lz, hw, hd) => { const w = toW(lx, lz); addObs(w.x, w.z, hw, hd); };
       const M = (c, r = 0.6, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
       const add = (geo, mat, x, y, z, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; g.add(m); return m; };
       const mark = (m, kind) => { m.userData = { station: s, kind }; pickables.push(m); return m; };
@@ -1098,14 +1109,15 @@
 
       add(new THREE.PlaneGeometry(ROOM_HW * 2 - 0.2, zl - 0.2), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(hue / 360, 0.2, 0.6), roughness: 1 }), 0, 0.014, zc, false).rotation.x = -Math.PI / 2;
       for (const x of [-ROOM_HW, ROOM_HW]) { mark(add(new THREE.BoxGeometry(0.12, 1.5, zl), plaster, x, 0.75, zc), "room"); add(new THREE.BoxGeometry(0.04, 1.1, zl), glass, x, 2.05, zc, false); }
-      mark(add(new THREE.BoxGeometry(ROOM_HW * 2, 2.6, 0.12), plaster, 0, 1.3, ROOM_Z0), "room");
+      if (rw.rot) { mark(add(new THREE.BoxGeometry(ROOM_HW * 2, 1.5, 0.12), plaster, 0, 0.75, ROOM_Z0), "room"); add(new THREE.BoxGeometry(ROOM_HW * 2, 1.1, 0.04), glass, 0, 2.05, ROOM_Z0, false); }   // 南排：後牆矮，從走道方向看得到室內
+      else mark(add(new THREE.BoxGeometry(ROOM_HW * 2, 2.6, 0.12), plaster, 0, 1.3, ROOM_Z0), "room");
       for (const [cx, w] of [[(-ROOM_HW + DOOR_DX - 0.8) / 2, DOOR_DX - 0.8 + ROOM_HW], [(DOOR_DX + 0.8 + ROOM_HW) / 2, ROOM_HW - DOOR_DX - 0.8]]) {
         mark(add(new THREE.BoxGeometry(w, 1.5, 0.12), plaster, cx, 0.75, ROOM_Z1), "room"); add(new THREE.BoxGeometry(w, 1.1, 0.04), glass, cx, 2.05, ROOM_Z1, false);
       }
       for (const [x, z] of [[-ROOM_HW, ROOM_Z0], [ROOM_HW, ROOM_Z0], [-ROOM_HW, ROOM_Z1], [ROOM_HW, ROOM_Z1]]) add(new THREE.BoxGeometry(0.1, 2.65, 0.1), brass, x, 1.32, z);
       for (const dx of [-0.8, 0.8]) add(new THREE.BoxGeometry(0.12, 2.4, 0.12), brass, DOOR_DX + dx, 1.2, ROOM_Z1);
-      addObs(sx - ROOM_HW, zc, 0.06, zl / 2); addObs(sx + ROOM_HW, zc, 0.06, zl / 2); addObs(sx, ROOM_Z0, ROOM_HW, 0.06);
-      addObs(sx + (-ROOM_HW + DOOR_DX - 0.8) / 2, ROOM_Z1, (DOOR_DX - 0.8 + ROOM_HW) / 2, 0.06); addObs(sx + (DOOR_DX + 0.8 + ROOM_HW) / 2, ROOM_Z1, (ROOM_HW - DOOR_DX - 0.8) / 2, 0.06);
+      obsL(-ROOM_HW, zc, 0.06, zl / 2); obsL(ROOM_HW, zc, 0.06, zl / 2); obsL(0, ROOM_Z0, ROOM_HW, 0.06);
+      obsL((-ROOM_HW + DOOR_DX - 0.8) / 2, ROOM_Z1, (DOOR_DX - 0.8 + ROOM_HW) / 2, 0.06); obsL((DOOR_DX + 0.8 + ROOM_HW) / 2, ROOM_Z1, (ROOM_HW - DOOR_DX - 0.8) / 2, 0.06);
       // 門（點它進出）
       const door = add(new THREE.BoxGeometry(1.6, 2.2, 0.3), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }), DOOR_DX, 1.1, ROOM_Z1, false); mark(door, "door");
       add(new THREE.BoxGeometry(1.6, 0.03, 0.22), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.8 }), DOOR_DX, 0.02, ROOM_Z1, false);
@@ -1114,16 +1126,16 @@
         c.textAlign = "center"; c.fillStyle = "#3a2e24"; let fs = 110; do { c.font = `800 ${fs}px Georgia, 'Noto Serif TC', serif`; fs -= 6; } while (c.measureText(p.name).width > w - 80 && fs > 40);
         c.fillText(p.name, w / 2, 130); c.fillStyle = "rgba(58,46,36,.72)"; c.font = "500 46px 'Noto Sans TC', sans-serif"; c.fillText("▲ 滾輪上滑 / Enter 進門", w / 2, 230);
       }), aniso);
-      const nm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.94), decalMat(nameTex, 0.95)); nm.rotation.x = -Math.PI / 2; nm.position.set(sx + DOOR_DX, 0.013, 0.7); scene.add(nm);
+      const nm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.94), decalMat(nameTex, 0.95)); nm.rotation.x = -Math.PI / 2; { const w = toW(DOOR_DX, 0.7); nm.position.set(w.x, 0.013, w.z); } scene.add(nm);
       // 室內：燈、盆栽
       const pl = new THREE.PointLight(0xffd9a0, 0.9, 9); pl.position.set(0, 2.3, zc + 0.4); g.add(pl);
-      add(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 16), M(0xff9b78, 0.7), 2.5, 0.2, -4.7);
-      for (let k = 0; k < 8; k++) { const a = k * 2.4; add(new THREE.SphereGeometry(0.19, 12, 10), M(0x3f9a6a, 0.8), 2.5 + Math.cos(a) * 0.13, 0.66 + k * 0.07, -4.7 + Math.sin(a) * 0.13); }
-      addObs(sx + 2.5, -4.7, 0.42, 0.42);
+      add(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 16), M(0xff9b78, 0.7), 2.5, 0.2, ROOM_Z0 + 0.6);
+      for (let k = 0; k < 8; k++) { const a = k * 2.4; add(new THREE.SphereGeometry(0.19, 12, 10), M(0x3f9a6a, 0.8), 2.5 + Math.cos(a) * 0.13, 0.66 + k * 0.07, ROOM_Z0 + 0.6 + Math.sin(a) * 0.13); }
+      obsL(2.5, ROOM_Z0 + 0.6, 0.42, 0.42);
 
       // 房內白板（斜面立架，從上往下看也讀得到）
       const bw = 2.3, bh = bw * 900 / 1400, bd = 1.25, rise = bd * Math.tan(TILT), hF = 0.55, hB = hF + rise;
-      const bg = new THREE.Group(); bg.position.set(-0.4, 0, -3.7); g.add(bg);
+      const bg = new THREE.Group(); bg.position.set(-0.4, 0, ROOM_Z0 + 1.55); g.add(bg);
       const alu = M(0xb9bcc7, 0.35, 0.8);
       for (const x of [-1.0, 1.0]) {
         const fl = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, hF, 10), alu); fl.position.set(x, hF / 2, -0.05); fl.castShadow = true; bg.add(fl);
@@ -1135,11 +1147,12 @@
       const bframe = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.1, bh + 0.1, 0.05), alu); bframe.castShadow = true; bpg.add(bframe);
       const bart = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); bart.position.z = 0.03; bpg.add(bart);
       const tray = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.9, 0.04, 0.08), alu); tray.position.set(0, hF - 0.02, 0.06); bg.add(tray);
-      mark(bart, "board"); mark(bframe, "board"); boardMats[s] = bmat; boardTex[s] = btex;
-      addObs(sx - 0.4, -3.7 - bd / 2, bw / 2 + 0.12, bd / 2 + 0.1);
+      const bart2 = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); bart2.position.z = -0.03; bart2.rotation.y = Math.PI; bpg.add(bart2);   // 背面也貼上，南排從走道另一側看也讀得到
+      mark(bart, "board"); mark(bart2, "board"); mark(bframe, "board"); boardMats[s] = bmat; boardTex[s] = btex;
+      obsL(-0.4, ROOM_Z0 + 1.55 - bd / 2, bw / 2 + 0.12, bd / 2 + 0.1);
 
       // 門外展台（掛畫）
-      const px = sx + PL_DX, pg = new THREE.Group(); pg.position.set(px, 0, PL_Z); scene.add(pg);
+      const pg = new THREE.Group(); pg.position.set(PL_DX, 0, PL_Z); g.add(pg);
       const prise = PL_D * Math.tan(TILT), phF = 0.62, phB = phF + prise;
       const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(PL_D, 0); shape.lineTo(PL_D, phB); shape.lineTo(0, phF); shape.closePath();
       const geo = new THREE.ExtrudeGeometry(shape, { depth: PL_W, bevelEnabled: false }); geo.translate(0, 0, -PL_W / 2);
@@ -1154,47 +1167,46 @@
       const art = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), mat); art.position.z = 0.03; panelGrp.add(art);
       for (const m of [art, frame, pbody]) { m.userData = { station: s, kind: "room" }; pickables.push(m); }
       panelMats[s] = mat; panelTex[s] = tex;
-      {
+      if (!rw.rot) {
         const wf = new THREE.Mesh(new THREE.BoxGeometry(2.36, 1.6, 0.06), brass); wf.position.set(1.25, 1.55, ROOM_Z0 + 0.09); wf.castShadow = true; g.add(wf);
         const wa = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.45), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.5, envMapIntensity: 0.3 })); wa.position.set(1.25, 1.55, ROOM_Z0 + 0.125); g.add(wa);
         const pbar = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.04, 0.1), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffd9a0, emissiveIntensity: 1.8 })); pbar.position.set(1.25, 2.5, ROOM_Z0 + 0.2); g.add(pbar);
       }
-      addObs(px, PL_Z - PL_D / 2, PL_W / 2 + 0.1, PL_D / 2 + 0.1);
+      obsL(PL_DX, PL_Z - PL_D / 2, PL_W / 2 + 0.1, PL_D / 2 + 0.1);
       const pool = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 5.2), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.14 }));
-      pool.rotation.x = -Math.PI / 2; pool.position.set(sx, 0.02, 0.4); scene.add(pool); pools[s] = pool;
-      const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); bang.position.set(sx + DOOR_DX, 2.9, ROOM_Z1); bang.scale.set(0.6, 0.6, 1); bang.renderOrder = 10; scene.add(bang); bangs[s] = bang;
+      pool.rotation.x = -Math.PI / 2; { const w = toW(0, 0.4); pool.position.set(w.x, 0.02, w.z); } scene.add(pool); pools[s] = pool;
+      const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); { const w = toW(DOOR_DX, ROOM_Z1); bang.position.set(w.x, 2.9, w.z); } bang.scale.set(0.6, 0.6, 1); bang.renderOrder = 10; scene.add(bang); bangs[s] = bang;
     });
-    // 隔著露台的盆景與長椅（寫實點綴）
-    for (let x = FIRST_X - 3.75; x < WORLD_W - 2; x += SPACING) {
-      if (x > COURT_CX - 12 && x < COURT_CX + HXE + 1) continue;
-      const bench = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), new THREE.MeshStandardMaterial({ color: 0x7a5a3c, roughness: 0.6 }));
-      bench.position.set(x, 0.45, DECK_HD - 1.3); bench.castShadow = true; scene.add(bench);
-      for (const dx of [-0.75, 0.75]) { const lg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), new THREE.MeshStandardMaterial({ color: 0x15121f, metalness: 0.5, roughness: 0.4 })); lg.position.set(x + dx, 0.22, DECK_HD - 1.3); lg.castShadow = true; scene.add(lg); }
-      addObs(x, DECK_HD - 1.3, 1.0, 0.35);
+    // 大廳點綴：靠門面兩側的長椅與盆栽
+    for (const z of [-DECK_HD + 1.2, DECK_HD - 1.2]) {
+      const bench = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.07, 0.5), new THREE.MeshStandardMaterial({ color: 0x7a5a3c, roughness: 0.6 })); bench.position.set(ENTRY + 5, 0.45, z); bench.castShadow = true; scene.add(bench);
+      for (const dx of [-0.95, 0.95]) { const lg = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), new THREE.MeshStandardMaterial({ color: 0x15121f, metalness: 0.5, roughness: 0.4 })); lg.position.set(ENTRY + 5 + dx, 0.22, z); scene.add(lg); }
+      addObs(ENTRY + 5, z, 1.2, 0.35);
     }
 
-    scene.traverse((o) => { if (o.material && o.material.isMeshStandardMaterial && o.material.envMapIntensity === 1) o.material.envMapIntensity = o.material.transparent ? 0.4 : 0.55; });
     /* ----- 人物 ----- */
     const av = buildAvatar(THREE); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
     const inHall = (x, z) => sPB > 0 && x > COURT_CX - HX + 0.3 && x < COURT_CX + HXE - 0.3 && Math.abs(z) < HZ - 0.2;
-    const doorX = (s) => (s === sPB ? COURT_CX - HX - 1.0 : sxOf(s) + DOOR_DX);
-    const anchor = (s) => (s === 0 ? { x: OFFICE_X, z: OFFICE_Z } : s === sPB ? { x: COURT_CX - HX - 2.0, z: 0.2 } : { x: sxOf(s) - 0.2, z: STAND_Z });
-    const boardAnchor = (s) => (s === sPB ? { x: COURT_CX + HXE - 1.8, z: 0 } : { x: sxOf(s) - 0.4, z: -2.9 });
+    const doorX = (s) => (s === sPB ? COURT_CX - HX - 1.0 : L2W(s, DOOR_DX, ROOM_Z1).x);
+    const anchor = (s) => (s === 0 ? { x: OFFICE_X, z: -0.9 } : s === sPB ? { x: COURT_CX - HX - 2.0, z: 0.2 } : L2W(s, -0.2, STAND_Z));
+    const boardAnchor = (s) => (s === sPB ? { x: COURT_CX + HXE - 1.8, z: 0 } : L2W(s, -0.4, ROOM_Z0 + 2.4));
     const roomAt = (x, z) => {
       if (inHall(x, z)) return sPB;
-      if (z > ROOM_Z1 + 0.15) return -1;
-      for (let s = 1; s <= N; s++) { if (s === sPB) continue; if (Math.abs(x - sxOf(s)) < ROOM_HW - 0.25) return s; }
+      for (let s = 1; s <= N; s++) {
+        if (s === sPB) continue; const r = rowOf[s], lx = r.rot ? r.sx - x : x - r.sx, lz = r.rot ? r.zoff - z : z - r.zoff;
+        if (Math.abs(lx) < ROOM_HW - 0.25 && lz < ROOM_Z1 - 0.1 && lz > ROOM_Z0) return s;
+      }
       return -1;
     };
     // 球場內不能穿過場地：沿南側走道（z≈4）繞到對面牆的白板
     const enterPts = (s) => (s === sPB
       ? [{ x: COURT_CX - HX - 1.0, z: 0 }, { x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX + 1.3, z: 4.0 }, { x: COURT_CX + HXE - 1.8, z: 4.0 }, boardAnchor(s)]
-      : [{ x: doorX(s), z: 0.1 }, { x: doorX(s), z: -2.4 }, boardAnchor(s)]);
+      : [L2W(s, DOOR_DX, 0.1), L2W(s, DOOR_DX, -2.4), boardAnchor(s)]);
     const exitPts = (s, from = pos) => {
-      if (s !== sPB) return [{ x: doorX(s), z: -2.3 }, { x: doorX(s), z: 0.4 }];
+      if (s !== sPB) return [L2W(s, DOOR_DX, -2.3), L2W(s, DOOR_DX, 0.4)];
       if (from.x < COURT_CX - HX + 2.6) return [{ x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX - 1.0, z: 0 }];
       const pts = []; if (Math.abs(from.z) < 3.6) pts.push({ x: from.x, z: 4.0 });
       pts.push({ x: COURT_CX - HX + 1.3, z: 4.0 }, { x: COURT_CX - HX + 1.3, z: 0 }, { x: COURT_CX - HX - 1.0, z: 0 });
@@ -1454,7 +1466,7 @@
             if (m === pl) pos.x = L; else if (m === pr) pos.x = R; else if (m === pt) pos.z = T; else pos.z = B;
           }
         }
-        pos.x = clamp(pos.x, 1.2, WORLD_W - 1.2); pos.z = clamp(pos.z, -4.8, DECK_HD - 0.9);
+        pos.x = clamp(pos.x, 1.2, WORLD_W - 1.2); pos.z = clamp(pos.z, -(DECK_HD - 0.5), DECK_HD - 0.5);
       }
       if (sp) facing += angDiff(facing, Math.atan2(lmx, lmz)) * Math.min(1, dt * 10);
       speedNow = lerp(speedNow, sp, Math.min(1, dt * 12));
@@ -1470,10 +1482,10 @@
           const b = boardAnchor(inside), bd = Math.hypot(pos.x - b.x, pos.z - b.z);
           if (bd < 1.3 && boardArmed) { boardArmed = false; openBoard(inside); } else if (bd > 2.6) boardArmed = true;
         } else boardArmed = true;
-        const od = Math.hypot(pos.x - OFFICE_X, pos.z - (-1.75));
+        const od = Math.hypot(pos.x - OFFICE_X, pos.z - (-1.75 - ROW_DZ - 1.0));
         if (od < 1.5 && officeArmed) { officeArmed = false; H.office(); } else if (od > 3.2) officeArmed = true;
       }
-      const bx = inside >= 0 ? (sxOf(inside) - pos.x) * 0.4 : 0, bz = inside >= 0 ? ((inside === sPB ? 0 : -3.2) - pos.z) * 0.4 : 0;
+      const rcC = inside >= 0 ? (inside === sPB ? { x: sxOf(inside), z: 0 } : L2W(inside, 0, -3.2)) : null, bx = rcC ? (rcC.x - pos.x) * 0.4 : 0, bz = rcC ? (rcC.z - pos.z) * 0.4 : 0;
       bias.x = lerp(bias.x, bx, Math.min(1, dt * 3)); bias.z = lerp(bias.z, bz, Math.min(1, dt * 3));
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5));
       const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * (1 - 0.3 * zoomK), hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
