@@ -45,7 +45,10 @@
     const pill = document.createElement("div");
     pill.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:40;padding:6px 14px;border-radius:999px;background:rgba(20,17,43,.78);color:#fff;font:600 12px -apple-system,'Noto Sans TC',sans-serif;pointer-events:none;letter-spacing:.04em;opacity:.0;transition:opacity .4s";
     document.body.appendChild(pill);
-    const setPill = (txt) => { pill.textContent = txt; pill.style.opacity = txt ? "1" : "0"; };
+    let pillBase = "", dbg = "";
+    const paint = () => { const t = pillBase ? pillBase + (dbg ? "  ·  " + dbg : "") : ""; pill.textContent = t; pill.style.opacity = t ? "1" : "0"; };
+    const setPill = (txt) => { pillBase = txt; paint(); };
+    const setDbg = (d) => { dbg = d; if (pillBase) paint(); };
 
     Pz = { peer: null, conn: null, status: "連線中", remote: null, timers: [], av, W, tag, zzz, pill, hooks, ctx };
     const rm = { x: 0, z: 0, f: 0, sp: 0, sit: 0, t: 0, on: false };    // 對方最新狀態
@@ -68,16 +71,21 @@
         { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"], username: "openrelayproject", credential: "openrelayproject" }] } }); Pz.peer = peer;
       peer.on("open", () => {
         // NPC 版 Aeris：有連上同步服務，就由「真人上線 / 睡覺」取代；沒連上則保留 NPC
-                setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線";
+                setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; setDbg(me === "david" ? "已連上同步服務，找對方中" : "已登記，等 David 連入");
         if (me === "david") {
-          const tryConn = () => { if (!Pz || (Pz.conn && Pz.conn.open)) return; adopt(peer.connect(ID[other], { reliable: false })); };
+          const tryConn = () => {
+            if (!Pz || (Pz.conn && Pz.conn.open)) return;
+            const c = peer.connect(ID[other], { reliable: false }); adopt(c); setDbg("嘗試連線中");
+            let n = 0; const iv = setInterval(() => { const st = c.peerConnection && c.peerConnection.iceConnectionState; if (c.open || !Pz) return clearInterval(iv); if (st) setDbg("連線狀態：" + st + (st === "new" ? "（對方沒回應）" : "")); if (++n > 3) clearInterval(iv); }, 1000);
+          };
           tryConn(); Pz.timers.push(setInterval(tryConn, 4000));
         }
       });
-      peer.on("connection", adopt);
+      peer.on("connection", (c) => { setDbg("收到對方連入…"); adopt(c); });
       peer.on("error", (e) => {
         if (e.type === "unavailable-id") { Pz.status = "此身分已在別處登入"; setPill("此身分已在別的視窗登入，這裡只能單機走走"); }
-        else if (e.type === "peer-unavailable") { /* 對方沒上線：正常 */ }
+        else if (e.type === "peer-unavailable") { setDbg("同步服務上找不到對方"); }
+        else setDbg("服務錯誤：" + e.type);
       });
       peer.on("disconnected", () => { try { peer.reconnect(); } catch (_) {} });
     }).catch(() => { Pz.status = "同步服務連不上"; });
