@@ -10,6 +10,8 @@
      ============================================================ */
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
+  const AERIS_HASH = "cad60b962a5c0cdfd98a2872cf3de52818aeb3dbe8411ad7e98668a218295003";                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
+  window.PERSONA = "david";
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -392,8 +394,10 @@
     e.preventDefault();
     const v = $("#pw").value;
     if (!v) return;
-    if ((await sha256(v)) === PASS_HASH) {
-      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, PASS_HASH); } catch (_) {}
+    const hv = await sha256(v.trim());
+    if (hv === PASS_HASH || hv === AERIS_HASH) {
+      window.PERSONA = hv === AERIS_HASH ? "aeris" : "david";
+      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, hv); } catch (_) {}
       enter();
     } else {
       $("#gateError").textContent = "密碼不正確，請再試一次";
@@ -405,6 +409,6 @@
   window.addEventListener("hashchange", () => { if (!document.body.classList.contains("locked")) render(); });
 
   let ok = false;
-  try { ok = sessionStorage.getItem(KEY) === PASS_HASH || localStorage.getItem(KEY) === PASS_HASH; } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; } catch (_) {}
   if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();

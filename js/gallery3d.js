@@ -1333,7 +1333,7 @@
     }
 
     /* ----- 人物 ----- */
-    const av = buildAvatar(THREE); scene.add(av.root);
+    const av = window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];

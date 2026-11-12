@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Aeris = { mount, unmount, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
+  const api = (window.Aeris = { mount, unmount, buildPlayer: (THREE, fn) => makeLook(THREE, fn).av, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
   let A = null;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -18,58 +18,57 @@
   const HELLO = ["嗨，David！", "今天也要加油喔！", "你的夢想一定會成真", "這裡越來越漂亮了～", "要不要一起去看看畫？", "記得寫進度喔 ✏️", "我最喜歡夕陽了"];
   const ART = ["這幅畫好美～", "好想快點看到完成！", "嗯…這個專案好有趣"];
 
-  function mount(ctx) {
-    unmount();
-    const { THREE, scene, P, pos, anchor, hooks, camera } = ctx;
-    const N = P.length; if (!N) return;
-    const SKIN = 0xf2cdb4, HAIR = 0x5e3420, DRESS = 0x9d7fd6, COLLAR = 0xfbf7ff;
-    const av = ctx.buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: SKIN, skin: SKIN, hair: HAIR, shoe: 0xe9dfe6 });
+  /* ----- Aeris 外觀（NPC 與玩家模式共用）：長髮、淡紫洋裝、髮夾小花 ----- */
+  function makeLook(THREE, buildAvatar) {
+    const SKIN = 0xf2cdb4, HAIR = 0x5e3420, DRESS = 0x9d7fd6, COLLAR = 0xcfbdf0, PI = Math.PI;
+    const av = buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: SKIN, skin: SKIN, hair: HAIR, shoe: 0xe9dfe6 });
     const M = (color, rough = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, envMapIntensity: 0.5, ...extra });
     const add = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
-    const hairM = M(HAIR, 0.45, { side: THREE.DoubleSide }), hairHi = M(0x8a5534, 0.4, { side: THREE.DoubleSide });
-    const dressM = M(DRESS, 0.8, { side: THREE.DoubleSide }), pinkM = M(0xf4a3b8, 0.5), blushM = M(0xf2a0a0, 0.9, { transparent: true, opacity: 0.45 });
-    const PI = Math.PI;
+    const hairM = M(HAIR, 0.45, { side: THREE.DoubleSide }), dressM = M(DRESS, 0.8, { side: THREE.DoubleSide });
+    const pinkM = M(0xf4a3b8, 0.5), blushM = M(0xf2a0a0, 0.9, { transparent: true, opacity: 0.45 });
 
-    // 洋裝裙襬（從腰到膝下，A 字微張）
+    // 洋裝裙襬（A 字微張）+ 腰帶
     const skirtProf = [[0.165, 0], [0.19, -0.12], [0.235, -0.3], [0.285, -0.47], [0.29, -0.49]].map(([x, y]) => new THREE.Vector2(x, y));
     const skirt = add(new THREE.LatheGeometry(skirtProf, 32), dressM, av.body, 0, 0.99, 0); skirt.scale.set(1, 1, 0.82);
-    add(new THREE.TorusGeometry(0.168, 0.012, 8, 32), M(0xffffff, 0.5), av.body, 0, 0.985, 0).rotation.x = PI / 2;  // 腰帶
+    add(new THREE.TorusGeometry(0.168, 0.012, 8, 32), M(0xffffff, 0.5), av.body, 0, 0.985, 0).rotation.x = PI / 2;
 
-    // 長髮：後髮（包住後腦一路垂到背中）、兩側垂到胸前的髮束、瀏海
+    // 長髮：換掉通用短髮 → 頭頂 + 一圈蓬鬆的髮幕（包住兩側與後面，前面留出臉）+ 瀏海
     const h = av.head;
-    const back = add(new THREE.CylinderGeometry(0.122, 0.145, 0.5, 24, 6, true, PI / 2, PI), hairM, h, 0, -0.15, -0.03);
-    back.scale.set(1, 1, 0.8);
-    { // 讓髮尾微微捲起、不規則
-      const p = back.geometry.attributes.position;
-      for (let i = 0; i < p.count; i++) { const y = p.getY(i); if (y < -0.2) { const k = (-0.2 - y) / 0.1; p.setX(i, p.getX(i) * (1 + 0.06 * k)); p.setY(i, y + Math.sin(p.getX(i) * 40) * 0.02 * k); } }
-      back.geometry.computeVertexNormals();
-    }
-    // 移除通用款的短髮，換成長髮：頭頂整圈蓋到額頭、後腦與兩側再往下包到耳下（前面留出臉）
     h.children.filter((m) => m.geometry && m.geometry.type === "SphereGeometry" && m.material && m.material.color && m.material.color.getHex() === HAIR && m.geometry.parameters.radius > 0.1).forEach((m) => (m.visible = false));
-    add(new THREE.SphereGeometry(0.124, 26, 12, 0, PI * 2, 0, PI * 0.36), hairM, h, 0, 0.092, -0.004).scale.set(0.98, 1.12, 1.08);   // 頭頂
-    add(new THREE.SphereGeometry(0.126, 26, 14, PI * 0.82, PI * 1.36, PI * 0.3, PI * 0.42), hairM, h, 0, 0.092, -0.008).scale.set(0.98, 1.12, 1.06);  // 後腦 + 兩側
+    add(new THREE.SphereGeometry(0.124, 28, 14, 0, PI * 2, 0, PI * 0.43), hairM, h, 0, 0.092, -0.006).scale.set(0.98, 1.12, 1.08);
+    const curtainProf = [[0.12, 0.13], [0.134, 0.06], [0.146, -0.06], [0.158, -0.2], [0.168, -0.3], [0.17, -0.37], [0.15, -0.42]].map(([r, y]) => new THREE.Vector2(r, y));
+    const back = add(new THREE.LatheGeometry(curtainProf, 30, PI * 0.34, PI * 1.32), hairM, h, 0, 0, -0.024); back.scale.set(1, 1, 0.9);
     const strands = [];
     const bang = add(new THREE.SphereGeometry(0.118, 24, 12, PI * 0.15, PI * 0.7, PI * 0.18, PI * 0.2), hairM, h, 0.006, 0.105, 0.012);
     bang.scale.set(1, 1.05, 1.08); bang.rotation.y = -0.08;
-    // 髮夾小花（左側）
-    { const f = new THREE.Group(); f.position.set(-0.1, 0.15, 0.06); h.add(f);
+    { const f = new THREE.Group(); f.position.set(-0.1, 0.15, 0.06); h.add(f);   // 髮夾小花
       for (let i = 0; i < 5; i++) { const a = (i / 5) * PI * 2; add(new THREE.SphereGeometry(0.013, 8, 6), pinkM, f, Math.cos(a) * 0.016, Math.sin(a) * 0.016, 0); }
       add(new THREE.SphereGeometry(0.009, 8, 6), M(0xffe27a, 0.4), f, 0, 0, 0.006); f.rotation.y = -0.9; }
-    // 腮紅、睫毛、粉色嘴唇
-    for (const sx of [-1, 1]) {
+    for (const sx of [-1, 1]) {                                                    // 腮紅、細睫毛
       add(new THREE.SphereGeometry(0.016, 10, 8), blushM, h, sx * 0.055, 0.058, 0.088).scale.set(1.3, 0.7, 0.35);
       const lash = add(new THREE.BoxGeometry(0.03, 0.003, 0.004), M(0x3a2218, 0.6), h, sx * 0.039, 0.104, 0.1); lash.rotation.z = sx * 0.18; lash.scale.set(0.8, 0.6, 1);
     }
-    // 可愛化：眉毛改成溫柔上揚的弧度、眼睛放大一點、拿掉通用款的直線嘴改成微笑、洋裝拿掉 V 領
-    for (const m of h.children) {
+    for (const m of h.children) {                                                  // 眉毛上揚、眼睛放大、鼻子縮小、拿掉直線嘴
       if (!m.geometry) continue; const gp = m.geometry.parameters;
       if (m.geometry.type === "BoxGeometry" && gp.width === 0.04 && gp.height === 0.007) { const sx = Math.sign(m.position.x); m.rotation.z = sx * -0.14; m.position.y += 0.004; m.scale.set(0.85, 0.8, 1); }
       if (m.geometry.type === "BoxGeometry" && gp.width === 0.04 && gp.height === 0.006) m.visible = false;
       if (m.geometry.type === "SphereGeometry" && (gp.radius === 0.015 || gp.radius === 0.0085)) m.scale.multiplyScalar(1.22);
+      if (m.geometry.type === "ConeGeometry") m.scale.set(0.65, 0.6, 0.65);
     }
     av.torso.children.forEach((m) => { if (m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });
-    { const sm = add(new THREE.TorusGeometry(0.016, 0.0028, 6, 16, Math.PI * 0.8), M(0xc95f73, 0.5), h, 0, 0.034, 0.1); sm.rotation.z = Math.PI * 1.1; }
+    { const sm = add(new THREE.TorusGeometry(0.017, 0.0028, 6, 16, PI * 0.8), M(0xc95f73, 0.5), h, 0, 0.034, 0.092); sm.rotation.z = PI * 1.1; sm.scale.set(1, 1, 0.25); }  // 貼著臉的微笑
     av.root.scale.setScalar(0.92);
+    return { av, back, skirt, strands };
+  }
+
+
+  function mount(ctx) {
+    unmount();
+    const { THREE, scene, P, pos, anchor, hooks, camera } = ctx;
+    const N = P.length; if (!N) return;
+    if (window.PERSONA === "aeris") return;                 // 玩家本人就是 Aeris，不再放 NPC 版
+    const { av, back, skirt, strands } = makeLook(THREE, ctx.buildAvatar);
+    const PI = Math.PI;
     scene.add(av.root);
 
     // 名牌
