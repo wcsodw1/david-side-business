@@ -311,7 +311,7 @@
       <div class="g-hud">
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
-        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 或雙擊方向鍵 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> / 雙擊 <kbd>↓</kbd> 退出</p>
+        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 或雙擊方向鍵 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> / 雙擊 <kbd>←</kbd> 退出</p>
       </div>
       <div class="g-camctl">
         <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
@@ -815,7 +815,7 @@
     /* ----- 輸入 ----- */
     const typing = (e) => /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
     const blocked = () => document.body.classList.contains("locked") || document.body.classList.contains("news-open") || document.body.classList.contains("board-open") || document.body.classList.contains("dir-typing");
-    // 雙擊「↓ / S」＝退出一層：白板 → 館長對話 → 房間 / 球場（有東西可退時優先於「雙擊跑步」）
+    // 雙擊「← / A」＝退出一層：白板 → 館長對話 → 房間 / 球場（有東西可退時優先於「雙擊跑步」）
     const dblBackExit = () => {
       if (!ov.hidden) { closeBoard(); return true; }
       if (window.Director && window.Director.dismiss()) return true;
@@ -823,9 +823,9 @@
       return false;
     };
     const onKey = (e) => {
-      if (e.type === "keydown" && !e.repeat && (e.code === "ArrowDown" || e.code === "KeyS") && !e.__dsbHandled && !typing(e) && !e.metaKey && !e.ctrlKey && !e.altKey && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) {
+      if (e.type === "keydown" && !e.repeat && (e.code === "ArrowLeft" || e.code === "KeyA") && !e.__dsbHandled && !typing(e) && !e.metaKey && !e.ctrlKey && !e.altKey && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) {
         const n = performance.now(), second = n - lastDown < 350; lastDown = n;
-        if (second && dblBackExit()) { lastDown = 0; keys.d = 0; dbl.d = 0; e.preventDefault(); e.__dsbHandled = true; return; }
+        if (second && dblBackExit()) { lastDown = 0; keys.l = 0; dbl.l = 0; e.preventDefault(); e.__dsbHandled = true; return; }
       }
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || blocked()) return;
       const down = e.type === "keydown"; run = e.shiftKey;
@@ -891,7 +891,7 @@
     const holdBtn = (el, on, off) => { el.addEventListener("pointerdown", (e) => { e.preventDefault(); on(); }); for (const t of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(t, off); };
     holdBtn(root.querySelector("#gRotL"), () => (rotHold = -1), () => (rotHold = 0));
     holdBtn(root.querySelector("#gRotR"), () => (rotHold = 1), () => (rotHold = 0));
-    root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { const k = b.dataset.d, n = performance.now(); touch[k] = 1; cancelRoute(); if (n - (lastTap["t" + k] || 0) < 320) { if (k === "d" && dblBackExit()) { touch.d = 0; lastTap["t" + k] = 0; return; } dbl[k] = 1; } lastTap["t" + k] = n; }, () => { touch[b.dataset.d] = 0; dbl[b.dataset.d] = 0; }));
+    root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { const k = b.dataset.d, n = performance.now(); touch[k] = 1; cancelRoute(); if (n - (lastTap["t" + k] || 0) < 320) { if (k === "l" && dblBackExit()) { touch.l = 0; lastTap["t" + k] = 0; return; } dbl[k] = 1; } lastTap["t" + k] = n; }, () => { touch[b.dataset.d] = 0; dbl[b.dataset.d] = 0; }));
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
     root.querySelector("#gReset").addEventListener("click", () => { yaw = view0.yaw; elev = view0.elev; dist = view0.dist; stopAuto(); });
 
@@ -1000,7 +1000,7 @@
         promptKey = pk; nearIdx = inside >= 0 ? -1 : nn; dots.forEach((d, i) => d.classList.toggle("on", i === nn));
         if (nn >= 0) {
           prompt.innerHTML = inside >= 0
-            ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ↓ 或滾輪下滑出門</small>`
+            ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ← 或滾輪下滑出門</small>`
             : nn === 0 ? `<kbd>Enter</kbd> 進入 <b>辦公室</b> · 儀表板總覽 <small>　滾輪上滑</small>`
               : `<kbd>Enter</kbd> 進入 <b>${H.esc(P[nn - 1].name)}</b> 房間 · ${P[nn - 1].progress ?? 0}% <small>　滾輪上滑</small>`;
           prompt.hidden = false;

@@ -124,10 +124,10 @@
   });
   mega.addEventListener("click", (e) => { if (e.target.closest("a")) closeMega(0); });
 
-  // 雙擊「↓ / S」＝退出一層（所有地方通用）。藝廊內的白板 / 房間由 gallery3d 自己處理。
+  // 雙擊「← / A」＝退出一層（所有地方通用）。藝廊內的白板 / 房間由 gallery3d 自己處理。
   let lastDownApp = 0;
   document.addEventListener("keydown", (e) => {
-    if (e.repeat || (e.code !== "ArrowDown" && e.code !== "KeyS") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (e.repeat || (e.code !== "ArrowLeft" && e.code !== "KeyA") || e.metaKey || e.ctrlKey || e.altKey) return;
     if (document.body.classList.contains("locked")) return;
     if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
     const n = performance.now(), second = n - lastDownApp < 350; lastDownApp = n;
