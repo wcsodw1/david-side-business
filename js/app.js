@@ -124,6 +124,20 @@
   });
   mega.addEventListener("click", (e) => { if (e.target.closest("a")) closeMega(0); });
 
+  // 雙擊「↓ / S」＝退出一層（所有地方通用）。藝廊內的白板 / 房間由 gallery3d 自己處理。
+  let lastDownApp = 0;
+  document.addEventListener("keydown", (e) => {
+    if (e.repeat || (e.code !== "ArrowDown" && e.code !== "KeyS") || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (document.body.classList.contains("locked")) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+    const n = performance.now(), second = n - lastDownApp < 350; lastDownApp = n;
+    if (!second) return;
+    let acted = false;
+    if (window.News && window.News.isOpen()) { window.News.close(); acted = true; }
+    else if (location.hash.replace(/^#\/?/, "")) { location.hash = "#/"; acted = true; }   // 專案頁 / 辦公室 / 總覽 / 動態 → 回藝廊
+    if (acted) { lastDownApp = 0; e.preventDefault(); e.__dsbHandled = true; }
+  });
+
   $("#burger").addEventListener("click", () => {
     const on = nav.classList.toggle("menu-open");
     $("#burger").setAttribute("aria-expanded", String(on));
