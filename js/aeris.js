@@ -1,6 +1,6 @@
 /* ============================================================
    Aeris：在藝廊裡散步的女生 NPC（原創角色）。
-   長髮（栗色微捲、側邊髮夾小花）、淡紫洋裝、身高約 1.65m。
+   長髮（栗色）、咖啡色洋裝、身高約 1.65m。
    會在中央走道散步、停在畫作前欣賞；David 走近時轉身揮手打招呼，
    頭上跳出對話泡泡；也會在房間之間走進走出，並不時主動走到 David 身邊聊天（可點選回答）。
    純規則式行為，不是 AI。
@@ -20,7 +20,7 @@
 
   /* ----- Aeris 外觀（NPC 與玩家模式共用）：長髮、淡紫洋裝、髮夾小花 ----- */
   function makeLook(THREE, buildAvatar) {
-    const SKIN = 0xf2cdb4, HAIR = 0x5e3420, DRESS = 0x9d7fd6, COLLAR = 0xcfbdf0, PI = Math.PI;
+    const SKIN = 0xf2cdb4, HAIR = 0x5e3420, DRESS = 0x8b5a3c, COLLAR = 0xe3cdb2, PI = Math.PI;
     const av = buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: SKIN, skin: SKIN, hair: HAIR, shoe: 0xe9dfe6 });
     const M = (color, rough = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, envMapIntensity: 0.5, ...extra });
     const add = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
@@ -41,9 +41,6 @@
     const strands = [];
     const bang = add(new THREE.SphereGeometry(0.118, 24, 12, PI * 0.15, PI * 0.7, PI * 0.18, PI * 0.2), hairM, h, 0.006, 0.105, 0.012);
     bang.scale.set(1, 1.05, 1.08); bang.rotation.y = -0.08;
-    { const f = new THREE.Group(); f.position.set(-0.1, 0.15, 0.06); h.add(f);   // 髮夾小花
-      for (let i = 0; i < 5; i++) { const a = (i / 5) * PI * 2; add(new THREE.SphereGeometry(0.013, 8, 6), pinkM, f, Math.cos(a) * 0.016, Math.sin(a) * 0.016, 0); }
-      add(new THREE.SphereGeometry(0.009, 8, 6), M(0xffe27a, 0.4), f, 0, 0, 0.006); f.rotation.y = -0.9; }
     for (const sx of [-1, 1]) {                                                    // 腮紅、細睫毛
       add(new THREE.SphereGeometry(0.016, 10, 8), blushM, h, sx * 0.055, 0.058, 0.088).scale.set(1.3, 0.7, 0.35);
       const lash = add(new THREE.BoxGeometry(0.03, 0.003, 0.004), M(0x3a2218, 0.6), h, sx * 0.039, 0.104, 0.1); lash.rotation.z = sx * 0.18; lash.scale.set(0.8, 0.6, 1);
