@@ -570,3 +570,10 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .gi-last { margin-top: 8px; font-size: 13px; } .gi-last small { color: var(--ink-3); }
 .gi-dwell { margin-top: 10px; font-size: 12px; color: var(--ink-2); } .gi-dwell div { height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); margin-top: 5px; overflow: hidden; } .gi-dwell i { display: block; height: 100%; width: 0; background: #ffe9b8; }
 @media (max-width: 960px) { .g-info { bottom: auto; top: 116px; } }
+
+/* Aeris 主動聊天框（沿用館長對話框，換成粉色系） */
+.aeris-chat { background: #fff6fb; border: 1.5px solid #f0b6cc; }
+.aeris-chat::after { background: #fff6fb; border-right: 1.5px solid #f0b6cc; border-bottom: 1.5px solid #f0b6cc; }
+.aeris-chat .dir-name { color: #c0507c; }
+.aeris-chat .dir-btns button { background: #c0507c; }
+.aeris-chat .dir-btns button:last-child:not(:only-child) { background: transparent; color: #a0587a; border: 1.5px solid #f0b6cc; }

@@ -118,6 +118,7 @@
     if (window.News && window.News.isOpen()) { window.News.close(); return; }
     if (window.Gallery3D && window.Gallery3D.closeOverlay()) return;   // 先關白板
     if (window.Director && window.Director.dismiss()) return;           // 再關館長對話
+    if (window.Aeris && window.Aeris.dismiss()) return;              // 再關 Aeris 聊天
     if (window.Gallery3D && window.Gallery3D.active && window.Gallery3D.exitRoom()) return; // 在房間裡 → 走出門
     closeMega(0);
     if (!document.body.classList.contains("locked") && location.hash.replace(/^#\/?/, "")) location.hash = "#/";

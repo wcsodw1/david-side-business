@@ -1447,6 +1447,7 @@
     const dblBackExit = () => {
       if (!ov.hidden) { closeBoard(); return true; }
       if (window.Director && window.Director.dismiss()) return true;
+      if (window.Aeris && window.Aeris.dismiss()) return true;
       if (inside >= 0) { exitRoom(); return true; }
       return false;
     };
@@ -1706,6 +1707,7 @@
     };
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
+    if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
 
     S = {
       root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
@@ -1720,7 +1722,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
