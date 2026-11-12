@@ -63,7 +63,9 @@
     Pz.me = me;
     loadPeer().then(() => {
       if (!Pz) return;
-      const peer = new window.Peer(ID[me], { debug: 0 }); Pz.peer = peer;
+      const peer = new window.Peer(ID[me], { debug: 0, config: { iceServers: [      // 跨網路（手機 4G/5G、公司網路）需要中繼，否則兩邊註冊了但連不起來
+        { urls: "stun:stun.l.google.com:19302" }, { urls: "stun:global.stun.twilio.com:3478" },
+        { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"], username: "openrelayproject", credential: "openrelayproject" }] } }); Pz.peer = peer;
       peer.on("open", () => {
         // NPC 版 Aeris：有連上同步服務，就由「真人上線 / 睡覺」取代；沒連上則保留 NPC
                 setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線";
