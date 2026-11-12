@@ -553,3 +553,7 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .dir-bubble, .wb-card, .news-panel { color-scheme: light; }
 .dir-form input, .inline-form input { background: #fff !important; color: #1f1a33 !important; caret-color: #1f1a33; -webkit-text-fill-color: #1f1a33; }
 .dir-form input::placeholder, .inline-form input::placeholder { color: #9a90a8; -webkit-text-fill-color: #9a90a8; }
+
+.g-start { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 9; padding: 10px 20px; border-radius: 99px; background: rgba(20,17,43,.72); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 14px; color: var(--ink); pointer-events: none; animation: startHint 14s ease forwards; max-width: 92vw; text-align: center; }
+.g-start b { color: var(--accent); }
+@keyframes startHint { 0%, 82% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
