@@ -9,7 +9,8 @@
   "use strict";
   const api = (window.Presence = { mount, unmount, state: () => (Pz ? { status: Pz.status, remote: Pz.remote, peer: !!Pz.peer } : null) });
   const PEER_SRC = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
-  const ID = { david: "dsb7f3a-david-v1", aeris: "dsb7f3a-aeris-v1" };
+  const ROOM = (() => { try { const r = new URLSearchParams(location.search).get("room"); return r ? "-" + r.replace(/[^a-z0-9]/gi, "").slice(0, 12) : ""; } catch (_) { return ""; } })();   // 測試用：?room=xxx 使用獨立代號，不干擾正式的兩個身分
+  const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM };
   const NAME = { david: "David", aeris: "Aeris ✿" };
   const BED = { david: { x: 2.55, z: -4.4 }, aeris: { x: 2.55, z: -1.95 } };   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
   let Pz = null;
@@ -92,9 +93,7 @@
 
     const hook = (dt, t) => {
       // 送出自己的狀態
-      sendT -= dt;
-      if (sendT <= 0 && Pz.conn && Pz.conn.open) { sendT = 0.1; const m = ctx.getMe(); try { Pz.conn.send({ x: m.x, z: m.z, f: m.f, sp: m.sp, sit: m.sit }); } catch (_) {} }
-      if (rm.on && performance.now() - rm.t > 6000) drop();
+      if (rm.on && performance.now() - rm.t > 15000) drop();   // 15 秒都沒收到才當作下線（手機切到背景時會變慢）
       // 對方：在線 → 站在對方位置；離線 → 躺在床上睡覺
       const on = rm.on;
       vis = lerp(vis, on ? 1 : 0, Math.min(1, dt * 5));
@@ -115,6 +114,11 @@
       { const w = camera.position.distanceTo(tag.position) * 0.07; tag.scale.set(w, w * 0.3125, 1); }
     };
     hooks.push(hook); Pz.hook = hook;
+    // 送出自己的狀態：用計時器而不是畫面更新，這樣分頁在背景、手機暫時切走時也不會停送（背景分頁最慢約每秒一次）
+    Pz.timers.push(setInterval(() => {
+      if (!Pz.conn || !Pz.conn.open) return;
+      const m = ctx.getMe(); try { Pz.conn.send({ x: m.x, z: m.z, f: m.f, sp: m.sp, sit: m.sit }); } catch (_) {}
+    }, 100));
   }
 
   function unmount() {
