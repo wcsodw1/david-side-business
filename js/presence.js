@@ -51,18 +51,20 @@
     const setPill = (txt) => { pillBase = txt; paint(); };
     const setDbg = (d) => { dbg = d; if (pillBase) paint(); };
 
-    Pz = { peer: null, conn: null, status: "連線中", remote: null, timers: [], av, W, tag, zzz, pill, hooks, ctx };
+    Pz = { peer: null, conns: null, status: "連線中", remote: null, timers: [], av, W, tag, zzz, pill, hooks, ctx };
     const rm = { x: 0, z: 0, f: 0, sp: 0, sit: 0, t: 0, on: false };    // 對方最新狀態
     let sendT = 0, vis = 0;
 
-    const drop = () => { rm.on = false; Pz.remote = null; try { Pz.conn && Pz.conn.close(); } catch (_) {} Pz.conn = null; setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; };
+    // 連線管理：可能同時有好幾條連線（重連時），全部都收、全部都送，避免「A 以為連上、B 以為沒連上」的平行宇宙
+    const conns = new Set(); Pz.conns = conns;
+    const anyOpen = () => [...conns].some((c) => c.open);
+    const drop = () => { rm.on = false; Pz.remote = null; conns.forEach((c) => { try { c.close(); } catch (_) {} }); conns.clear(); setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; };
     const adopt = (c) => {
-      if (Pz.conn && Pz.conn.open) { c.close(); return; }
-      Pz.conn = c;
+      conns.add(c); c.__t = performance.now();
       c.on("open", () => { Pz.status = "對方在線"; setPill(`${NAME[other].replace(" ✿", "")} 在線上`); setTimeout(() => setPill(""), 3500); });
       c.on("data", (d) => { if (d && typeof d.x === "number") { if (!rm.on) { rm.x = d.x; rm.z = d.z; } Object.assign(rm, d, { t: performance.now(), on: true }); Pz.remote = { x: +d.x.toFixed(1), z: +d.z.toFixed(1) }; } });
-      c.on("close", () => { if (Pz && Pz.conn === c) drop(); });
-      c.on("error", () => { if (Pz && Pz.conn === c) drop(); });
+      const gone = () => { conns.delete(c); setTimeout(() => { if (Pz && rm.on && !anyOpen()) drop(); }, 4000); };   // 4 秒內沒有任何連線恢復，才當作下線
+      c.on("close", gone); c.on("error", gone);
     };
     Pz.me = me;
     loadPeer().then(() => {
@@ -75,7 +77,10 @@
                 setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; setDbg(me === "david" ? "已連上同步服務，找對方中" : "已登記，等 David 連入");
         if (me === "david") {
           const tryConn = () => {
-            if (!Pz || (Pz.conn && Pz.conn.open)) return;
+            if (!Pz || anyOpen()) return;
+            const now = performance.now();
+            for (const c of [...conns]) { if (!c.open && now - c.__t > 12000) { try { c.close(); } catch (_) {} conns.delete(c); } }   // 清掉卡住的舊連線
+            if ([...conns].some((c) => !c.open)) return;                                                                          // 還有一條在連，不要再開新的
             const c = peer.connect(ID[other], { reliable: false }); adopt(c); setDbg("嘗試連線中");
             let n = 0; const iv = setInterval(() => { const st = c.peerConnection && c.peerConnection.iceConnectionState; if (c.open || !Pz) return clearInterval(iv); if (st) setDbg("連線狀態：" + st + (st === "new" ? "（對方沒回應）" : "")); if (++n > 3) clearInterval(iv); }, 1000);
           };
@@ -116,8 +121,8 @@
     hooks.push(hook); Pz.hook = hook;
     // 送出自己的狀態：用計時器而不是畫面更新，這樣分頁在背景、手機暫時切走時也不會停送（背景分頁最慢約每秒一次）
     Pz.timers.push(setInterval(() => {
-      if (!Pz.conn || !Pz.conn.open) return;
-      const m = ctx.getMe(); try { Pz.conn.send({ x: m.x, z: m.z, f: m.f, sp: m.sp, sit: m.sit }); } catch (_) {}
+      const m = ctx.getMe(), msg = { x: m.x, z: m.z, f: m.f, sp: m.sp, sit: m.sit };
+      conns.forEach((c) => { if (c.open) { try { c.send(msg); } catch (_) {} } });
     }, 100));
   }
 
@@ -125,7 +130,7 @@
     if (!Pz) return;
     const i = Pz.hooks.indexOf(Pz.hook); if (i >= 0) Pz.hooks.splice(i, 1);
     Pz.timers.forEach(clearInterval);
-    try { Pz.conn && Pz.conn.close(); Pz.peer && Pz.peer.destroy(); } catch (_) {}
+    try { Pz.conns.forEach((c) => c.close()); Pz.peer && Pz.peer.destroy(); } catch (_) {}
     for (const o of [Pz.W, Pz.tag, Pz.zzz]) o.parent && o.parent.remove(o);
     Pz.pill.remove();
     Pz = null;
