@@ -20,7 +20,7 @@
     unmount();
     const { THREE, scene, P, H, pos, stationsX, anchor, enterPts, exitPts, hooks, toScreen } = ctx;
     const N = P.length; if (!N) return;
-    const av = ctx.buildAvatar({ blazer: 0x3b404c, pants: 0x25262c, hair: 0xb9b6b0, shirt: 0xf3f1ea, skin: 0xd9a785 });
+    const av = ctx.buildAvatar({ blazer: 0x3b404c, pants: 0x25262c, hair: 0xc4c1ba, shirt: 0xf3f1ea, skin: 0xd9a785, tie: 0x7a2230 });
     if (av.head) {
       const gm = new THREE.MeshStandardMaterial({ color: 0x15121f, metalness: 0.6, roughness: 0.3 });
       for (const sx of [-1, 1]) { const r = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.004, 8, 20), gm); r.position.set(sx * 0.04, 0.012, 0.112); av.head.add(r); }
@@ -140,6 +140,7 @@
         else if (!route.length) { state = "pause"; timer = D.entering >= 0 ? rand(4, 7) : rand(2, 4); D.entering = -1; if (inRoom >= 0) { /* 在房內停一下，再出來 */ route = []; } }
       }
       av.root.position.set(npc.x, 0, npc.z); av.root.rotation.y = npc.face; av.update(dt, speed, t);
+      { const w = ctx.camera.position.distanceTo(av.root.position) * 0.075; tag.scale.set(w, w * 0.3125, 1); }
       // 對話框位置
       if (!bubble.hidden) {
         const p = toScreen(new THREE.Vector3(npc.x, 2.3, npc.z));
