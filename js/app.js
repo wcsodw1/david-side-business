@@ -10,7 +10,7 @@
      ============================================================ */
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
-  const AERIS_HASH = "cad60b962a5c0cdfd98a2872cf3de52818aeb3dbe8411ad7e98668a218295003";                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
+  const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   window.PERSONA = "david";
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -394,10 +394,10 @@
     e.preventDefault();
     const v = $("#pw").value;
     if (!v) return;
-    const hv = await sha256(v.trim());
-    if (hv === PASS_HASH || hv === AERIS_HASH) {
-      window.PERSONA = hv === AERIS_HASH ? "aeris" : "david";
-      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, hv); } catch (_) {}
+    const hv = await sha256(v.trim()), ha = await sha256(v.trim().toLowerCase());   // Aeris 的密碼不分大小寫
+    if (hv === PASS_HASH || ha === AERIS_HASH) {
+      window.PERSONA = hv === PASS_HASH ? "david" : "aeris";
+      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : PASS_HASH); } catch (_) {}
       enter();
     } else {
       $("#gateError").textContent = "密碼不正確，請再試一次";
