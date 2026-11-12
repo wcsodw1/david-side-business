@@ -14,7 +14,7 @@
     const stale = window.Store ? window.Store.daysSinceUpdate(p) : null;
     return `
     <div class="wb-card" data-pid="${esc(p.id)}">
-      ${opt.page ? "" : `<button class="wb-x" data-x aria-label="關閉">✕</button>`}
+      ${opt.page ? "" : `<span class="esc-hint">按 <kbd>Esc</kbd> 離開</span><button class="wb-x" data-x aria-label="關閉">✕</button>`}
       <p class="eyebrow">${esc(p.category)} · WHITEBOARD</p>
       <h2>${esc(p.name)} <small>${esc(p.zh || "")}</small></h2>
       <div class="wb-meta">

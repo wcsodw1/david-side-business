@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Gallery3D = { active: false, lastId: null, mount, unmount, supported, closeOverlay: () => !!(S && S.closeBoard && S.closeBoard()) });
+  const api = (window.Gallery3D = { active: false, lastId: null, mount, unmount, supported, closeOverlay: () => !!(S && S.closeBoard && S.closeBoard()), exitRoom: () => !!(S && S.exitRoom && S.exitRoom()) });
   let S = null;
 
   /* ---------- 版面常數（單位：公尺） ---------- */
@@ -307,7 +307,7 @@
       <div class="g-hud">
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
-        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動</p>
+        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> 離開房間</p>
       </div>
       <div class="g-camctl">
         <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
@@ -437,7 +437,7 @@
       add(new THREE.CylinderGeometry(0.3, 0.3, 0.03, 5), M(0x15121f, 0.4, 0.6), 0, 0.03, -2.15);
       // 書櫃
       const shelf = add(new THREE.BoxGeometry(2.4, 2.3, 0.4), M(0x3b2a22, 0.7), -2.2, 1.15, -4.95);
-      for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) add(new THREE.BoxGeometry(0.1, 0.38, 0.28), M(new THREE.Color().setHSL((k * 0.11 + r * 0.2) % 1, 0.5, 0.45), 0.8), -3.1 + k * 0.23, 0.35 + r * 0.52, -4.72);
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 9; k++) add(new THREE.BoxGeometry(0.1, 0.38, 0.28), M(new THREE.Color().setHSL((k * 0.11 + r * 0.2) % 1, 0.32, 0.4), 0.8), -3.1 + k * 0.23, 0.35 + r * 0.52, -4.72);
       // 盆栽
       for (const [px, pz] of [[3.4, -1.0], [-3.7, -0.8]]) {
         add(new THREE.CylinderGeometry(0.28, 0.2, 0.42, 16), M(0xff9b78, 0.7), px, 0.21, pz);
@@ -445,7 +445,6 @@
         addObs(OFFICE_X + px, pz, 0.45, 0.45);
       }
       // 吊燈
-      add(new THREE.ConeGeometry(0.34, 0.24, 20, 1, true), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.6, side: THREE.DoubleSide }), 0, 2.6, -2.8, false);
       const pl = new THREE.PointLight(0xffd9a0, 1.1, 9); pl.position.set(0, 2.3, -2.6); g.add(pl);
       for (const m of [desk, screen]) { m.userData = { station: 0, kind: "office" }; pickables.push(m); }
       addObs(OFFICE_X, -3.0, 1.75, 0.8); addObs(OFFICE_X - 2.2, -4.9, 1.3, 0.35);
@@ -488,7 +487,6 @@
       }), aniso);
       const nm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.94), decalMat(nameTex, 0.95)); nm.rotation.x = -Math.PI / 2; nm.position.set(sx + DOOR_DX, 0.013, 0.7); scene.add(nm);
       // 室內：燈、盆栽
-      add(new THREE.ConeGeometry(0.3, 0.22, 18, 1, true), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.5, side: THREE.DoubleSide }), 0, 2.55, zc, false);
       const pl = new THREE.PointLight(0xffd9a0, 0.9, 9); pl.position.set(0, 2.3, zc + 0.4); g.add(pl);
       add(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 16), M(0xff9b78, 0.7), 2.5, 0.2, -4.7);
       for (let k = 0; k < 8; k++) { const a = k * 2.4; add(new THREE.SphereGeometry(0.19, 12, 10), M(0x3f9a6a, 0.8), 2.5 + Math.cos(a) * 0.13, 0.66 + k * 0.07, -4.7 + Math.sin(a) * 0.13); }
@@ -564,6 +562,7 @@
     const view0 = { yaw, elev, dist };
     const camT = new THREE.Vector3(pos.x, 0.9, pos.z), bias = { x: 0, z: 0 };
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
+    let boardArmed = true, officeArmed = true;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
     const tickHooks = [];
 
@@ -622,6 +621,7 @@
         case "ArrowRight": case "KeyD": set("r"); break;
         case "ArrowUp": case "KeyW": set("u"); break;
         case "ArrowDown": case "KeyS": set("d"); break;
+        case "Backspace": if (down && inside >= 0) { e.preventDefault(); exitRoom(); } break;
         case "KeyQ": keys.q = down ? 1 : 0; break;
         case "KeyE": keys.e = down ? 1 : 0; break;
         case "Enter": case "Space": if (down && !e.repeat) { e.preventDefault(); activate(); } break;
@@ -752,6 +752,15 @@
       // 是否在房間裡 → 鏡頭拉近
       inside = roomAt(pos.x, pos.z);
       zoomK = lerp(zoomK, inside >= 0 ? 1 : 0, Math.min(1, dt * 3));
+      // 走近白板 / 辦公桌 → 自動秀出資訊
+      if (ov.hidden && !document.body.classList.contains("dir-typing") && !document.body.classList.contains("news-open")) {
+        if (inside >= 0) {
+          const b = boardAnchor(inside), bd = Math.hypot(pos.x - b.x, pos.z - b.z);
+          if (bd < 1.3 && boardArmed) { boardArmed = false; openBoard(inside); } else if (bd > 2.6) boardArmed = true;
+        } else boardArmed = true;
+        const od = Math.hypot(pos.x - OFFICE_X, pos.z - (-1.75));
+        if (od < 1.5 && officeArmed) { officeArmed = false; H.office(); } else if (od > 3.2) officeArmed = true;
+      }
       const bx = inside >= 0 ? (sxOf(inside) - pos.x) * 0.4 : 0, bz = inside >= 0 ? (-3.2 - pos.z) * 0.4 : 0;
       bias.x = lerp(bias.x, bx, Math.min(1, dt * 3)); bias.z = lerp(bias.z, bz, Math.min(1, dt * 3));
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5));
@@ -798,7 +807,7 @@
     if (window.Director) window.Director.mount(ctx);
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard,
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
     return true;

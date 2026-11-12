@@ -10,7 +10,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Director = { mount, unmount });
+  const api = (window.Director = { mount, unmount, dismiss: () => !!(D && D.dismissFn && D.dismissFn()) });
   let D = null;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -150,7 +150,7 @@
       }
     };
     hooks.push(hook);
-    D = { av, bubble, hook, hooks, entering: -1 };
+    D = { av, bubble, hook, hooks, entering: -1, dismissFn: () => { if (bubble.hidden) return false; const p = talk && P.find((x) => x.id === talk.pid); if (p) snooze[p.id] = Date.now() + 180000; end(40); return true; } };
   }
 
   function unmount() {

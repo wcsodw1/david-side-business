@@ -545,3 +545,6 @@ body.locked .news-fab { display: none; }
 /* 3D 模式：背景由 WebGL 全景天空負責，停用 2D 畫作省效能 */
 body.gl3d .painting { display: none; }
 body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65), transparent); }
+
+.esc-hint { position: absolute; top: 20px; right: 60px; font-size: 12px; color: #8a7a98; }
+.esc-hint kbd { font: 700 11px var(--font); padding: 1px 7px; border: 1px solid #b9b0a0; border-bottom-width: 2px; border-radius: 5px; background: #fff; color: #5b4c70; }
