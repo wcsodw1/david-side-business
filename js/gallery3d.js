@@ -11,7 +11,7 @@
   let S = null;
 
   /* ---------- 版面常數（單位：公尺） ---------- */
-  const SPACING = 7.5, OFFICE_X = 31, FIRST_X = 45;
+  const SPACING = 7.5, OFFICE_X = 15, FIRST_X = 29;
   const DECK_HD = 5.4;                                  // 露台半寬（z）
   const ROOM_HW = 3.2, ROOM_Z0 = -5.3, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
   const PL_W = 2.5, PL_D = 1.25, PL_Z = -0.25, PL_DX = -1.7;         // 門外展台
@@ -280,7 +280,7 @@
     function update(dt, speed, t) {
       const target = speed > 0.05 ? 1 : 0; mv = lerp(mv, target, Math.min(1, dt * 9));
       phase += dt * (1.7 * speed);
-      const run = clamp((speed - 3.5) / 3.5, 0, 1), amp = lerp(0.5, 0.9, run), s = Math.sin(phase), c = Math.cos(phase);
+      const run = clamp((speed - 3.5) / 3.5, 0, 1), amp = lerp(0.5, 0.74, run), s = Math.sin(phase), c = Math.cos(phase);
       legL.hip.rotation.x = s * amp * mv; legR.hip.rotation.x = -s * amp * mv;
       legL.knee.rotation.x = Math.max(0, -c) * amp * 1.4 * mv; legR.knee.rotation.x = Math.max(0, c) * amp * 1.4 * mv;
       armL.sh.rotation.x = -s * amp * 0.75 * mv; armR.sh.rotation.x = s * amp * 0.75 * mv;
@@ -300,14 +300,14 @@
     unmount();
     if (!root || !supported()) return false;
     const THREE = window.THREE, N = P.length;
-    const WORLD_W = FIRST_X + N * SPACING + 8;
+    const COURT_CX = FIRST_X + N * SPACING + 11, WORLD_W = COURT_CX + 12.5;
     const stationsX = [OFFICE_X, ...P.map((_, i) => FIRST_X + i * SPACING)];
 
     root.innerHTML = `
       <div class="g-hud">
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
-        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> 離開房間</p>
+        <p class="g-keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 走路　<kbd>Shift</kbd> 或雙擊方向鍵 跑　拖曳 / <kbd>Q</kbd><kbd>E</kbd> 轉 360°　滾輪：門口上滑進門・下滑出門，其他縮放　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> / <kbd>⌫</kbd> 離開房間</p>
       </div>
       <div class="g-camctl">
         <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
@@ -389,7 +389,7 @@
     }), aniso);
     const decalMat = (map, op = 1) => new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false, opacity: op, polygonOffset: true, polygonOffsetFactor: -2 });
     const intro = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 2.69), decalMat(introTex));
-    intro.rotation.x = -Math.PI / 2; intro.position.set(4.7, 0.012, -0.9); scene.add(intro);
+    intro.rotation.x = -Math.PI / 2; intro.position.set(5.9, 0.012, -0.9); scene.add(intro);
 
     const poolTex = mkTex(THREE, poolCanvas(), aniso);
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
@@ -400,7 +400,7 @@
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
     let courtUpdate = null;
     {
-      const CX = 16.7, CZ = 0, CL = 13.41, CW = 6.1, PADL = 15.4, PADW = 7.4, K = 2.13;
+      const CX = COURT_CX, CZ = 0, CL = 13.41, CW = 6.1, PADL = 15.4, PADW = 7.4, K = 2.13;
       const ppm = 90, cw = Math.round(PADL * ppm), ch = Math.round(PADW * ppm), cvs = mkCanvas(cw, ch), g = cvs.getContext("2d"), rnd = mulberry(77);
       const X = (m) => (m + PADL / 2) * ppm, Z = (m) => (m + PADW / 2) * ppm;
       g.fillStyle = "#2f6b5a"; g.fillRect(0, 0, cw, ch);
@@ -429,6 +429,27 @@
       const tape = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, CW + 0.7), new THREE.MeshStandardMaterial({ color: 0xf4f4ee, roughness: 0.6 })); tape.position.set(CX, 0.93, CZ); tape.castShadow = true; scene.add(tape);
       for (const z of [-(CW / 2 + 0.35), CW / 2 + 0.35]) { const po = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.0, 10), new THREE.MeshStandardMaterial({ color: 0x2a2a31, metalness: 0.6, roughness: 0.4 })); po.position.set(CX, 0.5, z); po.castShadow = true; scene.add(po); }
       addObs(CX, CZ, 0.1, CW / 2 + 0.5);
+      addObs(CX, CZ, CL / 2 + 0.1, CW / 2 + 0.1);   // 球場本身不能走進去，沿邊走
+
+      // ===== 室內球場：四面圍起來（下半白牆、上半玻璃），西側留門，球不會跑出去 =====
+      const HX = 8.6, HZ = 4.6, DZ = 1.2;
+      const hallWall = new THREE.MeshStandardMaterial({ color: 0xf1ede4, roughness: 0.92, envMapIntensity: 0.4 });
+      const wb = (w, h, d, x, y, z, mat, cast = true) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; scene.add(m); return m; };
+      for (const z of [-HZ, HZ]) { wb(2 * HX, 1.3, 0.14, CX, 0.65, z, hallWall); wb(2 * HX, 2.3, 0.05, CX, 2.45, z, glass, false); addObs(CX, z, HX, 0.1); }
+      wb(0.14, 1.3, 2 * HZ, CX + HX, 0.65, 0, hallWall); wb(0.05, 2.3, 2 * HZ, CX + HX, 2.45, 0, glass, false); addObs(CX + HX, 0, 0.1, HZ);
+      for (const sg of [-1, 1]) {
+        const len = HZ - DZ, zc = sg * (DZ + len / 2);
+        wb(0.14, 1.3, len, CX - HX, 0.65, zc, hallWall); wb(0.05, 2.3, len, CX - HX, 2.45, zc, glass, false); addObs(CX - HX, zc, 0.1, len / 2);
+        wb(0.14, 3.6, 0.14, CX - HX, 1.8, sg * DZ, brass);
+      }
+      for (const [x, z] of [[CX - HX, -HZ], [CX - HX, HZ], [CX + HX, -HZ], [CX + HX, HZ]]) wb(0.16, 3.65, 0.16, x, 1.82, z, brass);
+      const hl = new THREE.PointLight(0xfff2dc, 0.9, 20); hl.position.set(CX, 3.4, 0); scene.add(hl);
+      // 門口地面標示
+      const signTex = mkTex(THREE, decalCanvas(1024, 300, (c, w, h) => {
+        c.textAlign = "center"; c.fillStyle = "#3a2e24"; c.font = "800 110px Georgia, serif"; if ("letterSpacing" in c) c.letterSpacing = "8px"; c.fillText("PICKLEBALL", w / 2, 125);
+        c.fillStyle = "rgba(58,46,36,.75)"; c.font = "500 50px 'Noto Sans TC', sans-serif"; if ("letterSpacing" in c) c.letterSpacing = "8px"; c.fillText("室內匹克球場 →", w / 2, 220);
+      }), aniso);
+      const sg2 = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.29), decalMat(signTex, 0.95)); sg2.rotation.x = -Math.PI / 2; sg2.position.set(CX - HX - 3.2, 0.013, 0); scene.add(sg2);
 
       // 四位球員：左隊 2 人、右隊 2 人
       const kit = [
@@ -647,6 +668,7 @@
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     const camT = new THREE.Vector3(pos.x, 0.9, pos.z), bias = { x: 0, z: 0 };
+    const lastTap = {}, dbl = { l: 0, r: 0, u: 0, d: 0 };
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
@@ -701,7 +723,7 @@
     const onKey = (e) => {
       if (typing(e) || e.metaKey || e.ctrlKey || e.altKey || blocked()) return;
       const down = e.type === "keydown"; run = e.shiftKey;
-      const set = (k) => { keys[k] = down ? 1 : 0; if (down) cancelRoute(); e.preventDefault(); };
+      const set = (k) => { keys[k] = down ? 1 : 0; if (down) { cancelRoute(); if (!e.repeat) { const n = performance.now(); if (n - (lastTap[k] || 0) < 320) dbl[k] = 1; lastTap[k] = n; } } else dbl[k] = 0; e.preventDefault(); };
       switch (e.code) {
         case "ArrowLeft": case "KeyA": set("l"); break;
         case "ArrowRight": case "KeyD": set("r"); break;
@@ -713,7 +735,7 @@
         case "Enter": case "Space": if (down && !e.repeat) { e.preventDefault(); activate(); } break;
       }
     };
-    const clearKeys = () => { keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }; run = false; touch = { l: 0, r: 0, u: 0, d: 0 }; rotHold = 0; };
+    const clearKeys = () => { dbl.l = dbl.r = dbl.u = dbl.d = 0; keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }; run = false; touch = { l: 0, r: 0, u: 0, d: 0 }; rotHold = 0; };
     window.addEventListener("keydown", onKey); window.addEventListener("keyup", onKey); window.addEventListener("blur", clearKeys);
 
     // 滑鼠 / 觸控：拖曳轉 360°、滾輪（門口：上滑進門 / 下滑出門；其他：縮放）、點擊
@@ -763,7 +785,7 @@
     const holdBtn = (el, on, off) => { el.addEventListener("pointerdown", (e) => { e.preventDefault(); on(); }); for (const t of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(t, off); };
     holdBtn(root.querySelector("#gRotL"), () => (rotHold = -1), () => (rotHold = 0));
     holdBtn(root.querySelector("#gRotR"), () => (rotHold = 1), () => (rotHold = 0));
-    root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { touch[b.dataset.d] = 1; cancelRoute(); }, () => { touch[b.dataset.d] = 0; }));
+    root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { const k = b.dataset.d, n = performance.now(); touch[k] = 1; cancelRoute(); if (n - (lastTap["t" + k] || 0) < 320) dbl[k] = 1; lastTap["t" + k] = n; }, () => { touch[b.dataset.d] = 0; dbl[b.dataset.d] = 0; }));
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
     root.querySelector("#gReset").addEventListener("click", () => { yaw = view0.yaw; elev = view0.elev; dist = view0.dist; stopAuto(); });
 
@@ -813,7 +835,7 @@
         if (ix || iz) {
           cancelRoute();
           fwd.set(-Math.sin(yaw), 0, -Math.cos(yaw)); rgt.set(Math.cos(yaw), 0, -Math.sin(yaw));
-          mx = rgt.x * ix + fwd.x * iz; mz = rgt.z * ix + fwd.z * iz; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; sp = run ? RUN : WALK;
+          mx = rgt.x * ix + fwd.x * iz; mz = rgt.z * ix + fwd.z * iz; const l = Math.hypot(mx, mz) || 1; mx /= l; mz /= l; sp = (run || dbl.l || dbl.r || dbl.u || dbl.d) ? RUN : WALK;
         } else if (route.length) {
           const t = route[0], dx = t.x - pos.x, dz = t.z - pos.z, d = Math.hypot(dx, dz);
           if (d < 0.2) { route.shift(); if (!route.length) { const f = afterFn; afterFn = null; if (f) f(); } }
@@ -894,7 +916,7 @@
     if (window.Director) window.Director.mount(ctx);
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
     return true;
