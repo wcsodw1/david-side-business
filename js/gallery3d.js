@@ -15,7 +15,7 @@
   const HOUSE = { x0: 0.5, x1: 7.4, z0: -5.0, z1: 0.4 };
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
-  const DECK_HD = 8.1;                                  // 露台半寬（z）
+  const DECK_HD = 8.6;                                  // 露台半寬（z）
   const ROOM_HW = 3.2, ROOM_Z0 = -6.2, ROOM_Z1 = -1.6, DOOR_DX = 1.2; // 房間：半寬、後牆、前牆、門中心偏移
   const PL_W = 2.5, PL_D = 1.25, PL_Z = -0.25, PL_DX = -1.7;         // 門外展台
   const TILT = 35 * Math.PI / 180;
@@ -140,6 +140,23 @@
   }
 
   /* ---------- 展台上的畫（含專案資訊） ---------- */
+  /* ---------- 後牆外側的招牌：從走道哪一側看都知道這間是什麼 ---------- */
+  function signCanvas(p, i, H) {
+    const W = 1380, Hh = 318, c = mkCanvas(W, Hh), g = c.getContext("2d"), h = H.hue(i), stt = H.st(p), pr = p.progress ?? 0;
+    g.fillStyle = "#1d1a2b"; g.fillRect(0, 0, W, Hh); g.fillStyle = `hsl(${h} 75% 55%)`; g.fillRect(0, 0, 36, Hh);
+    g.strokeStyle = "#c9a35c"; g.lineWidth = 8; g.strokeRect(10, 10, W - 20, Hh - 20);
+    let fs = 124; g.fillStyle = "#f6f1ff"; do { g.font = `800 ${fs}px Georgia, 'Noto Serif TC', serif`; fs -= 6; } while (g.measureText(p.name).width > W - 500 && fs > 50);
+    g.textAlign = "left"; g.fillText(p.name, 80, 150);
+    g.fillStyle = "rgba(246,241,255,.78)"; g.font = "500 44px 'Noto Sans TC', -apple-system, sans-serif"; g.fillText(`${p.zh || ""}　·　${p.category || ""}`, 80, 212);
+    const lu = (p.updates || [])[0]; g.fillStyle = "rgba(255,226,170,.9)"; g.font = "500 34px 'Noto Sans TC', sans-serif";
+    let t = lu ? `最新：${lu.title}` : "尚無進度紀錄"; while (g.measureText(t).width > W - 520 && t.length > 4) t = t.slice(0, -2) + "…"; g.fillText(t, 80, 262);
+    g.textAlign = "right"; g.fillStyle = stt.color; g.beginPath(); g.arc(W - 330, 78, 14, 0, 7); g.fill();
+    g.fillStyle = "#f6f1ff"; g.font = "600 40px 'Noto Sans TC', sans-serif"; g.fillText(stt.label, W - 60, 92);
+    g.font = "800 128px Georgia, serif"; g.fillStyle = `hsl(${h} 80% 68%)`; g.fillText(pr + "%", W - 60, 214);
+    g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(W - 420, 244, 360, 14); g.fillStyle = `hsl(${h} 80% 62%)`; g.fillRect(W - 420, 244, 360 * pr / 100, 14);
+    return c;
+  }
+
   function panelCanvas(p, i, H) {
     const W = 1320, Hh = 870, artH = 600, c = mkCanvas(W, Hh), g = c.getContext("2d"), rnd = mulberry(i * 13 + 4);
     const h = H.hue(i), h2 = (h + 40) % 360;
@@ -158,6 +175,13 @@
     g.fillStyle = `hsl(${h} 52% 17%)`; g.beginPath(); g.moveTo(0, artH * .85);
     g.bezierCurveTo(W * .26, artH * .72, W * .55, artH * .94, W, artH * .8); g.lineTo(W, artH); g.lineTo(0, artH); g.fill();
     for (let k = 0; k < 2600; k++) { g.fillStyle = `rgba(${rnd() < .5 ? "255,255,255" : "0,0,0"},${rnd() * 0.05})`; g.fillRect(rnd() * W, rnd() * artH, 2, 2); }
+    { // 作品底部的資訊條：最新進度、目標、里程碑（門前就能看到裡面的細節）
+      g.fillStyle = "rgba(10,8,24,.66)"; g.fillRect(0, artH - 104, W, 104); g.textAlign = "left";
+      const fit2 = (t, mw) => { t = String(t || ""); while (g.measureText(t).width > mw && t.length > 3) t = t.slice(0, -2) + "…"; return t; };
+      const lu = (p.updates || [])[0], ms = p.milestones || [], done = ms.filter((m) => m.done).length;
+      g.fillStyle = "#fff"; g.font = "600 34px 'Noto Sans TC', -apple-system, sans-serif"; g.fillText(fit2(lu ? `最新：${lu.title}（${String(lu.date).replace(/-/g, ".")}）` : "尚無進度紀錄", W - 80), 40, artH - 58);
+      g.fillStyle = "#ffd9a0"; g.font = "500 30px 'Noto Sans TC', sans-serif"; g.fillText(fit2(`${p.goal ? "目標：" + p.goal : "尚未設定目標"}　·　里程碑 ${done}/${ms.length}`, W - 80), 40, artH - 18);
+    }
     // 說明欄
     g.fillStyle = "#f4ecd8"; g.fillRect(0, artH, W, Hh - artH);
     g.fillStyle = "#8a7a98"; g.font = "600 30px -apple-system, 'Noto Sans TC', sans-serif";
@@ -325,6 +349,7 @@
 
     root.innerHTML = `
       <div class="g-hud">
+        <div class="g-info" id="gInfo" hidden></div>
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
         <p class="g-keys">按住左鍵：往指標方向走　單擊：走過去　右鍵拖曳：轉視角　<kbd>WASD</kbd> 走路　雙擊方向鍵：跑　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> 退出</p>
@@ -416,7 +441,7 @@
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd });
-    const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [];
+    const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
 
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
     let courtUpdate = null; const chairSpots = [], roofs = [], shells = [];
@@ -1026,7 +1051,7 @@
       addRoof(new THREE.BoxGeometry(MW + 0.8, 0.35, DECK_HD * 2 + 0.8), roofM, ENTRY + MW / 2, 4.38, 0, "M");
       for (let x = ENTRY + 9; x < WORLD_W - 6; x += 12) addRoof(new THREE.BoxGeometry(6, 0.08, 3), skyM, x, 4.6, 0, "M");
       const ext = new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.92 });
-      shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, -DECK_HD, ext, "M", 0.27); shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, DECK_HD, ext, "M", 0.27); shellBox(0.3, 4.2, DECK_HD * 2, WORLD_W, 0, ext, "M", 0.27);
+      shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, -DECK_HD, ext, "M", 0.1); shellBox(MW, 4.2, 0.3, ENTRY + MW / 2, DECK_HD, ext, "M", 0.1); shellBox(0.3, 4.2, DECK_HD * 2, WORLD_W, 0, ext, "M", 0.1);
       // 家：斜屋頂
       const roofH = new THREE.MeshStandardMaterial({ color: 0xa3492f, roughness: 0.8, transparent: true });
       const hw = (Z1 - Z0 + 0.8) / 2, rshape = new THREE.Shape(); rshape.moveTo(-hw, 0); rshape.lineTo(hw, 0); rshape.lineTo(0, 1.7); rshape.closePath();
@@ -1111,6 +1136,9 @@
       for (const x of [-ROOM_HW, ROOM_HW]) { mark(add(new THREE.BoxGeometry(0.12, 1.5, zl), plaster, x, 0.75, zc), "room"); add(new THREE.BoxGeometry(0.04, 1.1, zl), glass, x, 2.05, zc, false); }
       if (rw.rot) { mark(add(new THREE.BoxGeometry(ROOM_HW * 2, 1.5, 0.12), plaster, 0, 0.75, ROOM_Z0), "room"); add(new THREE.BoxGeometry(ROOM_HW * 2, 1.1, 0.04), glass, 0, 2.05, ROOM_Z0, false); }   // 南排：後牆矮，從走道方向看得到室內
       else mark(add(new THREE.BoxGeometry(ROOM_HW * 2, 2.6, 0.12), plaster, 0, 1.3, ROOM_Z0), "room");
+      { const stex = mkTex(THREE, signCanvas(p, i, H), aniso); roomSignTex[s] = stex;
+        const sg3 = new THREE.Mesh(new THREE.PlaneGeometry(5.9, 1.36), new THREE.MeshStandardMaterial({ map: stex, roughness: 0.6, emissive: 0xffffff, emissiveMap: stex, emissiveIntensity: 0.4 }));
+        sg3.position.set(0, 0.76, ROOM_Z0 - 0.07); sg3.rotation.y = Math.PI; g.add(sg3); }                   // 後牆外側（朝外）的招牌
       for (const [cx, w] of [[(-ROOM_HW + DOOR_DX - 0.8) / 2, DOOR_DX - 0.8 + ROOM_HW], [(DOOR_DX + 0.8 + ROOM_HW) / 2, ROOM_HW - DOOR_DX - 0.8]]) {
         mark(add(new THREE.BoxGeometry(w, 1.5, 0.12), plaster, cx, 0.75, ROOM_Z1), "room"); add(new THREE.BoxGeometry(w, 1.1, 0.04), glass, cx, 2.05, ROOM_Z1, false);
       }
@@ -1124,7 +1152,7 @@
       // 門前地面名牌
       const nameTex = mkTex(THREE, decalCanvas(1024, 300, (c, w, h) => {
         c.textAlign = "center"; c.fillStyle = "#3a2e24"; let fs = 110; do { c.font = `800 ${fs}px Georgia, 'Noto Serif TC', serif`; fs -= 6; } while (c.measureText(p.name).width > w - 80 && fs > 40);
-        c.fillText(p.name, w / 2, 130); c.fillStyle = "rgba(58,46,36,.72)"; c.font = "500 46px 'Noto Sans TC', sans-serif"; c.fillText("▲ 滾輪上滑 / Enter 進門", w / 2, 230);
+        c.fillText(p.name, w / 2, 130); c.fillStyle = "rgba(58,46,36,.72)"; c.font = "500 46px 'Noto Sans TC', sans-serif"; c.fillText("▲ 站在門前 1 秒 / Enter 進門", w / 2, 230);
       }), aniso);
       const nm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.94), decalMat(nameTex, 0.95)); nm.rotation.x = -Math.PI / 2; { const w = toW(DOOR_DX, 0.7); nm.position.set(w.x, 0.013, w.z); } scene.add(nm);
       // 室內：燈、盆栽
@@ -1147,7 +1175,7 @@
       const bframe = new THREE.Mesh(new THREE.BoxGeometry(bw + 0.1, bh + 0.1, 0.05), alu); bframe.castShadow = true; bpg.add(bframe);
       const bart = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); bart.position.z = 0.03; bpg.add(bart);
       const tray = new THREE.Mesh(new THREE.BoxGeometry(bw * 0.9, 0.04, 0.08), alu); tray.position.set(0, hF - 0.02, 0.06); bg.add(tray);
-      const bart2 = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); bart2.position.z = -0.03; bart2.rotation.y = Math.PI; bpg.add(bart2);   // 背面也貼上，南排從走道另一側看也讀得到
+      const bart2 = new THREE.Mesh(new THREE.PlaneGeometry(bw, bh), bmat); bart2.position.z = -0.03; bart2.rotation.set(0, Math.PI, Math.PI); bpg.add(bart2);   // 背面也貼上，南排從走道另一側看也讀得到
       mark(bart, "board"); mark(bart2, "board"); mark(bframe, "board"); boardMats[s] = bmat; boardTex[s] = btex;
       obsL(-0.4, ROOM_Z0 + 1.55 - bd / 2, bw / 2 + 0.12, bd / 2 + 0.1);
 
@@ -1230,6 +1258,20 @@
 
     if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
+    const infoEl = root.querySelector("#gInfo"); let lastInfoS = 0, dwell = 0, dwellS = -1;
+    const dOut = (s) => (s === sPB ? { x: COURT_CX - HX - 1.0, z: 0 } : L2W(s, DOOR_DX, ROOM_Z1 + 0.9));          // 門外一步的位置
+    const renderInfo = (s) => {                                                                                       // 門前介紹卡：直接看到裡面的細節
+      if (!s) { infoEl.hidden = true; return; }
+      const p = P[s - 1], stt = H.st(p), ms = p.milestones || [], done = ms.filter((m) => m.done).length, lu = (p.updates || [])[0];
+      infoEl.innerHTML = `<div class="gi-head"><b>${H.esc(p.name)}</b><span>${H.esc(p.zh || "")} · ${H.esc(p.category || "")}</span></div>
+        <div class="gi-meta"><i style="background:${stt.color}"></i>${H.esc(stt.label)} · ${p.progress ?? 0}%${ms.length ? ` · 里程碑 ${done}/${ms.length}` : ""}</div>
+        <div class="gi-bar"><i style="width:${p.progress ?? 0}%"></i></div>
+        <p class="gi-goal">${p.goal ? "目標：" + H.esc(p.goal) : "尚未設定目標（走進去問館長或在白板設定）"}</p>
+        ${ms.length ? `<ul class="gi-ms">${ms.slice(0, 4).map((m) => `<li class="${m.done ? "done" : ""}">${H.esc(m.text)}</li>`).join("")}</ul>` : ""}
+        <p class="gi-last">${lu ? `最新：${H.esc(lu.title)} <small>${H.esc(String(lu.date).replace(/-/g, "."))}</small>` : "尚無進度紀錄"}</p>
+        <div class="gi-dwell"><span>停在門前 1 秒自動進入　或按 Enter</span><div><i id="gDwellBar"></i></div></div>`;
+      infoEl.hidden = false;
+    };
     const goRoute = (pts, fn) => { route = pts.slice(); afterFn = fn || null; };
     const cancelRoute = () => { route = []; afterFn = null; };
 
@@ -1246,8 +1288,9 @@
       const p = P[s - 1]; if (!p) return;
       if (boardTex[s]) { boardTex[s].image = boardCanvas(p, s - 1, H); boardTex[s].needsUpdate = true; }
       if (panelTex[s]) { panelTex[s].image = panelCanvas(p, s - 1, H); panelTex[s].needsUpdate = true; }
+      if (roomSignTex[s]) { roomSignTex[s].image = signCanvas(p, s - 1, H); roomSignTex[s].needsUpdate = true; }
     };
-    const onStore = () => { for (let s = 1; s <= N; s++) refreshBoardTexture(s); if (!ov.hidden && boardS > 0) renderBoard(); };
+    const onStore = () => { for (let s = 1; s <= N; s++) refreshBoardTexture(s); if (!ov.hidden && boardS > 0) renderBoard(); if (lastInfoS > 0) renderInfo(lastInfoS); };
     window.addEventListener("store:change", onStore);
 
     /* ----- 進門 / 出門 / 前往 ----- */
@@ -1508,6 +1551,7 @@
       const cn = chairNearIdx(), pk = sitting >= 0 ? "sit" : cn >= 0 ? "chair" + cn : (inside >= 0 ? "in" : "out") + nn;
       if (pk !== promptKey) {
         promptKey = pk; nearIdx = inside >= 0 ? -1 : nn; dots.forEach((d, i) => d.classList.toggle("on", i === nn));
+        lastInfoS = (inside < 0 && sitting < 0 && cn < 0 && nn > 0) ? nn : 0; renderInfo(lastInfoS);
         if (sitting >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 起身　或按任意方向鍵"; prompt.hidden = false; }
         else if (cn >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 坐下休息"; prompt.hidden = false; }
         else if (nn >= 0) {
@@ -1517,6 +1561,12 @@
               : `<kbd>Enter</kbd> 進入 <b>${H.esc(P[nn - 1].name)}</b> 房間 · ${P[nn - 1].progress ?? 0}% <small>　滾輪上滑</small>`;
           prompt.hidden = false;
         } else prompt.hidden = true;
+      }
+      { // 貼住門前 1 秒 → 自動進入
+        let dS = -1;
+        if (inside < 0 && sitting < 0 && ov.hidden && !blocked() && !route.length) for (let s = 1; s <= N; s++) { const d = dOut(s); if (Math.hypot(pos.x - d.x, pos.z - d.z) < 1.25) { dS = s; break; } }
+        if (dS > 0 && speedNow < 1.2) { if (dwellS !== dS) { dwellS = dS; dwell = 0; } dwell += dt; if (dwell >= 1.0) { dwell = 0; dwellS = -1; enterRoom(dS); } } else { dwell = 0; dwellS = -1; }
+        const bar = infoEl.hidden ? null : infoEl.querySelector("#gDwellBar"); if (bar) bar.style.width = Math.min(100, dwell * 100) + "%";
       }
       for (let s = 1; s <= N; s++) {
         const on = s === nn, k = Math.min(1, dt * 6);

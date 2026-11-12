@@ -557,3 +557,16 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .g-start { position: absolute; top: 76px; left: 50%; transform: translateX(-50%); z-index: 9; padding: 10px 20px; border-radius: 99px; background: rgba(20,17,43,.72); border: 1px solid var(--line); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font-size: 14px; color: var(--ink); pointer-events: none; animation: startHint 14s ease forwards; max-width: 92vw; text-align: center; }
 .g-start b { color: var(--accent); }
 @keyframes startHint { 0%, 82% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+
+/* 門前介紹卡 */
+.g-info { position: absolute; left: 50%; bottom: 128px; transform: translateX(-50%); z-index: 9; width: min(440px, 92vw); padding: 14px 16px 12px; border-radius: 16px; background: rgba(20,17,43,.8); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); color: var(--ink); animation: pop .25s ease; pointer-events: none; }
+.g-info[hidden] { display: none; }
+.gi-head b { font-size: 19px; } .gi-head span { margin-left: 8px; color: var(--ink-2); font-size: 13px; }
+.gi-meta { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-top: 6px; } .gi-meta i { width: 8px; height: 8px; border-radius: 50%; }
+.gi-bar { height: 5px; background: rgba(255,255,255,.14); border-radius: 5px; margin: 8px 0; overflow: hidden; } .gi-bar i { display: block; height: 100%; background: #ffb28a; }
+.gi-goal { font-size: 13px; color: var(--ink-2); }
+.gi-ms { list-style: none; margin-top: 6px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; font-size: 12.5px; }
+.gi-ms li::before { content: "○ "; color: var(--ink-3); } .gi-ms li.done { color: var(--ink-3); text-decoration: line-through; } .gi-ms li.done::before { content: "✓ "; color: #6be3a4; }
+.gi-last { margin-top: 8px; font-size: 13px; } .gi-last small { color: var(--ink-3); }
+.gi-dwell { margin-top: 10px; font-size: 12px; color: var(--ink-2); } .gi-dwell div { height: 4px; border-radius: 4px; background: rgba(255,255,255,.14); margin-top: 5px; overflow: hidden; } .gi-dwell i { display: block; height: 100%; width: 0; background: #ffe9b8; }
+@media (max-width: 960px) { .g-info { bottom: auto; top: 116px; } }
