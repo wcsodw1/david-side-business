@@ -66,7 +66,7 @@
     unmount();
     const { THREE, scene, P, pos, anchor, hooks, camera } = ctx;
     const N = P.length; if (!N) return;
-    if (window.PERSONA === "aeris") return;                 // 玩家本人就是 Aeris，不再放 NPC 版
+    if (window.PERSONA === "aeris" || window.Presence) return;   // 不再有 NPC 版：Aeris 是真人（上線）或在家睡覺（沒上線），由 presence.js 負責
     const { av, back, skirt, strands } = makeLook(THREE, ctx.buildAvatar);
     const PI = Math.PI;
     scene.add(av.root);

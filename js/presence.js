@@ -55,7 +55,7 @@
     const adopt = (c) => {
       if (Pz.conn && Pz.conn.open) { c.close(); return; }
       Pz.conn = c;
-      c.on("open", () => { Pz.status = "對方在線"; setPill(`${NAME[other].replace(" ✿", "")} 在線上`); setTimeout(() => setPill(""), 3500); if (window.Aeris && Pz.me === "david") window.Aeris.hide(true); });
+      c.on("open", () => { Pz.status = "對方在線"; setPill(`${NAME[other].replace(" ✿", "")} 在線上`); setTimeout(() => setPill(""), 3500); });
       c.on("data", (d) => { if (d && typeof d.x === "number") { if (!rm.on) { rm.x = d.x; rm.z = d.z; } Object.assign(rm, d, { t: performance.now(), on: true }); Pz.remote = { x: +d.x.toFixed(1), z: +d.z.toFixed(1) }; } });
       c.on("close", () => { if (Pz && Pz.conn === c) drop(); });
       c.on("error", () => { if (Pz && Pz.conn === c) drop(); });
@@ -66,8 +66,7 @@
       const peer = new window.Peer(ID[me], { debug: 0 }); Pz.peer = peer;
       peer.on("open", () => {
         // NPC 版 Aeris：有連上同步服務，就由「真人上線 / 睡覺」取代；沒連上則保留 NPC
-        if (me === "david" && window.Aeris) window.Aeris.hide(true);
-        setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線";
+                setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線";
         if (me === "david") {
           const tryConn = () => { if (!Pz || (Pz.conn && Pz.conn.open)) return; adopt(peer.connect(ID[other], { reliable: false })); };
           tryConn(); Pz.timers.push(setInterval(tryConn, 4000));
@@ -75,11 +74,11 @@
       });
       peer.on("connection", adopt);
       peer.on("error", (e) => {
-        if (e.type === "unavailable-id") { Pz.status = "此身分已在別處登入"; setPill("此身分已在別的視窗登入，這裡只能單機走走"); if (me === "david" && window.Aeris) window.Aeris.hide(false); }
+        if (e.type === "unavailable-id") { Pz.status = "此身分已在別處登入"; setPill("此身分已在別的視窗登入，這裡只能單機走走"); }
         else if (e.type === "peer-unavailable") { /* 對方沒上線：正常 */ }
       });
       peer.on("disconnected", () => { try { peer.reconnect(); } catch (_) {} });
-    }).catch(() => { Pz.status = "同步服務連不上"; if (me === "david" && window.Aeris) window.Aeris.hide(false); });
+    }).catch(() => { Pz.status = "同步服務連不上"; });
 
     const hook = (dt, t) => {
       // 送出自己的狀態
@@ -114,7 +113,7 @@
     Pz.timers.forEach(clearInterval);
     try { Pz.conn && Pz.conn.close(); Pz.peer && Pz.peer.destroy(); } catch (_) {}
     for (const o of [Pz.W, Pz.tag, Pz.zzz]) o.parent && o.parent.remove(o);
-    Pz.pill.remove(); if (Pz.me === "david" && window.Aeris) window.Aeris.hide(false);
+    Pz.pill.remove();
     Pz = null;
   }
 })();
