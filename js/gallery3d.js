@@ -880,7 +880,11 @@
           if (type === "serve") { const rc = inCourt(opp, p.court); recv = rc; z1 = p.aimZ != null ? p.aimZ : Math.sign(courtZ(opp, rc.court)) * rr(0.7, 2.5); }
           else { z1 = p.aimZ != null ? p.aimZ : clamp(rr(-2.4, 2.4), -CW / 2 + 0.35, CW / 2 - 0.35); recv = pickPlayer(opp, z1); }
           p.aimZ = null;
-          const dep1 = rr(S.depth[0], S.depth[1]);
+          let dep1 = rr(S.depth[0], S.depth[1]);
+          if (type === "out") {                                                          // 出界球：飛到場地外，但還在球館裡（長球飛過底線 / 大角度飛到側邊）
+            const east = wx(opp, 1) > CX, dmax = east ? 9.4 : 10.6;
+            if (Math.random() < 0.4) { z1 = (Math.random() < 0.5 ? -1 : 1) * rr(3.5, 4.5); dep1 = rr(2.5, 6.2); } else dep1 = rr(7.3, dmax);
+          }
           const lastY = S.bounce ? 0.04 : 0.95;
           const bx = wx(opp, dep1);
           const dh = Math.hypot(bx - sx, z1 - sz), vh = rr(...SPD[type]);
@@ -892,7 +896,20 @@
           segs.push({ x0: sx, y0, z0: sz, x1: bx, y1: lastY, z1, dur: d1, apex });
           const cd = Math.max(2.3, dep1 + 0.5);
           contact = { x: S.bounce ? wx(opp, cd) : bx, z: z1 };
-          if (type === "smash" || type === "out") { segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 1.6, y1: 0.05, z1: z1 + rr(-0.6, 0.6), dur: 0.5, apex: 0.9 }); end = true; winner = type === "smash" ? team : opp; }
+          if (type === "smash") { segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 1.6, y1: 0.05, z1: z1 + rr(-0.6, 0.6), dur: 0.5, apex: 0.9 }); end = true; winner = team; }
+          else if (type === "out") {                                                     // 落地後在館內滾動，碰到牆 / 圍欄會反彈，最後停在某處等人去撿
+            let x = bx, z = z1, hv = Math.max(0.1, vh), ux = (bx - sx) / Math.max(0.01, dh), uz = (z1 - sz) / Math.max(0.01, dh), v = hv * 0.55, n = 0;
+            const XA = CX - HX + 0.35, XB = CX + 10.3 - 0.5, ZA = -HZ + 0.3, ZB = HZ - 0.3;
+            while (v > 0.5 && n < 3) {
+              const stop = v * v / 4.4, dX = ux > 1e-6 ? (XB - x) / ux : ux < -1e-6 ? (XA - x) / ux : 1e9, dZ = uz > 1e-6 ? (ZB - z) / uz : uz < -1e-6 ? (ZA - z) / uz : 1e9, dw = Math.min(dX, dZ);
+              if (dw >= stop) { segs.push({ x0: x, y0: 0.04, z0: z, x1: x + ux * stop, y1: 0.04, z1: z + uz * stop, dur: Math.max(0.2, v / 2.2), apex: n === 0 ? 0.2 : 0.05 }); break; }
+              const t = Math.max(0.12, (v - Math.sqrt(Math.max(0, v * v - 2.2 * dw))) / 1.1), xw = x + ux * dw, zw = z + uz * dw;
+              segs.push({ x0: x, y0: 0.04, z0: z, x1: xw, y1: 0.04, z1: zw, dur: t, apex: n === 0 ? 0.2 : 0.05 });
+              v = Math.max(0, v - 2.2 * t) * 0.55; if (dX <= dZ) ux = -ux; else uz = -uz; x = xw; z = zw; n++;
+            }
+            if (segs.length < 2) segs.push({ x0: bx, y0: 0.04, z0: z1, x1: bx + dir * 0.8, y1: 0.04, z1, dur: 0.4, apex: 0.12 });
+            end = true; winner = opp;
+          }
           else if (S.bounce) { const d2 = clamp(Math.abs(contact.x - bx) / (vh * 0.45), 0.25, 0.55); segs.push({ x0: bx, y0: 0.04, z0: z1, x1: contact.x, y1: 0.85, z1, dur: d2, apex: 9.8 * d2 * d2 / 8 }); }
         }
         flight = { segs, i: 0, t: 0, recv, recvType: end ? null : chooseType(rally.k), recvHand: Math.random() < 0.68 ? "F" : "B", end, winner, swung: false, contact: contact || { x: CX, z: 0 }, hitDir: dir };
@@ -921,7 +938,7 @@
         drawBoard();
       };
       const startPoint = () => {
-        rally = { k: 0, max: Math.round(rr(5, 14)), finish: (() => { const r = Math.random(); return r < 0.6 ? "smash" : r < 0.8 ? "net" : "out"; })() };
+        rally = { k: 0, max: Math.round(rr(5, 14)), finish: (() => { const r = Math.random(); return r < 0.5 ? "smash" : r < 0.7 ? "net" : "out"; })() };
         depthT[0] = depthT[1] = 3.6; lastType = ""; setupPoint();
         { const sv = players[serverP], rc0 = inCourt(1 - srv, sv.court); sv.aimZ = Math.sign(courtZ(1 - srv, rc0.court)) * rr(0.7, 2.5); } startSwing(players[serverP], "serve", "F"); serveT = SWDUR.serve * 0.5; mode = "serve"; drawBoard();
       };
@@ -933,6 +950,7 @@
       startGame(); setupPoint(); drawBoard();
       let courtTS = 1;
       api.setCourtSpeed = (n) => { courtTS = n; };
+      api.forceFinish = (t) => { if (rally) { rally.finish = t; rally.max = rally.k + 1; return true; } return false; };   // 測試用：讓這一分用指定方式結束（out / net / smash）
       api.forceRest = (sec = 10) => { flight = null; rally = null; mode = "rest"; restT = sec; };   // 測試用：立刻讓四位球員去休息區
       api.courtState = () => ({ mode, score: score.slice(), games: games.slice(), srv, serverNo, gameNo, half: half.slice(), k: rally ? rally.k : -1, fetch: fetch ? fetch.stage : null, ball: [+ball.position.x.toFixed(1), +ball.position.y.toFixed(2), +ball.position.z.toFixed(1)], players: players.map((p) => ({ x: +p.x.toFixed(1), z: +p.z.toFixed(1), court: p.court, role: p.role, sit: +p.sitA.toFixed(2), hand: p.hand, wr: p.av.armR.wr.rotation.toArray().slice(0, 3).map((v) => +v.toFixed(2)) })) });
       players.forEach((p) => { const d = { server: 6.9, sPartner: 6.4, receiver: 6.7, rPartner: 2.7 }[p.role]; p.x = wx(p.team, d); p.z = courtZ(p.team, p.court); p.face = half[p.team] === 0 ? Math.PI / 2 : -Math.PI / 2; });
