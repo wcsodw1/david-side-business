@@ -1,5 +1,5 @@
 /* ============================================================
-   自動門：走近會自動往兩側滑開，離開幾秒後自動關上（附「叮」與滑動聲）。
+   自動門：走近會自動往兩側滑開，離開幾秒後自動關上（靜音）。
    · 美術館大門（入口）
    · 匹克球館大門
    · 家門（一樓）
@@ -44,7 +44,7 @@
     D.hook = (dt) => {
       for (const d of doors) {
         const near = Math.hypot(pos.x - d.x, pos.z - d.zc) < d.r && (d.name !== "家門" || ctx.getLevel() === 0);
-        if (near !== d.was) { d.was = near; if (window.Music) window.Music.sfx("door", d.x, d.zc, 1); }
+        if (near !== d.was) d.was = near;   // 自動門：靜音（沒有聲音）
         d.open = lerp(d.open, near ? 1 : 0, Math.min(1, dt * (near ? 3.2 : 1.8)));      // 開得快、關得慢
         const half = d.w / 4 + 0.02, slide = d.w / 2 * d.open * 0.96;
         for (const p of d.panels) p.g.position.set(d.x, 0, d.zc + p.s * (half + slide));

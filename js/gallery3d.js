@@ -1183,7 +1183,7 @@
         addObs(STAIR.x1 + 0.1, zc, 0.1, (STAIR.z1 - STAIR.z0) / 2 + 0.1, 1); }                                                  // 二樓：樓梯口東端是空的
 
       /* ---- 一樓家具（lv 0）---- */
-      const bedF = M(0x7a5a3c, 0.6), white = M(0xf4f1ea, 0.9), teal = M(0x2f8f8a, 0.9), terra = M(0xb4643a, 0.9), navy = M(0x2b3a5a, 0.9), pinkB = M(0xe9a9c0, 0.9), dk = M(0x1a1630, 0.4, 0.4);
+      const bedF = M(0x7a5a3c, 0.6), white = M(0xf4f1ea, 0.9), teal = M(0x2f8f8a, 0.9), terra = M(0xb4643a, 0.9), navy = M(0x2b3a5a, 0.9), pinkB = M(0x1b2f5e, 0.9), dk = M(0x1a1630, 0.4, 0.4);
       const bed = (bx, bz, wd, blanket, y0 = 0, lv = 0) => {            // 大床：床尾朝東、床頭靠西
         mk(new THREE.BoxGeometry(2.1, 0.3, wd), bedF, bx, y0 + 0.15, bz); mk(new THREE.BoxGeometry(2.0, 0.2, wd - 0.1), white, bx + 0.03, y0 + 0.4, bz); mk(new THREE.BoxGeometry(1.2, 0.07, wd - 0.08), blanket, bx + 0.45, y0 + 0.53, bz);
         mk(new THREE.BoxGeometry(0.1, 0.9, wd + 0.1), bedF, bx - 0.97, y0 + 0.45, bz);
@@ -1207,6 +1207,20 @@
       mk(new THREE.BoxGeometry(0.9, 2.0, 0.75), M(0xdadde4, 0.4, 0.5), 11.45, 1.0, Z1 - 0.5); addObs(11.45, Z1 - 0.5, 0.5, 0.42, 0);   // 冰箱
       mk(new THREE.CylinderGeometry(0.75, 0.75, 0.06, 20), wood, 8.6, 0.74, -3.5); mk(new THREE.CylinderGeometry(0.07, 0.1, 0.72, 10), dk, 8.6, 0.37, -3.5); addObs(8.6, -3.5, 0.8, 0.8, 0, 0.8);
       for (const [dx, dz] of [[-1.0, 0], [1.0, 0], [0, -1.0], [0, 1.0]]) { mk(new THREE.BoxGeometry(0.42, 0.06, 0.42), terra, 8.6 + dx, 0.46, -3.5 + dz); mk(new THREE.BoxGeometry(0.4, 0.36, 0.05), terra, 8.6 + dx * 1.12, 0.66, -3.5 + dz * 1.12); }
+      // 餐桌上的早餐（桌面高度 0.77）：兩人份的盤子、荷包蛋、吐司、杯子，中間是麵包籃、果汁、水果
+      { const T = 8.6, TZ = -3.5, ty = 0.78, pl = M(0xfafafa, 0.35), egg = M(0xfffdf5, 0.5), yolk = M(0xffc21a, 0.4), toast = M(0xd9a35a, 0.8), cup = M(0xf1ece2, 0.4), coffee = M(0x4a2a18, 0.3), juice = new THREE.MeshStandardMaterial({ color: 0xff9a2e, roughness: 0.15, transparent: true, opacity: 0.85 }), bread = M(0xc98d4a, 0.85), glassM = new THREE.MeshStandardMaterial({ color: 0xcfe8ff, roughness: 0.05, transparent: true, opacity: 0.4 });
+        for (const [sx, sz, face] of [[-0.5, 0, 0], [0.5, 0, Math.PI]]) {   // 兩個座位：西側、東側
+          const bx = T + sx * 1.0, bz = TZ + sz;
+          mk(new THREE.CylinderGeometry(0.17, 0.15, 0.02, 20), pl, bx, ty + 0.01, bz, false);
+          const e = mk(new THREE.SphereGeometry(0.07, 14, 8), egg, bx - 0.03, ty + 0.03, bz + 0.03, false); e.scale.set(1.3, 0.28, 1.1); mk(new THREE.SphereGeometry(0.03, 10, 8), yolk, bx - 0.03, ty + 0.045, bz + 0.03, false);
+          for (const dz of [-0.07, 0.01]) { const t = mk(new THREE.BoxGeometry(0.1, 0.018, 0.1), toast, bx + 0.07, ty + 0.03 + (dz > 0 ? 0.018 : 0), bz + dz - 0.05, false); t.rotation.y = 0.2; }
+          mk(new THREE.CylinderGeometry(0.045, 0.035, 0.07, 14), cup, bx + (sx < 0 ? -0.1 : 0.1), ty + 0.04, bz - 0.26, false); mk(new THREE.CylinderGeometry(0.037, 0.037, 0.004, 14), coffee, bx + (sx < 0 ? -0.1 : 0.1), ty + 0.072, bz - 0.26, false);   // 咖啡
+          mk(new THREE.BoxGeometry(0.012, 0.004, 0.16), M(0xcfd3dc, 0.3, 0.8), bx + (sx < 0 ? -0.2 : 0.2), ty + 0.005, bz, false);   // 刀叉
+        }
+        const bk = mk(new THREE.CylinderGeometry(0.15, 0.11, 0.07, 18), M(0x9a6b3c, 0.8), T, ty + 0.035, TZ + 0.2, false); for (let k = 0; k < 4; k++) { const b = mk(new THREE.SphereGeometry(0.06, 10, 8), bread, T - 0.07 + (k % 2) * 0.12, ty + 0.1, TZ + 0.15 + (k > 1 ? 0.1 : 0), false); b.scale.set(1.4, 0.8, 0.9); }   // 麵包籃
+        mk(new THREE.CylinderGeometry(0.055, 0.055, 0.2, 14), juice, T + 0.18, ty + 0.1, TZ - 0.12, false); mk(new THREE.CylinderGeometry(0.058, 0.058, 0.01, 14), glassM, T + 0.18, ty + 0.205, TZ - 0.12, false);                // 果汁
+        mk(new THREE.CylinderGeometry(0.13, 0.08, 0.06, 18), M(0xe8e4dc, 0.5), T - 0.1, ty + 0.03, TZ - 0.18, false); for (const [dx, dz, c] of [[-0.05, -0.02, 0xe23b3b], [0.04, 0.0, 0xff8a1f], [0.0, 0.05, 0xe23b3b], [-0.03, 0.06, 0xf2c14e]]) mk(new THREE.SphereGeometry(0.045, 10, 8), M(c, 0.55), T - 0.1 + dx, ty + 0.085, TZ - 0.18 + dz, false);   // 水果盤
+      }
       mk(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X0 + 0.35, 1.1, -1.4); addObs(X0 + 0.35, -1.4, 0.25, 0.95, 0);                          // 書櫃（西牆；樓梯入口前面要留空）
       for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) mk(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.13 + r * 0.2) % 1, 0.32, 0.42), 0.8), X0 + 0.6, 0.4 + r * 0.5, -2.1 + k * 0.3, false);
       mk(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 6.9, 0.8, -4.9); mk(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.6 }), 6.9, 1.7, -4.9, false);
@@ -1226,8 +1240,8 @@
       U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 7.6, 0.8, -1.0); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 7.6, 1.7, -1.0, false);
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
 
-      // 二樓牆上的海報：卜燦烈（程式畫的舞台風格海報，用剪影與燈光，不是本人照片；之後可以換成你自己的圖）
-      { const NAME = "卜燦烈";
+      // 二樓牆上的海報：朴燦烈 Park Chanyeol（程式畫的舞台風格海報，用剪影與燈光，不是本人照片；之後可以換成你自己的圖）
+      { const NAME = "朴燦烈";
         const drawPoster = (g, w, h, st) => {
           const lg = (c0, c1, c2) => { const q = g.createLinearGradient(0, 0, w, h); q.addColorStop(0, c0); q.addColorStop(0.55, c1); q.addColorStop(1, c2); g.fillStyle = q; g.fillRect(0, 0, w, h); };
           const stars = (n, a) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(255,255,255,${a * Math.random()})`; g.fillRect(Math.random() * w, Math.random() * h * 0.7, 2, 2); } };
@@ -1240,9 +1254,10 @@
           else if (st === 3) { lg("#031b34", "#0a4a73", "#02101f"); stars(200, 1); for (let i = 0; i < 5; i++) { g.strokeStyle = `rgba(120,220,255,${0.15 + i * 0.07})`; g.lineWidth = 3; g.beginPath(); g.arc(w / 2, h * 0.62, 70 + i * 55, Math.PI, 0); g.stroke(); } person(w / 2, h * 0.9, 1.2, "#020a14"); g.fillStyle = "#cfefff"; g.font = "800 118px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.15); }
           else { lg("#22082f", "#7a1f6a", "#ff7a59"); for (let i = 0; i < 14; i++) { g.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.12})`; g.beginPath(); g.moveTo(w / 2, h * 0.6); const a = i * 0.45; g.lineTo(w / 2 + Math.cos(a) * 700, h * 0.6 + Math.sin(a) * 700); g.lineTo(w / 2 + Math.cos(a + 0.18) * 700, h * 0.6 + Math.sin(a + 0.18) * 700); g.fill(); } person(w / 2, h * 0.92, 1.3, "#12041a"); g.fillStyle = "#ffe9a8"; g.font = "800 122px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.16); g.fillStyle = "#fff"; g.font = "600 30px 'Noto Sans TC', sans-serif"; g.fillText("L I V E", w / 2, h * 0.225); }
         };
+        const drawPoster2 = (g, w, h, st) => { drawPoster(g, w, h, st); g.textAlign = "center"; g.fillStyle = st === 2 ? "rgba(0,0,0,.55)" : "rgba(255,255,255,.7)"; g.font = "600 30px 'Noto Sans TC', sans-serif"; g.fillText("P A R K   C H A N Y E O L", w / 2, h - 28); };
         const frameM = M(0xf4f1ea, 0.5);
         const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
-          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster(g, w, h, st)), aniso);
+          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso);
           const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
           const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
           const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.18 })); pl.position.z = 0.02; grp.add(pl);
@@ -1521,7 +1536,8 @@
     };
 
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
-    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 6.2, z: -2.6 };
+    const bedZ = window.PERSONA === "aeris" ? -3.6 : -6.85;                          // 開場：躺在自己的床上（ARIES 在二樓、David 在一樓）
+    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 2.55, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -1531,7 +1547,10 @@
     let lastDown = 0;
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
-    let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
+    let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;
+    let wake = spawn < 0 ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
+    if (wake && window.PERSONA === "aeris") { lvl = 1; py = UY; lvlS = 1; }
+    camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
     const tickHooks = [];
@@ -1686,6 +1705,8 @@
     const marker = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 32), new THREE.MeshBasicMaterial({ color: 0xffe9b8, transparent: true, opacity: 0.9, depthTest: false })); marker.rotation.x = -Math.PI / 2; marker.renderOrder = 12; marker.visible = false; scene.add(marker);
     let mouse = null, markT = 0;
     cv.addEventListener("contextmenu", (e) => e.preventDefault());
+    const skipWake = () => { if (wake) { wake.skipped = true; wake.t = Math.max(wake.t, 99); } };
+    window.addEventListener("keydown", skipWake); cv.addEventListener("pointerdown", skipWake);   // 開場動畫：任何按鍵或點擊都跳過
     cv.addEventListener("pointerdown", (e) => {
       cv.setPointerCapture(e.pointerId); ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY }); stopAuto();
       if (ptrs.size === 2) { mouse = null; pinch = 0; return; }
@@ -1837,7 +1858,7 @@
       else if (markT > 0) { markT -= dt; if (markT <= 0 && !route.length) marker.visible = false; }
       if (sitting >= 0 && (ix || iz || steering)) stand();
       const steps = Math.max(1, Math.ceil(dt / 0.04)), sdt = dt / steps;
-      for (let k = 0; k < (sitting >= 0 ? 0 : steps); k++) {
+      for (let k = 0; k < (sitting >= 0 || wake ? 0 : steps); k++) {
         let mx = 0, mz = 0; sp = 0;
         if (ix || iz) {
           cancelRoute();
@@ -1879,6 +1900,18 @@
       if (inWater !== wasSwim) { wasSwim = inWater; if (window.Music) window.Music.sfx("splash", pos.x, pos.z, 1.3); }
       swimT = lerp(swimT, inWater ? 1 : 0, Math.min(1, dt * 5));
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
+      if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
+        wake.t += dt; const T = wake.t, bx = 2.55, by = (window.PERSONA === "aeris" ? UY : 0) + 0.74, ex = 3.5, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        if (T < 2.2) { av.root.position.set(bx, by, bedZ); av.root.quaternion.copy(lieQ); av.torso.rotation.x = Math.sin(T * 1.6) * 0.02; }              // 躺著（輕輕呼吸）
+        else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), bedZ); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
+        else {
+          const skipped = wake.skipped; wake = null; pos.x = ex; pos.z = bedZ; facing = Math.PI / 2; camT.x = pos.x; camT.z = pos.z;
+          const way = window.PERSONA === "aeris"
+            ? [{ x: 5.4, z: -6.1 }, { x: 5.4, z: -7.05 }, { x: 6.6, z: -7.05 }, { x: 10.8, z: -7.05 }, { x: 11.5, z: -6.2 }, { x: 9.9, z: -4.7 }, { x: 7.5, z: -3.5 }]   // 下樓：樓梯口 → 一樓 → 餐桌
+            : [{ x: 6.0, z: -5.0 }, { x: 7.5, z: -3.5 }];
+          if (!skipped) goRoute(way);
+        }
+      }
       if (jy > 0.04 && swimT < 0.3) { av.legL.hip.rotation.x = -0.75; av.legL.knee.rotation.x = 1.15; av.legR.hip.rotation.x = -0.25; av.legR.knee.rotation.x = 0.55; av.armL.sh.rotation.x = -2.5; av.armR.sh.rotation.x = -2.5; av.armL.el.rotation.x = -0.25; av.armR.el.rotation.x = -0.25; }   // 跳起來的姿勢
       sitA = lerp(sitA, sitting >= 0 ? 1 : 0, Math.min(1, dt * 6)); if (sitA > 0.01) seatPose(av, sitA);
 
@@ -1964,7 +1997,7 @@
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
       
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
