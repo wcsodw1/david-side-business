@@ -365,12 +365,13 @@
         <div class="g-info" id="gInfo" hidden></div>
         <button class="g-prompt" id="gPrompt" type="button" hidden></button>
         <div class="g-map" id="gMap" aria-label="快速跳轉"><button type="button" class="office" data-s="0" title="辦公室" aria-label="辦公室"></button>${P.map((p, i) => `<button type="button" data-s="${i + 1}" title="${H.esc(p.name)}" aria-label="${H.esc(p.name)}"></button>`).join("")}</div>
-        <p class="g-keys">按住左鍵：往指標方向走　單擊：走過去　右鍵拖曳：轉視角　<kbd>WASD</kbd> 走路　雙擊方向鍵：跑　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> 退出</p>
+        <p class="g-keys">按住左鍵：往指標方向走　單擊：走過去　右鍵拖曳：轉視角　<kbd>WASD</kbd> 走路　<kbd>Space</kbd> 跳　雙擊方向鍵：跑　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> 退出</p>
       </div>
       <div class="g-camctl">
         <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
         <button type="button" id="gRotR" aria-label="向右轉視角">⟳</button>
         <button type="button" id="gAuto" aria-pressed="false">360° 環繞</button>
+        <button type="button" class="g-jump" id="gJump" aria-label="跳">⤒</button>
         <button type="button" id="gReset">重置視角</button>
       </div>
       <div class="g-board-ov" id="gBoardOv" hidden></div>
@@ -448,8 +449,8 @@
       for (let x = 0; x <= WORLD_W; x += 3) { const po = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.1, 0.07), brass); po.position.set(x, 0.55, z); scene.add(po); }
     }
     { const gl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, DECK_HD * 2), glass); gl.position.set(WORLD_W - 0.05, 0.55, 0); scene.add(gl);
-      for (const [z0, z1] of [[-DECK_HD, 3.4], [6.2, DECK_HD]]) { const g2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, z1 - z0), glass); g2.position.set(0.05, 0.55, (z0 + z1) / 2); scene.add(g2); }   // 西側欄杆：南邊留一個缺口通往船尾甲板
-      const rl = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 3.4 + DECK_HD), brass); rl.position.set(0.05, 1.08, (-DECK_HD + 3.4) / 2); scene.add(rl); const rl2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, DECK_HD - 6.2), brass); rl2.position.set(0.05, 1.08, (6.2 + DECK_HD) / 2); scene.add(rl2); }
+      for (const [z0, z1] of [[-DECK_HD, 1.4], [6.6, DECK_HD]]) { const g2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, z1 - z0), glass); g2.position.set(0.05, 0.55, (z0 + z1) / 2); scene.add(g2); }   // 西側欄杆：南邊留一個缺口通往船尾甲板
+      const rl = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 1.4 + DECK_HD), brass); rl.position.set(0.05, 1.08, (-DECK_HD + 1.4) / 2); scene.add(rl); const rl2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, DECK_HD - 6.6), brass); rl2.position.set(0.05, 1.08, (6.6 + DECK_HD) / 2); scene.add(rl2); }
     // 路燈
     const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 0.1 });   // 路燈燈泡（亮度由 lights.js 依天色控制）
     const lampPts = [];                                                                                                // 所有路燈位置，給 lights.js 做光暈與近燈照明
@@ -479,8 +480,8 @@
     const poolTex = mkTex(THREE, poolCanvas(), aniso);
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
-    const addObs = (cx, cz, hw, hd, lv) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv });
-    addObs(0.05, (-DECK_HD + 3.4) / 2, 0.05, (3.4 + DECK_HD) / 2); addObs(0.05, (6.2 + DECK_HD) / 2, 0.05, (DECK_HD - 6.2) / 2);   // 西側欄杆（缺口 z 3.4–6.2 通往船尾）
+    const addObs = (cx, cz, hw, hd, lv, h) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv, h });   // h：障礙物高度（≤0.85 的可以用 Space 跳過去）
+    addObs(0.05, (-DECK_HD + 1.4) / 2, 0.05, (1.4 + DECK_HD) / 2); addObs(0.05, (6.6 + DECK_HD) / 2, 0.05, (DECK_HD - 6.6) / 2);   // 西側欄杆（缺口 z 1.4–6.6 通往船尾）
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
 
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
@@ -1187,24 +1188,24 @@
         mk(new THREE.BoxGeometry(2.1, 0.3, wd), bedF, bx, y0 + 0.15, bz); mk(new THREE.BoxGeometry(2.0, 0.2, wd - 0.1), white, bx + 0.03, y0 + 0.4, bz); mk(new THREE.BoxGeometry(1.2, 0.07, wd - 0.08), blanket, bx + 0.45, y0 + 0.53, bz);
         mk(new THREE.BoxGeometry(0.1, 0.9, wd + 0.1), bedF, bx - 0.97, y0 + 0.45, bz);
         const np = wd > 1.8 ? 2 : 1; for (let k = 0; k < np; k++) mk(new THREE.BoxGeometry(0.42, 0.12, 0.6), white, bx - 0.75, y0 + 0.56, bz + (np === 2 ? (k ? 0.45 : -0.45) : 0));
-        addObs(bx, bz, 1.15, wd / 2 + 0.05, lv);
+        addObs(bx, bz, 1.15, wd / 2 + 0.05, lv, 0.65);
       };
       bed(1.75, -6.85, 1.98, teal);                                                                                                   // David 的 king size 大床（北西角）
       mk(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, -5.65); mk(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.5 }), 0.95, 0.62, -5.65, false);   // 床頭櫃 + 小燈
       mk(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.4, 1.1, Z0 + 0.4); addObs(4.4, Z0 + 0.4, 0.75, 0.32, 0);                       // 衣櫃
       mk(new THREE.BoxGeometry(1.5, 0.05, 0.75), wood, 2.2, 0.75, -3.9); for (const dx of [-0.65, 0.65]) for (const dz of [-0.3, 0.3]) mk(new THREE.BoxGeometry(0.05, 0.75, 0.05), dk, 2.2 + dx, 0.37, -3.9 + dz);
       mk(new THREE.BoxGeometry(0.5, 0.03, 0.34), M(0x2a2550, 0.4, 0.4), 2.2, 0.79, -3.8); { const lt = mk(new THREE.BoxGeometry(0.46, 0.3, 0.02), M(0x101018, 0.4, 0.3), 2.2, 0.95, -4.15); lt.rotation.x = -0.2; }
-      mk(new THREE.BoxGeometry(0.5, 0.06, 0.5), terra, 2.2, 0.48, -3.15); mk(new THREE.BoxGeometry(0.5, 0.5, 0.06), terra, 2.2, 0.72, -2.9); addObs(2.2, -3.6, 0.85, 0.75, 0);   // 書桌 + 椅
+      mk(new THREE.BoxGeometry(0.5, 0.06, 0.5), terra, 2.2, 0.48, -3.15); mk(new THREE.BoxGeometry(0.5, 0.5, 0.06), terra, 2.2, 0.72, -2.9); addObs(2.2, -3.6, 0.85, 0.75, 0, 0.8);   // 書桌 + 椅
       // 客廳：沙發、茶几、地毯、電視櫃
-      mk(new THREE.BoxGeometry(2.4, 0.45, 0.95), terra, 4.6, 0.22, -0.65); mk(new THREE.BoxGeometry(2.4, 0.5, 0.2), terra, 4.6, 0.62, -0.28); for (const sx of [-1.2, 1.2]) mk(new THREE.BoxGeometry(0.16, 0.3, 0.95), terra, 4.6 + sx, 0.4, -0.65); addObs(4.6, -0.6, 1.3, 0.55, 0);
-      mk(new THREE.BoxGeometry(1.1, 0.04, 0.6), wood, 4.6, 0.38, -2.0); for (const [dx, dz] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) mk(new THREE.BoxGeometry(0.04, 0.36, 0.04), dk, 4.6 + dx, 0.18, -2.0 + dz); addObs(4.6, -2.0, 0.6, 0.35, 0);
+      mk(new THREE.BoxGeometry(2.4, 0.45, 0.95), terra, 4.6, 0.22, -0.65); mk(new THREE.BoxGeometry(2.4, 0.5, 0.2), terra, 4.6, 0.62, -0.28); for (const sx of [-1.2, 1.2]) mk(new THREE.BoxGeometry(0.16, 0.3, 0.95), terra, 4.6 + sx, 0.4, -0.65); addObs(4.6, -0.6, 1.3, 0.55, 0, 0.85);
+      mk(new THREE.BoxGeometry(1.1, 0.04, 0.6), wood, 4.6, 0.38, -2.0); for (const [dx, dz] of [[-0.5, -0.25], [0.5, -0.25], [-0.5, 0.25], [0.5, 0.25]]) mk(new THREE.BoxGeometry(0.04, 0.36, 0.04), dk, 4.6 + dx, 0.18, -2.0 + dz); addObs(4.6, -2.0, 0.6, 0.35, 0, 0.45);
       const rugC = mkCanvas(256, 192), rg = rugC.getContext("2d"); rg.fillStyle = "#2b3a5a"; rg.fillRect(0, 0, 256, 192); rg.strokeStyle = "#e8c98a"; rg.lineWidth = 6; rg.strokeRect(14, 14, 228, 164); rg.lineWidth = 2; rg.strokeRect(30, 30, 196, 132);
       const rug = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.7), new THREE.MeshStandardMaterial({ map: mkTex(THREE, rugC, aniso), roughness: 1 })); rug.rotation.x = -PI / 2; rug.position.set(5.6, 0.022, -2.3); rug.receiveShadow = true; scene.add(rug);
-      mk(new THREE.BoxGeometry(1.8, 0.5, 0.45), bedF, 7.7, 0.25, -0.6); { const tv = mk(new THREE.BoxGeometry(1.5, 0.85, 0.06), M(0x0c0c12, 0.2, 0.4), 7.7, 1.2, -0.55); } addObs(7.7, -0.6, 0.95, 0.3, 0);
+      mk(new THREE.BoxGeometry(1.8, 0.5, 0.45), bedF, 7.7, 0.25, -0.6); { const tv = mk(new THREE.BoxGeometry(1.5, 0.85, 0.06), M(0x0c0c12, 0.2, 0.4), 7.7, 1.2, -0.55); } addObs(7.7, -0.6, 0.95, 0.3, 0, 0.5);
       // 廚房 / 餐廳（東半邊）
       mk(new THREE.BoxGeometry(3.0, 0.9, 0.7), M(0xe8e4dc, 0.6), 10.1, 0.45, Z1 - 0.45); mk(new THREE.BoxGeometry(3.1, 0.05, 0.75), M(0x5a5560, 0.4, 0.2), 10.1, 0.93, Z1 - 0.45); addObs(10.1, Z1 - 0.45, 1.55, 0.4, 0);
       mk(new THREE.BoxGeometry(0.9, 2.0, 0.75), M(0xdadde4, 0.4, 0.5), 11.45, 1.0, Z1 - 0.5); addObs(11.45, Z1 - 0.5, 0.5, 0.42, 0);   // 冰箱
-      mk(new THREE.CylinderGeometry(0.75, 0.75, 0.06, 20), wood, 8.6, 0.74, -3.5); mk(new THREE.CylinderGeometry(0.07, 0.1, 0.72, 10), dk, 8.6, 0.37, -3.5); addObs(8.6, -3.5, 0.8, 0.8, 0);
+      mk(new THREE.CylinderGeometry(0.75, 0.75, 0.06, 20), wood, 8.6, 0.74, -3.5); mk(new THREE.CylinderGeometry(0.07, 0.1, 0.72, 10), dk, 8.6, 0.37, -3.5); addObs(8.6, -3.5, 0.8, 0.8, 0, 0.8);
       for (const [dx, dz] of [[-1.0, 0], [1.0, 0], [0, -1.0], [0, 1.0]]) { mk(new THREE.BoxGeometry(0.42, 0.06, 0.42), terra, 8.6 + dx, 0.46, -3.5 + dz); mk(new THREE.BoxGeometry(0.4, 0.36, 0.05), terra, 8.6 + dx * 1.12, 0.66, -3.5 + dz * 1.12); }
       mk(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X0 + 0.35, 1.1, -1.4); addObs(X0 + 0.35, -1.4, 0.25, 0.95, 0);                          // 書櫃（西牆；樓梯入口前面要留空）
       for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) mk(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.13 + r * 0.2) % 1, 0.32, 0.42), 0.8), X0 + 0.6, 0.4 + r * 0.5, -2.1 + k * 0.3, false);
@@ -1217,7 +1218,7 @@
       U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, -2.55); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffd8e8, emissive: 0xffa8c8, emissiveIntensity: 1.5 }), 0.95, 0.62, -2.55, false);
       U(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.6, 1.1, Z0 + 0.4); addObs(4.6, Z0 + 0.4, 0.75, 0.32, 1);                         // 衣櫃
       U(new THREE.BoxGeometry(1.5, 0.05, 0.6), M(0xf4e4ec, 0.5), 3.4, 0.74, -0.9); for (const dx of [-0.65, 0.65]) U(new THREE.BoxGeometry(0.05, 0.74, 0.05), dk, 3.4 + dx, 0.37, -0.9);
-      U(new THREE.BoxGeometry(0.9, 1.1, 0.04), M(0xdfe8f4, 0.1, 0.8), 3.4, 1.35, -1.15); U(new THREE.BoxGeometry(0.4, 0.4, 0.4), M(0xe9a9c0, 0.8), 3.4, 0.22, -0.4); addObs(3.4, -0.75, 0.85, 0.45, 1);     // 梳妝台 + 鏡子 + 小凳
+      U(new THREE.BoxGeometry(0.9, 1.1, 0.04), M(0xdfe8f4, 0.1, 0.8), 3.4, 1.35, -1.15); U(new THREE.BoxGeometry(0.4, 0.4, 0.4), M(0xe9a9c0, 0.8), 3.4, 0.22, -0.4); addObs(3.4, -0.75, 0.85, 0.45, 1, 0.8);     // 梳妝台 + 鏡子 + 小凳
       U(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X1 - 0.3, 1.1, -3.4); addObs(X1 - 0.3, -3.4, 0.25, 0.95, 1);                       // 書櫃
       for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) U(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.11 + r * 0.17 + 0.5) % 1, 0.35, 0.5), 0.8), X1 - 0.55, 0.4 + r * 0.5, -4.1 + k * 0.3, false);
       const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(6.3, UY + 0.012, -2.4); rugP.receiveShadow = true; scene.add(rugP);
@@ -1234,15 +1235,15 @@
       const tree = (x, z, s = 1) => {
         mk(new THREE.CylinderGeometry(0.12 * s, 0.17 * s, 1.6 * s, 8), M(0x6a4a2e, 0.9), x, 0.8 * s, z);
         [[0, 2.1, 0, 0.95, 0x2f6a34], [0.45, 1.7, 0.25, 0.7, 0x3a7a3c], [-0.4, 1.8, -0.2, 0.75, 0x285c2e]].forEach(([dx, dy, dz, r, col]) => mk(new THREE.SphereGeometry(r * s, 14, 10), M(col, 0.9), x + dx * s, dy * s, z + dz * s));
-        addObs(x, z, 0.4 * s, 0.4 * s);
+        addObs(x, z, 0.2 * s, 0.2 * s);
       };
-      [[13.6, 3.0, 1.1], [16.4, -5.2, 1.0], [24.2, 3.6, 1.15], [24.6, -6.6, 0.95], [3.6, 3.6, 1.2], [8.4, 3.4, 1.0], [10.2, 5.8, 0.9], [22.0, 6.4, 1.0], [13.0, -6.6, 1.1], [19.8, -2.2, 0.0001]].forEach(([x, z, s]) => { if (s > 0.01) tree(x, z, s); });
+      [[13.6, 3.0, 1.1], [16.4, -5.2, 1.0], [24.2, 3.6, 1.15], [24.6, -6.6, 0.95], [3.6, 7.0, 1.2], [8.4, 3.4, 1.0], [10.2, 5.8, 0.9], [22.0, 6.4, 1.0], [13.0, -6.6, 1.1], [19.8, -2.2, 0.0001]].forEach(([x, z, s]) => { if (s > 0.01) tree(x, z, s); });
       const bush = (x, z, r = 0.45) => { mk(new THREE.SphereGeometry(r, 12, 9), M(0x2f6a34, 0.95), x, r * 0.8, z); };
       [[12.6, 1.4], [14.8, 1.8], [17.6, 2.2], [23.0, 1.2], [6.0, 2.6], [5.0, 3.2], [12.6, 6.8], [25.0, -3.0], [14.2, -7.2]].forEach(([x, z]) => bush(x, z, 0.5));
       const flowers = (x, z, w, d) => { mk(new THREE.BoxGeometry(w, 0.18, d), M(0x4a3524, 1), x, 0.09, z, false); for (let k = 0; k < 18; k++) mk(new THREE.SphereGeometry(0.075, 8, 6), M([0xff6b8a, 0xffd25a, 0xfff1f4, 0xb48cff][k % 4], 0.7), x + (rnd() - 0.5) * (w - 0.2), 0.26, z + (rnd() - 0.5) * (d - 0.2), false); };
       flowers(15.6, 1.9, 2.6, 0.9); flowers(21.0, 1.9, 2.4, 0.9); flowers(7.0, 5.0, 2.8, 1.0);
-      const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35); };
-      bench(14.4, 0.6); bench(20.0, -0.6); bench(14.0, 6.6); bench(23.4, 1.6);
+      const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35, undefined, 0.55); };
+      bench(14.4, 1.2); bench(20.8, 2.8); bench(14.0, 6.9); bench(23.4, 2.2);
       for (const [x, z] of [[13.0, -0.9], [16.8, -2.0], [18.6, 1.0], [22.2, -1.2], [24.6, 0.9], [15.2, -4.4], [19.8, -4.8], [20.6, -2.6], [19.0, 2.4], [14.6, 3.2], [24.4, 5.0], [17.0, 7.0], [9.0, 2.2], [6.0, 5.0]]) {   // 公園路燈（晚上自動亮、走近更亮）
         mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); mk(new THREE.SphereGeometry(0.15, 14, 10), lampMat, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z });
       }
@@ -1251,10 +1252,10 @@
         const pw = new THREE.Mesh(new THREE.CircleGeometry(pr, 40), new THREE.MeshStandardMaterial({ color: 0x3a8fc0, roughness: 0.05, metalness: 0.3, emissive: 0x12405e, emissiveIntensity: 0.35 })); pw.rotation.x = -PI / 2; pw.scale.set(1, ps, 1); pw.position.set(PX, 0.03, PZ); scene.add(pw);
         for (let k = 0; k < 26; k++) { const a = (k / 26) * PI * 2, r2 = mk(new THREE.SphereGeometry(0.3 + rnd() * 0.12, 8, 6), M([0x8e887a, 0x9a9486, 0x827c70][k % 3], 0.9), PX + Math.cos(a) * (pr + 0.1), 0.15, PZ + Math.sin(a) * (pr * ps + 0.1)); r2.scale.set(1.1, 0.6, 1.1); }
         for (const [dx, dz] of [[-0.8, 0.2], [0.9, -0.4], [0.2, 0.9], [-1.4, -0.7]]) { const lp = mk(new THREE.CylinderGeometry(0.32, 0.32, 0.02, 14), M(0x3f9a5a, 0.8), PX + dx, 0.045, PZ + dz, false); mk(new THREE.SphereGeometry(0.08, 8, 6), M(0xffa8c8, 0.6), PX + dx + 0.05, 0.08, PZ + dz, false); }
-        addObs(PX, PZ, pr * 0.92, pr * ps * 0.92); }
+        addObs(PX, PZ, pr * 0.92, pr * ps * 0.92, undefined, 0.3); }
       // 噴水廣場
       { const FX = 22.6, FZ = -4.6; mk(new THREE.CylinderGeometry(2.3, 2.3, 0.03, 32), M(0xb9b4a8, 0.9), FX, 0.04, FZ, false); mk(new THREE.CylinderGeometry(1.3, 1.4, 0.45, 24), M(0xcfcac0, 0.8), FX, 0.225, FZ); mk(new THREE.CylinderGeometry(1.15, 1.15, 0.05, 24), new THREE.MeshStandardMaterial({ color: 0x4aa0d0, roughness: 0.05, metalness: 0.3 }), FX, 0.44, FZ, false);
-        mk(new THREE.CylinderGeometry(0.12, 0.18, 1.1, 10), M(0xcfcac0, 0.8), FX, 0.95, FZ); mk(new THREE.CylinderGeometry(0.55, 0.3, 0.12, 16), M(0xcfcac0, 0.8), FX, 1.5, FZ); mk(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, emissive: 0x6ab0e0, emissiveIntensity: 0.8, transparent: true, opacity: 0.8 }), FX, 1.7, FZ, false); addObs(FX, FZ, 1.4, 1.4); }
+        mk(new THREE.CylinderGeometry(0.12, 0.18, 1.1, 10), M(0xcfcac0, 0.8), FX, 0.95, FZ); mk(new THREE.CylinderGeometry(0.55, 0.3, 0.12, 16), M(0xcfcac0, 0.8), FX, 1.5, FZ); mk(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, emissive: 0x6ab0e0, emissiveIntensity: 0.8, transparent: true, opacity: 0.8 }), FX, 1.7, FZ, false); addObs(FX, FZ, 1.4, 1.4, undefined, 0.5); }
       // 兒童遊戲區：鞦韆、溜滑梯、沙坑
       { const sx = 15.2, sz = -6.2, fr = M(0xd8352a, 0.5, 0.2);
         for (const dx of [-1.6, 1.6]) { const a = mk(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8), fr, sx + dx, 1.25, sz - 0.5); a.rotation.x = 0.2; const b = mk(new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8), fr, sx + dx, 1.25, sz + 0.5); b.rotation.x = -0.2; }
@@ -1262,15 +1263,20 @@
         for (const dx of [-0.6, 0.6]) { mk(new THREE.BoxGeometry(0.02, 1.9, 0.02), dk, sx + dx - 0.2, 1.5, sz, false); mk(new THREE.BoxGeometry(0.02, 1.9, 0.02), dk, sx + dx + 0.2, 1.5, sz, false); mk(new THREE.BoxGeometry(0.5, 0.05, 0.28), M(0x2f6a9a, 0.7), sx + dx, 0.52, sz); }
         addObs(sx, sz, 1.8, 0.7);
         const lx = 18.4; mk(new THREE.BoxGeometry(0.1, 1.9, 0.9), M(0x2f6a9a, 0.5), lx - 0.7, 0.95, sz - 0.3); mk(new THREE.BoxGeometry(0.6, 0.08, 0.7), M(0xf2c14e, 0.6), lx - 0.7, 1.9, sz - 0.3); const sl = mk(new THREE.BoxGeometry(2.4, 0.06, 0.7), M(0xe8b030, 0.35, 0.3), lx + 0.45, 1.0, sz - 0.3); sl.rotation.z = -0.62; addObs(lx + 0.2, sz - 0.3, 1.5, 0.55);
-        const sd = mk(new THREE.BoxGeometry(2.4, 0.2, 2.0), M(0xe8d29a, 1), 21.0, 0.1, -6.2); addObs(21.0, -6.2, 1.25, 1.05); for (const [dx, dz] of [[-1.25, 0], [1.25, 0]]) mk(new THREE.BoxGeometry(0.1, 0.3, 2.1), wood, 21.0 + dx, 0.15, -6.2 + dz * 0); }
+        const sd = mk(new THREE.BoxGeometry(2.4, 0.2, 2.0), M(0xe8d29a, 1), 21.0, 0.1, -6.2); addObs(21.0, -6.2, 1.25, 1.05, undefined, 0.25); for (const [dx, dz] of [[-1.25, 0], [1.25, 0]]) mk(new THREE.BoxGeometry(0.1, 0.3, 2.1), wood, 21.0 + dx, 0.15, -6.2 + dz * 0); }
       // 涼亭
       { const GX = 14.0, GZ = 4.6; for (const [dx, dz] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) mk(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8), M(0xf2ece0, 0.6), GX + dx, 1.25, GZ + dz);
-        mk(new THREE.CylinderGeometry(0.1, 2.2, 0.9, 6), M(0xa3492f, 0.7), GX, 2.95, GZ); mk(new THREE.BoxGeometry(2.8, 0.1, 2.8), M(0xd9c9a8, 0.8), GX, 0.06, GZ, false); addObs(GX, GZ, 1.5, 1.5); }
+        mk(new THREE.CylinderGeometry(0.1, 2.2, 0.9, 6), M(0xa3492f, 0.7), GX, 2.95, GZ); mk(new THREE.BoxGeometry(2.8, 0.1, 2.8), M(0xd9c9a8, 0.8), GX, 0.06, GZ, false); addObs(GX, GZ, 1.2, 1.2); }
       // 路標：往美術館
       const signT = mkTex(THREE, decalCanvas(512, 160, (c, w, h) => { c.fillStyle = "#3a2e24"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 5; c.strokeRect(6, 6, w - 12, h - 12); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 52px Georgia, serif"; c.fillText("Gallery  →", w / 2, 78); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("美術館 往這走", w / 2, 128); }), aniso);
       mk(new THREE.CylinderGeometry(0.05, 0.06, 1.7, 8), M(0x5a4028, 0.8), 14.2, 0.85, -3.3);
       { const sb = mk(new THREE.BoxGeometry(1.3, 0.42, 0.06), M(0x3a2e24, 0.6), 14.2, 1.55, -3.3); sb.rotation.y = -PI / 2; const sf = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.38), new THREE.MeshStandardMaterial({ map: signT, roughness: 0.7 })); sf.position.set(14.2 - 0.035, 1.55, -3.3); sf.rotation.y = -PI / 2; scene.add(sf); }
       addObs(14.2, -3.3, 0.15, 0.15);
+      // 通往船尾（泳池 / 後甲板）：石板小徑 + 路標
+      { const st = [0x8e887a, 0x9a9486, 0x827c70, 0xa39d8f]; for (let k = 0; k < 11; k++) { const tile = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 1.5), M(st[k % 4], 0.9)); tile.position.set(5.8 - k * 0.8, 0.028, 4.0 + Math.sin(k * 0.7) * 0.12); tile.receiveShadow = true; scene.add(tile); }
+        const poolT = mkTex(THREE, decalCanvas(512, 160, (c, w, h) => { c.fillStyle = "#1d5a7a"; c.fillRect(0, 0, w, h); c.strokeStyle = "#bfe8ff"; c.lineWidth = 5; c.strokeRect(6, 6, w - 12, h - 12); c.textAlign = "center"; c.fillStyle = "#e8f6ff"; c.font = "800 50px Georgia, serif"; c.fillText("←  Pool Deck", w / 2, 78); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("泳池 · 後甲板 往這走", w / 2, 128); }), aniso);
+        mk(new THREE.CylinderGeometry(0.05, 0.06, 1.7, 8), M(0x5a4028, 0.8), 3.4, 0.85, 2.3);
+        const sb2 = mk(new THREE.BoxGeometry(1.5, 0.46, 0.06), M(0x1d5a7a, 0.6), 3.4, 1.55, 2.3); sb2.rotation.y = PI / 2; const sf2 = new THREE.Mesh(new THREE.PlaneGeometry(1.44, 0.42), new THREE.MeshStandardMaterial({ map: poolT, roughness: 0.7 })); sf2.position.set(3.4 + 0.035, 1.55, 2.3); sf2.rotation.y = PI / 2; scene.add(sf2); addObs(3.4, 2.3, 0.15, 0.15); }
 
       // ===== 美術館門面（入口）=====
       const FW = 0.5, GZ = 1.9;
@@ -1498,7 +1504,7 @@
     let lastDown = 0;
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
-    let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false;   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
+    let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
     const tickHooks = [];
@@ -1604,7 +1610,8 @@
         case "Backspace": if (down && inside >= 0) { e.preventDefault(); exitRoom(); } break;
         case "KeyQ": keys.q = down ? 1 : 0; break;
         case "KeyE": keys.e = down ? 1 : 0; break;
-        case "Enter": case "Space": if (down && !e.repeat) { e.preventDefault(); activate(); } break;
+        case "Enter": if (down && !e.repeat) { e.preventDefault(); activate(); } break;
+        case "Space": if (down && !e.repeat) { e.preventDefault(); if (sitting >= 0) activate(); else jumpReq = true; } break;   // Space = 跳；Enter = 互動（進門 / 看白板 / 坐下）
       }
     };
     const clearKeys = () => { dbl.l = dbl.r = dbl.u = dbl.d = 0; keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }; run = false; touch = { l: 0, r: 0, u: 0, d: 0 }; rotHold = 0; };
@@ -1620,6 +1627,33 @@
     const autoBtn = root.querySelector("#gAuto");
     const stopAuto = () => { auto = false; autoBtn.setAttribute("aria-pressed", "false"); };
     // 按住左鍵 → David 往指標指的地面方向走；單擊空地 → 走過去；右鍵拖曳 / Alt+左鍵 / 雙指 → 轉視角
+    // 點地面走路：自動找路（繞過樹 / 涼亭 / 池塘 / 家具，穿過船尾欄杆缺口、門口）。找不到路就退回直線。
+    const NAV = 0.25, NAVX0 = -11, NAVZ0 = -8.2, NAVW = Math.ceil((WORLD_W + 2 - NAVX0) / NAV), NAVH = Math.ceil(16.4 / NAV), navCache = [null, null];
+    const navBlocked = (x, z, l) => {
+      if (x < -10.4 || x > WORLD_W - 1.2 || Math.abs(z) > DECK_HD - 0.5) return true;
+      if (x < -0.2) { const ex = (-x - 1) / 10.4, lim = 7.2 * Math.sqrt(Math.max(0, 1 - ex * ex)); if (Math.abs(z) > lim) return true; }
+      if (x > STAIR.x0 - 0.3 && x < STAIR.x1 + 0.3 && z > STAIR.z0 - 0.3 && z < STAIR.z1 + 0.3) return true;      // 樓梯要自己走上去
+      for (const o of obstacles) { if (o.lv !== undefined && o.lv !== l) continue; if (x > o.minX - 0.24 && x < o.maxX + 0.24 && z > o.minZ - 0.24 && z < o.maxZ + 0.24) return true; }
+      return false;
+    };
+    const navGrid = (l) => { if (navCache[l] && navCache[l].n === obstacles.length) return navCache[l].g; const g = new Uint8Array(NAVW * NAVH); for (let j = 0; j < NAVH; j++) for (let i = 0; i < NAVW; i++) g[j * NAVW + i] = navBlocked(NAVX0 + i * NAV, NAVZ0 + j * NAV, l) ? 1 : 0; navCache[l] = { g, n: obstacles.length }; return g; };
+    const planRoute = (t) => {
+      const g = navGrid(lvl), ci = (x) => Math.round((x - NAVX0) / NAV), cj = (z) => Math.round((z - NAVZ0) / NAV);
+      let si = clamp(ci(pos.x), 0, NAVW - 1), sj = clamp(cj(pos.z), 0, NAVH - 1), ti = clamp(ci(t.x), 0, NAVW - 1), tj = clamp(cj(t.z), 0, NAVH - 1);
+      if (g[tj * NAVW + ti]) { let best = null, bd = 1e9; for (let dj = -12; dj <= 12; dj++) for (let di = -12; di <= 12; di++) { const ni = ti + di, nj = tj + dj; if (ni < 0 || nj < 0 || ni >= NAVW || nj >= NAVH || g[nj * NAVW + ni]) continue; const d = di * di + dj * dj; if (d < bd) { bd = d; best = [ni, nj]; } } if (!best) return [{ x: t.x, z: t.z }]; ti = best[0]; tj = best[1]; }
+      const prev = new Int32Array(NAVW * NAVH).fill(-1), q = [sj * NAVW + si]; prev[q[0]] = q[0]; let h = 0, found = false;
+      while (h < q.length) { const cur = q[h++], ci0 = cur % NAVW, cj0 = (cur / NAVW) | 0; if (ci0 === ti && cj0 === tj) { found = true; break; }
+        for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) { const ni = ci0 + di, nj = cj0 + dj; if (ni < 0 || nj < 0 || ni >= NAVW || nj >= NAVH) continue; const k = nj * NAVW + ni; if (prev[k] >= 0 || g[k]) continue; if (di && dj && (g[cj0 * NAVW + ni] || g[nj * NAVW + ci0])) continue; prev[k] = cur; q.push(k); } }
+      if (!found) return [{ x: t.x, z: t.z }];
+      let cells = []; for (let k = tj * NAVW + ti; k !== sj * NAVW + si; k = prev[k]) cells.push(k); cells.reverse();
+      const P = cells.map((k) => ({ x: NAVX0 + (k % NAVW) * NAV, z: NAVZ0 + ((k / NAVW) | 0) * NAV }));
+      const clear = (a, b) => { const n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 0.15); for (let m = 1; m < n; m++) { const u = m / n; if (navBlocked(lerp(a.x, b.x, u), lerp(a.z, b.z, u), lvl)) return false; } return true; };
+      const out = []; let from = { x: pos.x, z: pos.z }, k = 0;
+      while (k < P.length) { let far = k; for (let m = P.length - 1; m >= k; m--) { if (clear(from, P[m])) { far = m; break; } } out.push(P[far]); from = P[far]; k = far + 1; }
+      if (!navBlocked(t.x, t.z, lvl)) out.push({ x: t.x, z: t.z });
+      return out;
+    };
+    const sternRoute = planRoute;
     const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), gp = new THREE.Vector3();
     const groundAt = (ev) => { const r = cv.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1); ray.setFromCamera(ndc, camera); return ray.ray.intersectPlane(groundPlane, gp) ? { x: gp.x, z: gp.z } : null; };
     const marker = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.3, 32), new THREE.MeshBasicMaterial({ color: 0xffe9b8, transparent: true, opacity: 0.9, depthTest: false })); marker.rotation.x = -Math.PI / 2; marker.renderOrder = 12; marker.visible = false; scene.add(marker);
@@ -1652,7 +1686,7 @@
             else if (u.kind === "board") toBoard(u.station);
             else if (u.kind === "door") (inside === u.station ? exitRoom() : enterRoom(u.station));
             else if (u.kind === "room" && inside !== u.station) enterRoom(u.station);
-          } else { const g = groundAt(e); if (g) { sitting >= 0 && stand(); goRoute([{ x: g.x, z: g.z }]); marker.position.set(g.x, 0.05, g.z); marker.visible = true; markT = 1.2; } }
+          } else { const g = groundAt(e); if (g) { sitting >= 0 && stand(); goRoute(sternRoute(g)); marker.position.set(g.x, 0.05, g.z); marker.visible = true; markT = 1.2; } }
         }
       }
       if (mouse && mouse.id === e.pointerId) mouse = null;
@@ -1673,6 +1707,7 @@
     }, { passive: false });
     cv.style.cursor = "crosshair"; cv.style.touchAction = "none";
 
+    root.querySelector("#gJump").addEventListener("pointerdown", (e) => { e.preventDefault(); e.stopPropagation(); jumpReq = true; });   // 手機：跳躍鈕
     const holdBtn = (el, on, off) => { el.addEventListener("pointerdown", (e) => { e.preventDefault(); on(); }); for (const t of ["pointerup", "pointerleave", "pointercancel"]) el.addEventListener(t, off); };
     holdBtn(root.querySelector("#gRotL"), () => (rotHold = -1), () => (rotHold = 0));
     holdBtn(root.querySelector("#gRotR"), () => (rotHold = 1), () => (rotHold = 0));
@@ -1680,7 +1715,7 @@
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
     root.querySelector("#gReset").addEventListener("click", () => { yaw = view0.yaw; elev = view0.elev; dist = view0.dist; stopAuto(); });
 
-    const refreshBangs = () => bangs.forEach((b, s) => { if (b) b.visible = (H.unread ? H.unread(s === 0 ? null : P[s - 1].id) : 0) > 0; });
+    const refreshBangs = () => bangs.forEach((b) => { if (b) b.visible = false; });   // 驚嘆號已拿掉（未讀邏輯保留在 NEWS 裡）
     window.addEventListener("news:change", refreshBangs); refreshBangs();
 
     const layers = [...document.querySelectorAll("#painting .layer")];
@@ -1691,7 +1726,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1794,7 +1829,8 @@
         { const wf = (pos.x > POOL.x0 && pos.x < POOL.x1 && pos.z > POOL.z0 && pos.z < POOL.z1) ? 0.55 : 1; pos.x += mx * sp * sdt * wf; pos.z += mz * sp * sdt * wf; }
         for (const o of obstacles) {
           if (o.lv !== undefined && o.lv !== lvl) continue;
-          const L = o.minX - 0.3, R = o.maxX + 0.3, T = o.minZ - 0.3, B = o.maxZ + 0.3;
+          if (o.h !== undefined && jy > o.h - 0.06) continue;      // 跳得夠高 → 越過低矮障礙物
+          const L = o.minX - 0.24, R = o.maxX + 0.24, T = o.minZ - 0.24, B = o.maxZ + 0.24;
           if (pos.x > L && pos.x < R && pos.z > T && pos.z < B) {
             const pl = pos.x - L, pr = R - pos.x, pt = pos.z - T, pb = B - pos.z, m = Math.min(pl, pr, pt, pb);
             if (m === pl) pos.x = L; else if (m === pr) pos.x = R; else if (m === pt) pos.z = T; else pos.z = B;
@@ -1810,10 +1846,13 @@
         if (inSt) { py = clamp(UY * (STAIR.x1 - pos.x) / (STAIR.x1 - STAIR.x0), 0, UY); lvl = py > UY * 0.5 ? 1 : 0; } else py = lvl * UY;
         lvlS = lerp(lvlS, py / UY, Math.min(1, dt * 6)); groundPlane.constant = -py;
       }
+      if (jumpReq) { jumpReq = false; if (jy < 0.01 && jv <= 0 && swimT < 0.3 && sitting < 0) { jv = 5.2; if (window.Music) window.Music.sfx("bounce", pos.x, pos.z, 0.4); } }
+      if (jy > 0 || jv > 0) { jv -= 13.5 * dt; jy += jv * dt; if (jy <= 0) { jy = 0; jv = 0; if (window.Music) window.Music.sfx("bounce", pos.x, pos.z, 0.4); } }
       const inWater = pos.x > POOL.x0 && pos.x < POOL.x1 && pos.z > POOL.z0 && pos.z < POOL.z1 && lvl === 0;
       if (inWater !== wasSwim) { wasSwim = inWater; if (window.Music) window.Music.sfx("splash", pos.x, pos.z, 1.3); }
       swimT = lerp(swimT, inWater ? 1 : 0, Math.min(1, dt * 5));
-      av.root.position.set(pos.x, lerp(py, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
+      av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
+      if (jy > 0.04 && swimT < 0.3) { av.legL.hip.rotation.x = -0.75; av.legL.knee.rotation.x = 1.15; av.legR.hip.rotation.x = -0.25; av.legR.knee.rotation.x = 0.55; av.armL.sh.rotation.x = -2.5; av.armR.sh.rotation.x = -2.5; av.armL.el.rotation.x = -0.25; av.armR.el.rotation.x = -0.25; }   // 跳起來的姿勢
       sitA = lerp(sitA, sitting >= 0 ? 1 : 0, Math.min(1, dt * 6)); if (sitA > 0.01) seatPose(av, sitA);
 
       // 是否在房間裡 → 鏡頭拉近
@@ -1898,7 +1937,7 @@
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50) => { let nowT = performance.now(); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; } },   // 測試用：面板被藏起來時手動推進畫面
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
       
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");

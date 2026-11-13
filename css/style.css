@@ -621,3 +621,9 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .ai-form button { height: 40px; padding: 0 16px; border-radius: 10px; background: #1f1a33; color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
 .ai-form .ai-att { width: 40px; padding: 0; background: transparent; border: 1.5px solid #cfc8b6; font-size: 16px; }
 .ai textarea, .ai input, .ai select { color-scheme: light; -webkit-text-fill-color: #1f1a33; } .ai textarea::placeholder, .ai input::placeholder { -webkit-text-fill-color: #9a90a8; }
+
+/* 驚嘆號全部拿掉（藝廊房間上方、畫框、報紙右上角） */
+.news-bang, .news-fab.has-new .news-bang, .g-bang { display: none !important; animation: none !important; }
+/* 手機跳躍鈕：只在觸控裝置顯示 */
+.g-jump { display: none; position: absolute; right: 18px; bottom: 96px; width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35); background: rgba(20,17,43,.55); color: #fff; font-size: 22px; backdrop-filter: blur(6px); z-index: 6; touch-action: none; }
+@media (pointer: coarse) { .g-jump { display: block; } }
