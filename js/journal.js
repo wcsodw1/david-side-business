@@ -6,6 +6,7 @@
   "use strict";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   
+  const tabOf = {};   // 每塊白板目前停在哪個分頁（白板 / AI）
   const STATUSES = ["TODO", "PENDING", "BLOCK", "ON PROCESS", "FINISH"];
 
   function card(p, i, H, opt = {}) {
@@ -21,7 +22,8 @@
     <div class="wb-card" data-pid="${esc(p.id)}">
       ${opt.page ? "" : `<button class="wb-x" data-x aria-label="關閉">✕</button>`}
       <h2>${esc(p.name)} <small>${esc(p.zh || "")}</small></h2>
-
+      <div class="wb-tabs"><button type="button" data-tab="board" class="${tabOf[p.id] === "ai" ? "" : "on"}">白板</button><button type="button" data-tab="ai" class="${tabOf[p.id] === "ai" ? "on" : ""}">AI</button></div>
+      <div data-pane="board" ${tabOf[p.id] === "ai" ? "hidden" : ""}>
       ${field("goal", "1　專案目標", p.goal, "要做到什麼程度？", "尚未設定")}
 
       <h3>2　目前狀態</h3>
@@ -32,11 +34,16 @@
       ${field("next", "3　Next Step", p.next, "下一步要做什麼？", "尚未設定")}
 
       <footer class="wb-foot"><button type="button" class="ghost-btn" data-export>匯出</button></footer>
+      </div>
+      <div data-pane="ai" ${tabOf[p.id] === "ai" ? "" : "hidden"}><div class="ai-mount"></div></div>
     </div>`;
   }
 
   function bind(el, p, i, H, cb = {}) {
     const S = window.Store, again = () => (cb.rerender ? cb.rerender() : null);
+    const showTab = (t) => { tabOf[p.id] = t; el.querySelectorAll("[data-tab]").forEach((b) => b.classList.toggle("on", b.dataset.tab === t)); el.querySelectorAll("[data-pane]").forEach((x) => (x.hidden = x.dataset.pane !== t)); if (t === "ai" && window.AIChat) { const m = el.querySelector(".ai-mount"); if (m && !m.firstChild) window.AIChat.mount(m, p); } };
+    el.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => showTab(b.dataset.tab)));
+    if (tabOf[p.id] === "ai") showTab("ai");
     el.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => { const f = el.querySelector(`[data-form="${b.dataset.edit}"]`); f.classList.remove("hidden"); f.querySelector("input").focus(); b.hidden = true; }));
     el.querySelectorAll("[data-form]").forEach((f) => f.addEventListener("submit", (e) => { e.preventDefault(); const v = String(new FormData(f).get("v") || "").trim(); if (!v) return; if (f.dataset.form === "goal") S.setGoal(p.id, v); else S.setNext(p.id, v); again(); }));
     el.querySelectorAll("[data-st]").forEach((b) => b.addEventListener("click", () => { S.setStatus(p.id, b.dataset.st); again(); }));
