@@ -408,10 +408,10 @@
     const waveTex = mkTex(THREE, waveCanvas(), aniso); waveTex.wrapS = waveTex.wrapT = THREE.RepeatWrapping; waveTex.repeat.set(90, 90);
     const sea = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({ map: waveTex, color: 0x3a86b4, roughness: 0.32, metalness: 0.55 }));
     const seaMat = sea.material;
-    sea.rotation.x = -Math.PI / 2; sea.position.set(WORLD_W / 2, -1.3, 0); sea.receiveShadow = true; scene.add(sea);
+    sea.rotation.x = -Math.PI / 2; sea.position.set(WORLD_W / 2, -14, 0); sea.receiveShadow = true; scene.add(sea);
     const glTex = mkTex(THREE, glitterCanvas(), aniso, false); glTex.wrapS = glTex.wrapT = THREE.RepeatWrapping;
     const glitter = new THREE.Mesh(new THREE.PlaneGeometry(130, 700), new THREE.MeshBasicMaterial({ map: glTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.95 }));
-    glitter.rotation.x = -Math.PI / 2; glitter.position.set(WORLD_W / 2, -1.28, -390); scene.add(glitter);
+    glitter.rotation.x = -Math.PI / 2; glitter.position.set(WORLD_W / 2, -13.98, -390); scene.add(glitter);
 
     /* ----- 光 ----- */
     const hemi = new THREE.HemisphereLight(0xe4e8ff, 0x7a6a62, 0.6); scene.add(hemi);
@@ -425,7 +425,7 @@
     const deck = new THREE.Mesh(new THREE.PlaneGeometry(WORLD_W, DECK_HD * 2), new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.42, metalness: 0.05 }));
     deck.rotation.x = -Math.PI / 2; deck.position.set(WORLD_W / 2, 0, 0); deck.receiveShadow = true; scene.add(deck);
     const base = new THREE.Mesh(new THREE.BoxGeometry(WORLD_W + 0.6, 1.3, DECK_HD * 2 + 0.6), new THREE.MeshStandardMaterial({ color: 0x2b2a31, roughness: 0.8 }));
-    base.position.set(WORLD_W / 2, -0.66, 0); base.castShadow = true; base.receiveShadow = true; scene.add(base);
+    base.position.set(WORLD_W / 2, -0.66, 0); base.visible = false; scene.add(base);   // 郵輪船體（ship.js）取代這個底座
     const brass = new THREE.MeshStandardMaterial({ color: 0x7d6446, metalness: 0.85, roughness: 0.38 });
     const glass = new THREE.MeshStandardMaterial({ color: 0xa8b8ff, transparent: true, opacity: 0.13, roughness: 0.08, side: THREE.DoubleSide, depthWrite: false });
     for (const z of [-DECK_HD + 0.05, DECK_HD - 0.05]) {
@@ -1588,7 +1588,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, f: facing, sp: speedNow, sit: sitA }), obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, f: facing, sp: speedNow, sit: sitA }), obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1719,7 +1719,7 @@
       camera.lookAt(camT);
       sky.position.copy(camera.position); clouds.position.copy(camera.position);
       clouds.rotation.y += dt * 0.004; hourTick += dt; if (hourTick > 0.25) { hourTick = 0; applyTime(clockHour()); }
-      waveTex.offset.x += dt * 0.0016; waveTex.offset.y += dt * 0.0009; glTex.offset.y -= dt * 0.012;
+      waveTex.offset.x += dt * 0.3; waveTex.offset.y += dt * 0.002;   // 船往東開，海面往船尾（西）流 glTex.offset.y -= dt * 0.012;
       { const d = sun._dir || { x: 0.3, y: 0.8, z: -0.5 }; sun.position.set(camT.x + d.x * 24, d.y * 24, camT.z + d.z * 24); sun.target.position.set(camT.x, 0, camT.z); }
       layers.forEach((l) => (l.style.transform = ""));
 
@@ -1770,6 +1770,8 @@
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
     if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
+    if (window.Ship) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
     if (window.Animals) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
@@ -1786,7 +1788,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
