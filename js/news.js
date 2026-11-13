@@ -78,7 +78,7 @@
   function pop(d) {
     const p = P.find((x) => x.id === d.pid); if (!p || !d.text && d.kind !== "status") return;
     if (!popBox) { popBox = document.createElement("div"); popBox.className = "news-pops"; document.body.appendChild(popBox); }
-    const who = d.remote ? (d.who === "aeris" ? "Aeris" : "David") + " 更新了" : "已更新";
+    const who = d.remote ? (d.who === "aeris" ? "ARIES" : "David") + " 更新了" : "已更新";
     const el = document.createElement("div"); el.className = "news-pop";
     const val = d.kind === "status" ? (d.text ? `<span class="ps-chip ps-${STATUS_CLS[d.text] || "TODO"}">${esc(d.text)}</span>` : "（已清除）") : esc(d.text);
     el.innerHTML = `<small>NEWS · ${esc(who)}</small><b>${esc(p.name)}</b><p><em>${esc(KIND_LABEL[d.kind] || "")}</em> ${val}</p>`;

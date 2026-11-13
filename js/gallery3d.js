@@ -1227,7 +1227,7 @@
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
 
       // 門口地墊與信箱
-      const homeT = mkTex(THREE, decalCanvas(512, 200, (c, w, h) => { c.fillStyle = "#6a4a2e"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 78px Georgia, serif"; c.fillText("HOME", w / 2, 118); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("David & Aeris", w / 2, 168); }), aniso);
+      const homeT = mkTex(THREE, decalCanvas(512, 200, (c, w, h) => { c.fillStyle = "#6a4a2e"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 78px Georgia, serif"; c.fillText("HOME", w / 2, 118); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("David & ARIES", w / 2, 168); }), aniso);
       const mat0 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.6), new THREE.MeshStandardMaterial({ map: homeT, roughness: 1 })); mat0.rotation.x = -PI / 2; mat0.rotation.z = PI / 2; mat0.position.set(X1 + 0.9, 0.04, (DW0 + DW1) / 2); scene.add(mat0);
       mk(new THREE.BoxGeometry(0.06, 1.0, 0.06), M(0x5a4028, 0.8), X1 + 1.5, 0.5, -0.9); mk(new THREE.BoxGeometry(0.38, 0.22, 0.24), M(0xc0392b, 0.6), X1 + 1.5, 1.1, -0.9); addObs(X1 + 1.5, -0.9, 0.2, 0.2);
 

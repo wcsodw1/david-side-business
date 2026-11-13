@@ -72,7 +72,7 @@
     const c = document.createElement("canvas"); c.width = 256; c.height = 80; const g = c.getContext("2d");
     g.fillStyle = "rgba(255,240,250,.92)"; g.beginPath(); g.roundRect ? g.roundRect(28, 10, 200, 60, 30) : g.rect(28, 10, 200, 60); g.fill();
     g.strokeStyle = "#e58fb0"; g.lineWidth = 3; g.stroke();
-    g.fillStyle = "#b0466e"; g.font = "700 34px 'Noto Sans TC', -apple-system, sans-serif"; g.textAlign = "center"; g.fillText("Aeris ✿", 128, 52);
+    g.fillStyle = "#b0466e"; g.font = "700 34px 'Noto Sans TC', -apple-system, sans-serif"; g.textAlign = "center"; g.fillText("ARIES ✿", 128, 52);
     const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthTest: false })); tag.renderOrder = 11; scene.add(tag);
 
     // 對話泡泡（3D sprite）

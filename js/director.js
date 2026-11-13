@@ -107,7 +107,7 @@
 
     const startTalk = () => {
       const p = projectNow(), st = H.st(p), real = (p.updates || []).filter((u) => !/專案頁建立/.test(u.title))[0];
-      const intro = inRoom >= 0 ? `${window.PERSONA === "aeris" ? "Aeris" : "David"}，我正在檢查 <b>${esc(p.name)}</b> 的白板。` : `${window.PERSONA === "aeris" ? "Aeris" : "David"}，我剛巡到 <b>${esc(p.name)}</b>。`;
+      const intro = inRoom >= 0 ? `${window.PERSONA === "aeris" ? "ARIES" : "David"}，我正在檢查 <b>${esc(p.name)}</b> 的白板。` : `${window.PERSONA === "aeris" ? "ARIES" : "David"}，我剛巡到 <b>${esc(p.name)}</b>。`;
       const report = `${intro}${p.wbStatus ? `目前狀態 <b>${esc(p.wbStatus)}</b>${p.wbNote ? `：${esc(p.wbNote)}` : ""}。` : "目前狀態還沒設定。"}`;
       talk = { pid: p.id }; state = "talk";
       const snoozed = (snooze[p.id] || 0) > Date.now();
