@@ -12,7 +12,7 @@
   const ROOM = (() => { try { const r = new URLSearchParams(location.search).get("room"); return r ? "-" + r.replace(/[^a-z0-9]/gi, "").slice(0, 12) : ""; } catch (_) { return ""; } })();   // 測試用：?room=xxx 使用獨立代號，不干擾正式的兩個身分
   const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM };
   const NAME = { david: "David", aeris: "Aeris ✿" };
-  const BED = { david: { x: 2.55, z: -4.4 }, aeris: { x: 2.55, z: -1.95 } };   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
+  const BED = { david: { x: 2.55, z: -4.35 }, aeris: { x: 2.55, z: -3.45 } };   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
   let Pz = null;
   const lerp = (a, b, t) => a + (b - a) * t;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };

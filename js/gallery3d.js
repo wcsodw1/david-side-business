@@ -78,13 +78,12 @@
   }
   function cloudCanvas() {
     const W = 2048, Hh = 1024, c = mkCanvas(W, Hh), g = c.getContext("2d"), rnd = mulberry(5);
-    for (let i = 0; i < 46; i++) {
-      const x = rnd() * W, y = Hh * (0.27 + rnd() * 0.19), rx = 90 + rnd() * 260, ry = 5 + rnd() * 14;
-      const warm = y > Hh * 0.38;
+    for (let i = 0; i < 60; i++) {
+      const x = rnd() * W, y = Hh * (0.26 + rnd() * 0.2), rx = 80 + rnd() * 240, ry = 6 + rnd() * 16;
       for (const dx of [0, W, -W]) {
         g.save(); g.translate(x + dx, y); g.scale(rx / ry, 1);
         const gr = g.createRadialGradient(0, 0, 0, 0, 0, ry * 2.2);
-        gr.addColorStop(0, warm ? "rgba(255,196,160,.55)" : "rgba(255,150,180,.38)"); gr.addColorStop(1, "rgba(255,160,160,0)");
+        gr.addColorStop(0, "rgba(255,255,255,.75)"); gr.addColorStop(1, "rgba(255,255,255,0)");
         g.fillStyle = gr; g.beginPath(); g.arc(0, 0, ry * 2.2, 0, 7); g.fill(); g.restore();
       }
     }
@@ -372,27 +371,50 @@
     const aniso = renderer.capabilities.getMaxAnisotropy();
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0xb6788f, 0.0017);
+    scene.fog = new THREE.FogExp2(0xbfe4ff, 0.0017);
     const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 2200);
 
     /* ----- 360° 全景天空 + 雲 + 海 ----- */
-    const skyTex = mkTex(THREE, skyCanvas(), aniso); skyTex.wrapS = THREE.RepeatWrapping; skyTex.repeat.x = -1; skyTex.offset.x = 1;
-    const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 64, 40), new THREE.MeshBasicMaterial({ map: skyTex, side: THREE.BackSide, fog: false, depthWrite: false }));
+    const skyU = { zen: { value: new THREE.Color(0x2f86e4) }, hor: { value: new THREE.Color(0xbfe4ff) }, gnd: { value: new THREE.Color(0x203a5a) }, sunDir: { value: new THREE.Vector3(0, 1, 0) }, moonDir: { value: new THREE.Vector3(0, -1, 0) }, night: { value: 0 }, sunI: { value: 1 } };
+    const skyMat = new THREE.ShaderMaterial({
+      uniforms: skyU, side: THREE.BackSide, depthWrite: false, fog: false,
+      vertexShader: "varying vec3 vD; void main(){ vD = normalize((modelMatrix * vec4(position, 0.0)).xyz); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
+      fragmentShader: `varying vec3 vD; uniform vec3 zen, hor, gnd, sunDir, moonDir; uniform float night, sunI;
+        float hash(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+        void main(){
+          vec3 d = normalize(vD); float h = d.y;
+          vec3 col = h > 0.0 ? mix(hor, zen, pow(clamp(h, 0.0, 1.0), 0.42)) : mix(hor, gnd, clamp(-h * 5.0, 0.0, 1.0));
+          float sd = max(dot(d, normalize(sunDir)), 0.0);
+          col += vec3(1.0, 0.72, 0.42) * pow(sd, 6.0) * 0.30 * sunI + vec3(1.0, 0.9, 0.7) * pow(sd, 60.0) * 0.5 * sunI;
+          col = mix(col, vec3(1.0, 0.97, 0.86), smoothstep(0.9990, 0.9996, sd) * clamp(sunI * 2.0, 0.0, 1.0));
+          float md = max(dot(d, normalize(moonDir)), 0.0);
+          col += vec3(0.5, 0.6, 0.9) * pow(md, 40.0) * 0.18 * night;
+          col = mix(col, vec3(0.93, 0.95, 1.0), smoothstep(0.9993, 0.9997, md) * night);
+          vec3 sp = floor(d * 170.0); float st = hash(sp);
+          col += vec3(1.0) * step(0.9968, st) * night * smoothstep(0.02, 0.25, h) * (0.5 + 0.5 * hash(sp + 7.0));
+          gl_FragColor = vec4(col, 1.0);
+        }`,
+    });
+    const sky = new THREE.Mesh(new THREE.SphereGeometry(1000, 48, 32), skyMat);
     sky.renderOrder = -3; scene.add(sky);
-    try { const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromEquirectangular(skyTex).texture; pm.dispose(); } catch (_) {}
+    const envScene = new THREE.Scene(); envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 24, 16), skyMat));
+    let envRT = null;
+    const updateEnv = () => { try { const pm = new THREE.PMREMGenerator(renderer); const rt = pm.fromScene(envScene, 0, 0.1, 100); if (envRT) envRT.dispose(); envRT = rt; scene.environment = rt.texture; pm.dispose(); } catch (_) {} };
+    updateEnv();
     const cloudTex = mkTex(THREE, cloudCanvas(), aniso); cloudTex.wrapS = THREE.RepeatWrapping; cloudTex.repeat.x = -1; cloudTex.offset.x = 1;
-    const clouds = new THREE.Mesh(new THREE.SphereGeometry(980, 48, 32), new THREE.MeshBasicMaterial({ map: cloudTex, side: THREE.BackSide, transparent: true, fog: false, depthWrite: false }));
+    const clouds = new THREE.Mesh(new THREE.SphereGeometry(980, 48, 32), new THREE.MeshBasicMaterial({ map: cloudTex, side: THREE.BackSide, transparent: true, fog: false, depthWrite: false, color: 0xffffff }));
     clouds.renderOrder = -2; scene.add(clouds);
 
     const waveTex = mkTex(THREE, waveCanvas(), aniso); waveTex.wrapS = waveTex.wrapT = THREE.RepeatWrapping; waveTex.repeat.set(90, 90);
-    const sea = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({ map: waveTex, color: 0x6a66b8, roughness: 0.32, metalness: 0.55 }));
+    const sea = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshStandardMaterial({ map: waveTex, color: 0x3a86b4, roughness: 0.32, metalness: 0.55 }));
+    const seaMat = sea.material;
     sea.rotation.x = -Math.PI / 2; sea.position.set(WORLD_W / 2, -1.3, 0); sea.receiveShadow = true; scene.add(sea);
     const glTex = mkTex(THREE, glitterCanvas(), aniso, false); glTex.wrapS = glTex.wrapT = THREE.RepeatWrapping;
     const glitter = new THREE.Mesh(new THREE.PlaneGeometry(130, 700), new THREE.MeshBasicMaterial({ map: glTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.95 }));
     glitter.rotation.x = -Math.PI / 2; glitter.position.set(WORLD_W / 2, -1.28, -390); scene.add(glitter);
 
     /* ----- 光 ----- */
-    scene.add(new THREE.HemisphereLight(0xe4e8ff, 0x7a6a62, 0.6));
+    const hemi = new THREE.HemisphereLight(0xe4e8ff, 0x7a6a62, 0.6); scene.add(hemi);
     const sun = new THREE.DirectionalLight(0xffe6cc, 1.3);
     sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
     Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 70 });
@@ -1106,12 +1128,9 @@
       for (const z of [DW0, DW1]) mk(new THREE.BoxGeometry(0.16, 2.1, 0.12), bronze, X1, 1.05, z);
       // 屋內家具
       const bedF = M(0x7a5a3c, 0.6), white = M(0xf4f1ea, 0.9), teal = M(0x2f8f8a, 0.9), terra = M(0xb4643a, 0.9), navy = M(0x2b3a5a, 0.9);
-      mk(new THREE.BoxGeometry(2.1, 0.3, 1.6), bedF, 1.75, 0.15, -4.0); mk(new THREE.BoxGeometry(2.0, 0.2, 1.5), white, 1.78, 0.4, -4.0); mk(new THREE.BoxGeometry(1.2, 0.07, 1.52), teal, 2.2, 0.53, -4.0);
-      mk(new THREE.BoxGeometry(0.1, 0.9, 1.7), bedF, 0.78, 0.45, -4.0); for (const dz of [-0.4, 0.4]) mk(new THREE.BoxGeometry(0.42, 0.12, 0.55), white, 1.0, 0.56, -4.0 + dz);
-      addObs(1.75, -4.0, 1.15, 0.85);
-      { const pinkB = M(0xd9a0b8, 0.9);   // Aeris 的床（同一個家）
-        mk(new THREE.BoxGeometry(2.1, 0.3, 1.0), bedF, 1.75, 0.15, -1.95); mk(new THREE.BoxGeometry(2.0, 0.2, 0.92), white, 1.78, 0.4, -1.95); mk(new THREE.BoxGeometry(1.2, 0.07, 0.94), pinkB, 2.2, 0.53, -1.95);
-        mk(new THREE.BoxGeometry(0.1, 0.8, 1.1), bedF, 0.78, 0.4, -1.95); mk(new THREE.BoxGeometry(0.42, 0.12, 0.55), white, 1.0, 0.56, -1.95); addObs(1.75, -1.95, 1.15, 0.55); }
+      mk(new THREE.BoxGeometry(2.1, 0.3, 1.98), bedF, 1.75, 0.15, -3.9); mk(new THREE.BoxGeometry(2.0, 0.2, 1.88), white, 1.78, 0.4, -3.9); mk(new THREE.BoxGeometry(1.2, 0.07, 1.9), teal, 2.2, 0.53, -3.9);
+      mk(new THREE.BoxGeometry(0.1, 0.9, 2.08), bedF, 0.78, 0.45, -3.9); for (const dz of [-0.45, 0.45]) mk(new THREE.BoxGeometry(0.42, 0.12, 0.6), white, 1.0, 0.56, -3.9 + dz);
+      addObs(1.75, -3.9, 1.15, 1.05);
       mk(new THREE.BoxGeometry(1.3, 2.1, 0.55), bedF, 4.4, 1.05, -4.65); addObs(4.4, -4.65, 0.7, 0.3);                                  // 衣櫃
       mk(new THREE.BoxGeometry(1.5, 0.05, 0.75), wood, 6.2, 0.75, -4.55); for (const dx of [-0.65, 0.65]) mk(new THREE.BoxGeometry(0.05, 0.75, 0.05), M(0x1a1630, 0.4, 0.4), 6.2 + dx, 0.37, -4.55);
       mk(new THREE.BoxGeometry(0.5, 0.03, 0.34), M(0x2a2550, 0.4, 0.4), 6.2, 0.79, -4.4); { const lt = mk(new THREE.BoxGeometry(0.46, 0.3, 0.02), M(0x101018, 0.4, 0.3), 6.2, 0.95, -4.6); lt.rotation.x = -0.2; }
@@ -1569,13 +1588,53 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, f: facing, sp: speedNow, sit: sitA }) };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, f: facing, sp: speedNow, sit: sitA }), obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
+    /* ----- 日夜循環：一天 = 12 分鐘（早晨→中午→黃昏→夜晚），兩個人用同一個時鐘所以看到的時間一樣 ----- */
+    const DAY_SEC = 720; let hourOverride = null, hourNow = 9, lastEnvH = -9, sunH = 1;
+    const KF = [   // 小時, 天頂, 地平線, 地面, 太陽/月光色, 太陽強度, 半球天光, 半球地光, 半球強度, 海, 雲, 曝光
+      [0, 0x030816, 0x0b1830, 0x050912, 0x8fa8ff, 0.30, 0x2a3b66, 0x10141f, 0.42, 0x0b1a33, 0x3a4a6a, 1.05],
+      [5, 0x0a1230, 0x1c2c55, 0x0a1020, 0x8fa8ff, 0.28, 0x2a3b66, 0x10141f, 0.42, 0x0d1f3d, 0x3a4a6a, 1.05],
+      [6.2, 0x35609c, 0xf4a878, 0x20304a, 0xffc890, 0.85, 0xffd9b8, 0x6a5a50, 0.55, 0x4a7aa4, 0xffd0b0, 0.95],
+      [8, 0x4f9be6, 0xcfe8ff, 0x28466a, 0xfff0d8, 1.25, 0xe4eeff, 0x8a7a68, 0.65, 0x3a86b4, 0xffffff, 0.9],
+      [12, 0x2f86e4, 0xbfe4ff, 0x28466a, 0xffffff, 1.45, 0xe4eeff, 0x8a7a68, 0.7, 0x2f80b8, 0xffffff, 0.88],
+      [16.5, 0x3f86d6, 0xffe9c4, 0x28466a, 0xffe2b0, 1.3, 0xffeedd, 0x8a7a68, 0.65, 0x3a86b4, 0xfff4e4, 0.9],
+      [18.4, 0x3a5a9c, 0xff9a5c, 0x20304a, 0xff9f60, 0.85, 0xffcfa8, 0x6a5a50, 0.55, 0x3a6a94, 0xffc090, 0.95],
+      [19.8, 0x14264f, 0x3a5a86, 0x0c1424, 0xa0b4ff, 0.32, 0x34466e, 0x10141f, 0.45, 0x12284a, 0x4a5c80, 1.02],
+      [21.5, 0x050c20, 0x0f1e3a, 0x060a14, 0x8fa8ff, 0.30, 0x2a3b66, 0x10141f, 0.42, 0x0b1a33, 0x3a4a6a, 1.05],
+      [24, 0x030816, 0x0b1830, 0x050912, 0x8fa8ff, 0.30, 0x2a3b66, 0x10141f, 0.42, 0x0b1a33, 0x3a4a6a, 1.05],
+    ];
+    const _c1 = new THREE.Color(), _c2 = new THREE.Color(), _l = new THREE.Vector3();
+    const mixC = (dst, a, b, k) => dst.setHex(a).lerp(_c2.setHex(b), k);
+    const applyTime = (h) => {
+      hourNow = h; let i = 0; while (i < KF.length - 2 && h >= KF[i + 1][0]) i++;
+      const A = KF[i], B = KF[i + 1], k = (h - A[0]) / (B[0] - A[0]), n = (idx) => lerp(A[idx], B[idx], k);
+      mixC(skyU.zen.value, A[1], B[1], k); mixC(skyU.hor.value, A[2], B[2], k); mixC(skyU.gnd.value, A[3], B[3], k);
+      mixC(sun.color, A[4], B[4], k); mixC(hemi.color, A[6], B[6], k); mixC(hemi.groundColor, A[7], B[7], k);
+      mixC(seaMat.color, A[9], B[9], k); mixC(clouds.material.color, A[10], B[10], k);
+      scene.fog.color.copy(skyU.hor.value);
+      hemi.intensity = n(8); renderer.toneMappingExposure = n(11);
+      const sa = ((h - 6) / 12.4) * Math.PI, ma = ((h - 18.4) / 11.6) * Math.PI;      // 太陽 6:00→18:24 升落，月亮 18:24→30:00
+      const sy = Math.sin(sa), my = Math.sin(((h < 6 ? h + 24 : h) - 18.4) / 11.6 * Math.PI);
+      skyU.sunDir.value.set(Math.cos(sa), sy, -0.35).normalize(); skyU.moonDir.value.set(Math.cos(((h < 6 ? h + 24 : h) - 18.4) / 11.6 * Math.PI), my, -0.35).normalize();
+      sunH = sy; const night = clamp(1 - smooth(-0.18, 0.12, sy), 0, 1); skyU.night.value = night; skyU.sunI.value = clamp(sy * 4, 0, 1);
+      // 平行光：太陽在地平線上用太陽，否則用月光
+      const useSun = sy > 0.02, L = useSun ? skyU.sunDir.value : skyU.moonDir.value;
+      _l.copy(L); _l.y = Math.max(_l.y, 0.24); _l.normalize(); sun._dir = _l.clone();
+      sun.intensity = useSun ? lerp(0.3, n(5), clamp(sy * 3, 0, 1)) : n(5);
+      clouds.material.opacity = lerp(0.35, 0.95, 1 - night);
+      glitter.material.opacity = 0.95 * clamp(1 - Math.abs(sy - 0.12) * 5, 0, 1) * (sy > -0.05 ? 1 : 0);
+      if (Math.abs(h - lastEnvH) > 0.4 && Math.abs(h - lastEnvH) < 23.6) { lastEnvH = h; updateEnv(); }
+    };
+    const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const clockHour = () => (hourOverride != null ? hourOverride : ((Date.now() / 1000) % DAY_SEC) / DAY_SEC * 24);
+    applyTime(clockHour());
+
     /* ----- 主迴圈 ----- */
     const fwd = new THREE.Vector3(), rgt = new THREE.Vector3();
-    let raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality = 2, stuckT = 0, stuckX = 0, stuckZ = 0;
+    let hourTick = 0, raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality = 2, stuckT = 0, stuckX = 0, stuckZ = 0;
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const rawDt = (now - last) / 1000; last = now;
@@ -1659,9 +1718,9 @@
       camera.position.set(camT.x + Math.sin(yaw) * hd, camT.y + vd, camT.z + Math.cos(yaw) * hd);
       camera.lookAt(camT);
       sky.position.copy(camera.position); clouds.position.copy(camera.position);
-      clouds.rotation.y += dt * 0.004; sky.rotation.y += dt * 0.0006;
+      clouds.rotation.y += dt * 0.004; hourTick += dt; if (hourTick > 0.25) { hourTick = 0; applyTime(clockHour()); }
       waveTex.offset.x += dt * 0.0016; waveTex.offset.y += dt * 0.0009; glTex.offset.y -= dt * 0.012;
-      sun.position.set(camT.x + 7, 19, camT.z - 11); sun.target.position.set(camT.x, 0, camT.z);
+      { const d = sun._dir || { x: 0.3, y: 0.8, z: -0.5 }; sun.position.set(camT.x + d.x * 24, d.y * 24, camT.z + d.z * 24); sun.target.position.set(camT.x, 0, camT.z); }
       layers.forEach((l) => (l.style.transform = ""));
 
       // 靠近哪個站點
@@ -1711,10 +1770,11 @@
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
     if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Animals) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; },
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow,
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
     return true;
@@ -1726,7 +1786,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
