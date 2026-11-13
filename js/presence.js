@@ -12,7 +12,7 @@
   const ROOM = (() => { try { const r = new URLSearchParams(location.search).get("room"); return r ? "-" + r.replace(/[^a-z0-9]/gi, "").slice(0, 12) : ""; } catch (_) { return ""; } })();   // 測試用：?room=xxx 使用獨立代號，不干擾正式的兩個身分
   const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM };
   const NAME = { david: "David", aeris: "Aeris ✿" };
-  const BED = { david: { x: 2.55, z: -4.35 }, aeris: { x: 2.55, z: -3.45 } };   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
+  const BED = { david: { x: 2.55, z: -6.85, y: 0.74 }, aeris: { x: 2.55, z: -3.6, y: 3.3 + 0.74 } };   // David 睡一樓大床；Aeris 睡二樓自己的床（y = 床面高度）   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
   let Pz = null;
   const lerp = (a, b, t) => a + (b - a) * t;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -106,14 +106,14 @@
         rm.x += 0; const k = Math.min(1, dt * 9);
         av.root.rotation.set(0, av.root.rotation.y, 0); W.position.set(0, 0, 0); W.rotation.set(0, 0, 0);
         const px = av.root.position.x, pz = av.root.position.z;
-        av.root.position.set(lerp(px || rm.x, rm.x, k), 0, lerp(pz || rm.z, rm.z, k));
+        av.root.position.set(lerp(px || rm.x, rm.x, k), lerp(av.root.position.y, rm.y || 0, k), lerp(pz || rm.z, rm.z, k));
         av.root.rotation.y += angDiff(av.root.rotation.y, rm.f) * Math.min(1, dt * 10);
         av.update(dt, rm.sp || 0, t); if (rm.sit > 0.5 && ctx.seatPose) ctx.seatPose(av, rm.sit);
-        tag.visible = true; tag.position.set(av.root.position.x, 2.0, av.root.position.z); zzz.visible = false;
+        tag.visible = true; tag.position.set(av.root.position.x, av.root.position.y + 2.0, av.root.position.z); zzz.visible = false;
       } else {
-        const b = BED[other]; W.position.set(b.x, 0.74, b.z); W.rotation.set(0, Math.PI / 2, 0); av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
+        const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, Math.PI / 2, 0); av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
         av.update(dt, 0, t); av.torso.rotation.x = Math.sin(t * 1.4) * 0.02; av.head.rotation.set(0, 0.3, 0);
-        tag.visible = false; zzz.visible = true; const f = (t * 0.5) % 1; zzz.position.set(b.x - 1.45 + f * 0.1, 1.15 + f * 0.5, b.z); zzz.material.opacity = 1 - f * 0.9;
+        tag.visible = false; zzz.visible = true; const f = (t * 0.5) % 1; zzz.position.set(b.x - 1.45 + f * 0.1, b.y + 0.4 + f * 0.5, b.z); zzz.material.opacity = 1 - f * 0.9;
         { const w = camera.position.distanceTo(zzz.position) * 0.06; zzz.scale.set(w, w, 1); }
       }
       { const w = camera.position.distanceTo(tag.position) * 0.07; tag.scale.set(w, w * 0.3125, 1); }
@@ -121,7 +121,7 @@
     hooks.push(hook); Pz.hook = hook;
     // 送出自己的狀態：用計時器而不是畫面更新，這樣分頁在背景、手機暫時切走時也不會停送（背景分頁最慢約每秒一次）
     Pz.timers.push(setInterval(() => {
-      const m = ctx.getMe(), msg = { x: m.x, z: m.z, f: m.f, sp: m.sp, sit: m.sit };
+      const m = ctx.getMe(), msg = { x: m.x, z: m.z, y: m.y, f: m.f, sp: m.sp, sit: m.sit };
       conns.forEach((c) => { if (c.open) { try { c.send(msg); } catch (_) {} } });
     }, 100));
   }

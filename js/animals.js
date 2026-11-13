@@ -94,30 +94,31 @@
 
   function mount(ctx) {
     unmount();
-    const { THREE, scene, hooks, obstacles, HOUSE, ENTRY, DECK_HD, pos, camera } = ctx;
+    const { THREE, scene, hooks, obstacles, HOUSE, ENTRY, DECK_HD, pos, camera, STAIR } = ctx;
     const root = new THREE.Group(); scene.add(root);
     Z = { root, hooks, wild: [], pets: [], birds: [], hook: null, H: HOUSE, E: ENTRY };
 
     /* --- 通行判斷：走獸只在戶外花園；不能進 David 的家與美術館；避開家具 / 樹 / 長椅 / 路燈 --- */
     const blockedBy = (x, z, pad) => {
-      for (const o of obstacles) if (x > o.minX - pad && x < o.maxX + pad && z > o.minZ - pad && z < o.maxZ + pad) return true;
+      for (const o of obstacles) if ((o.lv === undefined || o.lv === 0) && x > o.minX - pad && x < o.maxX + pad && z > o.minZ - pad && z < o.maxZ + pad) return true;
       return false;
     };
     const inHouse = (x, z, pad = 0) => x > HOUSE.x0 - pad && x < HOUSE.x1 + pad && z > HOUSE.z0 - pad && z < HOUSE.z1 + pad;
-    const GX0 = 1.6, GX1 = ENTRY - 1.5, GZ0 = -4.4, GZ1 = Math.min(DECK_HD - 1.2, 5.0);
+    const GX0 = 1.6, GX1 = ENTRY - 1.5, GZ0 = -(DECK_HD - 1.2), GZ1 = DECK_HD - 1.2;
     const wildOK = (x, z) => x > GX0 && x < GX1 && z > GZ0 && z < GZ1 && !inHouse(x, z, 1.0) && !blockedBy(x, z, 0.45);
-    const petOK = (x, z) => x > HOUSE.x0 + 0.5 && x < HOUSE.x1 - 0.5 && z > HOUSE.z0 + 0.5 && z < HOUSE.z1 - 0.45 && !blockedBy(x, z, 0.3);
+    const inStairs = (x, z) => x > STAIR.x0 - 0.6 && x < STAIR.x1 + 0.6 && z > STAIR.z0 - 0.4 && z < STAIR.z1 + 0.4;
+    const petOK = (x, z) => x > HOUSE.x0 + 0.5 && x < HOUSE.x1 - 0.5 && z > HOUSE.z0 + 0.5 && z < HOUSE.z1 - 0.45 && !inStairs(x, z) && !blockedBy(x, z, 0.3);
 
     const spawn = (kind, ok, list, sx, sz) => {
       const cfg = KINDS[kind], q = quad(THREE, cfg); root.add(q.root);
-      let x = sx, z = sz, n = 0; while (!ok(x, z) && n++ < 200) { x = rand(GX0, GX1); z = rand(GZ0, GZ1); }
+      let x = sx, z = sz, n = 0; while (!ok(x, z) && n++ < 400) { if (list === Z.pets) { x = rand(HOUSE.x0 + 1, HOUSE.x1 - 1); z = rand(HOUSE.z0 + 1, HOUSE.z1 - 0.8); } else { x = rand(GX0, GX1); z = rand(GZ0, GZ1); } }
       const a = { kind, cfg, q, x, z, f: rand(0, 6.28), tx: x, tz: z, wait: rand(0.5, 4), sp: 0, lie: 0, lying: false, ok, pet: list === Z.pets };
       list.push(a); return a;
     };
     // 走獸：3 隻兔子、2 隻小鹿、1 隻狐狸
     [["rabbit", 9.5, 2.0], ["rabbit", 17.5, -2.0], ["rabbit", 22.5, 1.5], ["deer", 13.5, -2.5], ["deer", 19.5, 3.0], ["fox", 11.5, 4.0]].forEach(([k, x, z]) => spawn(k, wildOK, Z.wild, x, z));
     // 家裡：一隻貓、一隻狗
-    spawn("dog", petOK, Z.pets, 5.0, -1.6); spawn("cat", petOK, Z.pets, 2.8, -0.8);
+    spawn("dog", petOK, Z.pets, 7.4, -2.6); spawn("cat", petOK, Z.pets, 4.6, -2.4);
 
     const step = (a, dt, t) => {
       const { cfg } = a;
