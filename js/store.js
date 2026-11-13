@@ -16,7 +16,8 @@
   const load = () => { try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { data = {}; } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} };
   const rec = (pid) => (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "" });
-  const emit = () => window.dispatchEvent(new CustomEvent("store:change"));
+  const emit = (detail) => window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null }));
+  const bc = (msg) => { try { window.Presence && window.Presence.broadcast && window.Presence.broadcast({ kind: "proj", who: window.PERSONA || "david", ...msg }); } catch (_) {} };   // 兩人同時在線時，專案更新也傳給對方
 
   const norm = (s) => String(s || "").toLowerCase().replace(/[\s,.;:!?，。；：！？、'"()（）\-_/]+/g, "");
   const bigrams = (s) => { const n = norm(s), out = new Set(); if (n.length < 2) { if (n) out.add(n); return out; } for (let i = 0; i < n.length - 1; i++) out.add(n.slice(i, i + 2)); return out; };
@@ -68,10 +69,19 @@
       emit();
       return { update: u, ticked };
     },
-    setGoal(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).goal = String(text).trim(); save(); apply(p); emit(); },
-    setStatus(pid, st) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.status = r.status === st ? "" : st; save(); apply(p); emit(); },
-    setNote(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; text = String(text).trim(); if (!text) return; const r = rec(pid); r.note = text; r.noteAt = today(); save(); api.addUpdate(pid, { type: "進度", text }); },
-    setNext(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).next = String(text).trim(); save(); apply(p); emit(); },
+    setGoal(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).goal = String(text).trim(); save(); apply(p); emit({ pid, kind: "goal", text: rec(pid).goal }); bc({ pid, goal: rec(pid).goal }); },
+    setStatus(pid, st) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.status = r.status === st ? "" : st; save(); apply(p); emit({ pid, kind: "status", text: r.status }); bc({ pid, status: r.status }); },
+    setNote(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; text = String(text).trim(); if (!text) return; const r = rec(pid); r.note = text; r.noteAt = today(); save(); api.addUpdate(pid, { type: "進度", text }); emit({ pid, kind: "note", text }); bc({ pid, note: text, noteAt: r.noteAt }); },
+    setNext(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).next = String(text).trim(); save(); apply(p); emit({ pid, kind: "next", text: rec(pid).next }); bc({ pid, next: rec(pid).next }); },
+    // 收到對方（另一位玩家）傳來的專案更新：寫進自己的紀錄，並讓 NEWS 彈出提示
+    applyRemote(m) {
+      const p = P.find((x) => x.id === m.pid); if (!p) return; const r = rec(m.pid); let kind = "note", text = "";
+      if (m.goal !== undefined) { r.goal = m.goal; kind = "goal"; text = m.goal; }
+      if (m.status !== undefined) { r.status = m.status; kind = "status"; text = m.status; }
+      if (m.next !== undefined) { r.next = m.next; kind = "next"; text = m.next; }
+      if (m.note !== undefined) { r.note = m.note; r.noteAt = m.noteAt || today(); kind = "note"; text = m.note; r.updates.unshift({ date: today(), title: m.note.length > 24 ? m.note.slice(0, 24) + "…" : m.note, text: m.note, type: "進度", at: Date.now(), local: false, remote: true }); }
+      save(); apply(p); emit({ pid: m.pid, kind, text, remote: true, who: m.who });
+    },
     addMilestones(pid, list) {
       const p = P.find((x) => x.id === pid); if (!p) return 0;
       const items = (Array.isArray(list) ? list : String(list).split(/[\n,，;；、]+/)).map((s) => s.trim()).filter(Boolean);

@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Presence = { mount, unmount, state: () => (Pz ? { status: Pz.status, remote: Pz.remote, peer: !!Pz.peer } : null) });
+  const api = (window.Presence = { mount, unmount, broadcast: (m) => { if (!Pz || !Pz.conns) return false; let ok = false; Pz.conns.forEach((c) => { if (c.open) { try { c.send(m); ok = true; } catch (_) {} } }); return ok; }, state: () => (Pz ? { status: Pz.status, remote: Pz.remote, peer: !!Pz.peer } : null) });
   const PEER_SRC = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
   const ROOM = (() => { try { const r = new URLSearchParams(location.search).get("room"); return r ? "-" + r.replace(/[^a-z0-9]/gi, "").slice(0, 12) : ""; } catch (_) { return ""; } })();   // 測試用：?room=xxx 使用獨立代號，不干擾正式的兩個身分
   const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM };
@@ -62,7 +62,7 @@
     const adopt = (c) => {
       conns.add(c); c.__t = performance.now();
       c.on("open", () => { Pz.status = "對方在線"; setPill(`${NAME[other].replace(" ✿", "")} 在線上`); setTimeout(() => setPill(""), 3500); });
-      c.on("data", (d) => { if (d && typeof d.x === "number") { if (!rm.on) { rm.x = d.x; rm.z = d.z; } Object.assign(rm, d, { t: performance.now(), on: true }); Pz.remote = { x: +d.x.toFixed(1), z: +d.z.toFixed(1) }; } });
+      c.on("data", (d) => { if (d && d.kind === "proj") { try { window.Store && window.Store.applyRemote(d); } catch (_) {} return; } if (d && typeof d.x === "number") { if (!rm.on) { rm.x = d.x; rm.z = d.z; } Object.assign(rm, d, { t: performance.now(), on: true }); Pz.remote = { x: +d.x.toFixed(1), z: +d.z.toFixed(1) }; } });
       const gone = () => { conns.delete(c); setTimeout(() => { if (Pz && rm.on && !anyOpen()) drop(); }, 4000); };   // 4 秒內沒有任何連線恢復，才當作下線
       c.on("close", gone); c.on("error", gone);
     };

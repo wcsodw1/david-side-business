@@ -1,6 +1,6 @@
 /* ============================================================
-   NEWS：右側的報紙。有新事件 → 跳出紅色驚嘆號；
-   點開報紙看過、按「看過了」或點進報導後才會消掉。
+   NEWS：右側的報紙。上半是「各專案現況」（每個專案的狀態 / 目前狀態 / Next Step / 目標），
+   下半是最近的更新紀錄。有新更新的專案會蓋 NEW 章，看過後按「看過了」才會消掉。
    已讀狀態存在這台瀏覽器（localStorage）。
    ============================================================ */
 (() => {
@@ -14,7 +14,7 @@
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...read])); } catch (_) {} };
   const keyOf = (p, u) => `${p.id}|${u.date}|${u.title}`;
 
-  const items = () => P.flatMap((p, i) => (p.updates || []).map((u) => ({ p, i, u, key: keyOf(p, u) })))
+  const items = () => P.flatMap((p, i) => (p.updates || []).filter((u) => !/專案頁建立/.test(u.title)).map((u) => ({ p, i, u, key: keyOf(p, u) })))   // 「專案頁建立」是系統訊息，不算更新
     .sort((a, b) => String(b.u.date).localeCompare(String(a.u.date)));
   const unread = () => items().filter((x) => !read.has(x.key));
 
@@ -61,16 +61,32 @@
     panel.addEventListener("click", onPanelClick);
 
     document.body.append(fab, scrim, panel);
-    mounted = true;
+    mounted = true; window.addEventListener("store:change", onStore);
     refresh();
   }
 
   function unmount() {
     if (!mounted) return;
     close();
-    fab.remove(); scrim.remove(); panel.remove();
+    fab.remove(); scrim.remove(); panel.remove(); window.removeEventListener("store:change", onStore); if (popBox) { popBox.remove(); popBox = null; }
     mounted = false;
   }
+
+  // 專案一有更新就從 NEWS 圖示旁彈出提示卡（約 7 秒後自動收起；點一下打開報紙）
+  const KIND_LABEL = { status: "狀態", note: "目前狀態", next: "Next Step", goal: "專案目標" };
+  let popBox = null;
+  function pop(d) {
+    const p = P.find((x) => x.id === d.pid); if (!p || !d.text && d.kind !== "status") return;
+    if (!popBox) { popBox = document.createElement("div"); popBox.className = "news-pops"; document.body.appendChild(popBox); }
+    const who = d.remote ? (d.who === "aeris" ? "Aeris" : "David") + " 更新了" : "已更新";
+    const el = document.createElement("div"); el.className = "news-pop";
+    const val = d.kind === "status" ? (d.text ? `<span class="ps-chip ps-${STATUS_CLS[d.text] || "TODO"}">${esc(d.text)}</span>` : "（已清除）") : esc(d.text);
+    el.innerHTML = `<small>NEWS · ${esc(who)}</small><b>${esc(p.name)}</b><p><em>${esc(KIND_LABEL[d.kind] || "")}</em> ${val}</p>`;
+    el.addEventListener("click", () => { el.remove(); openPanel(); });
+    popBox.appendChild(el); while (popBox.children.length > 3) popBox.firstChild.remove();
+    requestAnimationFrame(() => el.classList.add("on")); setTimeout(() => { el.classList.remove("on"); setTimeout(() => el.remove(), 400); }, 7000);
+  }
+  function onStore(e) { if (mounted) { refresh(); const d = e && e.detail; if (d && d.pid && !document.body.classList.contains("locked")) pop(d); } }
 
   function refresh() {
     if (!mounted) return;
@@ -81,41 +97,57 @@
     window.dispatchEvent(new CustomEvent("news:change"));
   }
 
+  const STATUS_CLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH" };
+
   function render() {
-    const all = items(), un = all.filter((x) => !read.has(x.key)), rd = all.filter((x) => read.has(x.key));
+    const all = items(), unreadKeys = new Set(unread().map((x) => x.key));
     const d = new Date();
     const dateStr = d.toLocaleDateString("zh-TW", { year: "numeric", month: "long", day: "numeric", weekday: "long" });
-    const art = (x, isNew) => `
-      <article class="art ${isNew ? "unread" : "seen"}">
-        ${isNew ? `<span class="stamp">NEW</span>` : ""}
-        <p class="kicker">${esc(x.p.name)} · ${esc(String(x.u.date).replace(/-/g, "."))}</p>
-        <h3><a href="#/p/${esc(x.p.id)}" data-key="${esc(x.key)}" data-go>${esc(x.u.title)}</a></h3>
-        <p class="body">${esc(x.u.text)}</p>
-        ${isNew ? `<button type="button" class="seen-btn" data-key="${esc(x.key)}">✓ 看過了</button>` : ""}
+    const real = (p) => (p.updates || []).filter((u) => !/專案頁建立/.test(u.title));
+    // 各專案現況卡
+    const card = (p) => {
+      const ups = p.updates || [], hasNew = ups.some((u) => unreadKeys.has(keyOf(p, u))), last = real(p)[0];
+      const st = p.wbStatus ? `<span class="ps-chip ps-${STATUS_CLS[p.wbStatus] || "TODO"}">${esc(p.wbStatus)}</span>` : `<span class="ps-chip ps-none">未設定</span>`;
+      const note = p.wbNote || (last ? last.title : "");
+      const when = p.wbNoteAt || (last ? last.date : "");
+      return `
+      <article class="art pj ${hasNew ? "unread" : "seen"}">
+        ${hasNew ? `<span class="stamp">NEW</span>` : ""}
+        <p class="kicker">${esc(p.category || "")}${when ? ` · ${esc(String(when).replace(/-/g, "."))}` : ""}</p>
+        <h3><a href="#/p/${esc(p.id)}" data-go data-pid="${esc(p.id)}">${esc(p.name)}</a> ${st}</h3>
+        <p class="body">${note ? esc(note) : `<span class="dimtxt">還沒有狀態更新</span>`}</p>
+        <p class="pj-row"><b>Next</b>${p.next ? esc(p.next) : `<span class="dimtxt">尚未設定</span>`}</p>
+        <p class="pj-row"><b>目標</b>${p.goal ? esc(p.goal) : `<span class="dimtxt">尚未設定</span>`}</p>
+        ${hasNew ? `<button type="button" class="seen-btn" data-pid="${esc(p.id)}">✓ 看過了</button>` : ""}
       </article>`;
+    };
+    // 最近更新紀錄（不含「專案頁建立」這種系統訊息）
+    const recent = all.filter((x) => !/專案頁建立/.test(x.u.title)).slice(0, 8);
+    const rec = (x) => `<article class="art ${unreadKeys.has(x.key) ? "unread" : "seen"}"><p class="kicker">${esc(x.p.name)} · ${esc(String(x.u.date).replace(/-/g, "."))}</p><h3><a href="#/p/${esc(x.p.id)}" data-key="${esc(x.key)}" data-go>${esc(x.u.title)}</a></h3>${x.u.text ? `<p class="body">${esc(x.u.text)}</p>` : ""}</article>`;
+    const un = P.filter((p) => (p.updates || []).some((u) => unreadKeys.has(keyOf(p, u)))).length;
     panel.innerHTML = `
       <header class="paper-head">
         <button type="button" class="paper-x" data-close aria-label="關閉">✕</button>
         <small>VOL.1 · ${esc(dateStr)}</small>
         <h2>THE DAVID TIMES</h2>
         <div class="rule"></div>
-        <p class="sub">${un.length ? `<b>${un.length}</b> 則新消息 · 看過後按「看過了」` : "目前沒有新消息 ☕"}</p>
+        <p class="sub">${P.length} 個專案現況${un ? ` · <b>${un}</b> 個有新更新` : ""}</p>
       </header>
       <div class="paper-body">
-        ${un.length ? `<div class="sec">頭條 HEADLINES</div>${un.map((x) => art(x, true)).join("")}` : ""}
-        ${rd.length ? `<div class="sec dim">過往報導 ARCHIVE</div>${rd.slice(0, 12).map((x) => art(x, false)).join("")}` : ""}
-        ${!all.length ? `<p class="empty-paper">還沒有任何消息。</p>` : ""}
+        <div class="sec">專案現況 PROJECT STATUS</div>
+        ${P.map(card).join("") || `<p class="empty-paper">還沒有專案。</p>`}
+        ${recent.length ? `<div class="sec dim">最近更新 RECENT</div>${recent.map(rec).join("")}` : ""}
       </div>
-      <footer>${un.length ? `<button type="button" class="read-all" data-all>全部標為已讀</button>` : `<span>已全部看過</span>`}</footer>`;
+      <footer>${un ? `<button type="button" class="read-all" data-all>全部標為已讀</button>` : `<span>已全部看過</span>`}</footer>`;
   }
 
   function onPanelClick(e) {
     if (e.target.closest("[data-close]")) return close();
     if (e.target.closest("[data-all]")) { unread().forEach((x) => read.add(x.key)); save(); return refresh(); }
     const b = e.target.closest(".seen-btn");
-    if (b) { read.add(b.dataset.key); save(); return refresh(); }
+    if (b) { items().filter((x) => x.p.id === b.dataset.pid).forEach((x) => read.add(x.key)); save(); return refresh(); }
     const a = e.target.closest("[data-go]");
-    if (a) { read.add(a.dataset.key); save(); close(); refresh(); }   // 照常跳到專案頁
+    if (a) { if (a.dataset.key) read.add(a.dataset.key); if (a.dataset.pid) items().filter((x) => x.p.id === a.dataset.pid).forEach((x) => read.add(x.key)); save(); close(); refresh(); }   // 照常跳到專案頁
   }
 
   function openPanel() {

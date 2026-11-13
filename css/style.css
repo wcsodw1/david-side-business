@@ -627,3 +627,18 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 /* 手機跳躍鈕：只在觸控裝置顯示 */
 .g-jump { display: none; position: absolute; right: 18px; bottom: 96px; width: 58px; height: 58px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35); background: rgba(20,17,43,.55); color: #fff; font-size: 22px; backdrop-filter: blur(6px); z-index: 6; touch-action: none; }
 @media (pointer: coarse) { .g-jump { display: block; } }
+
+/* NEWS：各專案現況卡 */
+.pj h3 { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.ps-chip { display: inline-block; padding: 2px 10px; border-radius: 99px; font: 800 10.5px var(--font); letter-spacing: .05em; color: #fff; vertical-align: middle; }
+.ps-TODO { background: #7a7a8a; } .ps-PENDING { background: #d99a1c; } .ps-BLOCK { background: #d92a47; } .ps-ON-PROCESS { background: #2f7be0; } .ps-FINISH { background: #1b9a62; } .ps-none { background: transparent; color: #8a7a98; border: 1.5px dashed #b8aa8a; }
+.pj-row { margin-top: 4px; font-size: 13.5px; line-height: 1.5; color: #3a3150; } .pj-row b { display: inline-block; min-width: 44px; margin-right: 6px; font: 800 10.5px var(--font); letter-spacing: .1em; color: #8a7a98; text-transform: uppercase; }
+.dimtxt { color: #a39a8a; }
+
+/* NEWS 提示卡：專案有更新時，從 NEWS 圖示下方彈出 */
+.news-pops { position: fixed; right: 12px; top: 160px; z-index: 65; display: grid; gap: 8px; width: min(300px, 86vw); pointer-events: none; }
+.news-pop { pointer-events: auto; cursor: pointer; padding: 11px 14px 12px; border-radius: 6px; background: #f4ecd8; color: #1f1a33; border: 2px solid #2a2218; box-shadow: 0 10px 28px rgba(0,0,0,.4); transform: translateX(120%) rotate(2deg); opacity: 0; transition: transform .45s cubic-bezier(.2,1.2,.3,1), opacity .35s; font-family: var(--font); }
+.news-pop.on { transform: none; opacity: 1; }
+.news-pop small { display: block; font: 800 10px var(--font); letter-spacing: .16em; color: #8a3a2a; text-transform: uppercase; }
+.news-pop b { display: block; margin-top: 2px; font: 800 17px Georgia, 'Noto Serif TC', serif; }
+.news-pop p { margin-top: 4px; font-size: 13.5px; line-height: 1.45; } .news-pop em { font-style: normal; font-weight: 800; font-size: 11px; letter-spacing: .08em; color: #8a7a98; margin-right: 4px; }
