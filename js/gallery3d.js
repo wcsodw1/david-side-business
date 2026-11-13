@@ -1187,10 +1187,10 @@
       mk(new THREE.BoxGeometry(0.9, 2.0, 0.75), M(0xdadde4, 0.4, 0.5), 11.45, 1.0, Z1 - 0.5); addObs(11.45, Z1 - 0.5, 0.5, 0.42, 0);   // 冰箱
       mk(new THREE.CylinderGeometry(0.75, 0.75, 0.06, 20), wood, 8.6, 0.74, -3.5); mk(new THREE.CylinderGeometry(0.07, 0.1, 0.72, 10), dk, 8.6, 0.37, -3.5); addObs(8.6, -3.5, 0.8, 0.8, 0);
       for (const [dx, dz] of [[-1.0, 0], [1.0, 0], [0, -1.0], [0, 1.0]]) { mk(new THREE.BoxGeometry(0.42, 0.06, 0.42), terra, 8.6 + dx, 0.46, -3.5 + dz); mk(new THREE.BoxGeometry(0.4, 0.36, 0.05), terra, 8.6 + dx * 1.12, 0.66, -3.5 + dz * 1.12); }
-      mk(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X1 - 0.3, 1.1, -5.2); addObs(X1 - 0.3, -5.2, 0.25, 0.95, 0);                          // 書櫃（東牆）
-      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) mk(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.13 + r * 0.2) % 1, 0.32, 0.42), 0.8), X1 - 0.55, 0.4 + r * 0.5, -5.9 + k * 0.3, false);
+      mk(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X0 + 0.35, 1.1, -1.4); addObs(X0 + 0.35, -1.4, 0.25, 0.95, 0);                          // 書櫃（西牆；樓梯入口前面要留空）
+      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) mk(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.13 + r * 0.2) % 1, 0.32, 0.42), 0.8), X0 + 0.6, 0.4 + r * 0.5, -2.1 + k * 0.3, false);
       mk(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 6.9, 0.8, -4.9); mk(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.6 }), 6.9, 1.7, -4.9, false);
-      { const pg = new THREE.Group(); mk(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xff9b78, 0.7), 1.0, 0.2, -0.6); for (let k = 0; k < 8; k++) { const a = k * 2.4; mk(new THREE.SphereGeometry(0.19, 10, 8), M(0x3f9a6a, 0.85), 1.0 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.6 + Math.sin(a) * 0.12, false); } }
+      { const pg = new THREE.Group(); mk(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xff9b78, 0.7), 1.6, 0.2, -0.1); for (let k = 0; k < 8; k++) { const a = k * 2.4; mk(new THREE.SphereGeometry(0.19, 10, 8), M(0x3f9a6a, 0.85), 1.6 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.1 + Math.sin(a) * 0.12, false); } }
 
       /* ---- 二樓：Aeris 的房間（lv 1）---- */
       const U = (geo, mat, x, y, z, cast = true) => mk(geo, mat, x, UY + y, z, cast);
@@ -1876,7 +1876,7 @@
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50) => { let nowT = performance.now(); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; } },   // 測試用：面板被藏起來時手動推進畫面
+      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50) => { let nowT = performance.now(); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; } },   // 測試用：面板被藏起來時手動推進畫面
       
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
