@@ -577,3 +577,13 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .aeris-chat .dir-name { color: #c0507c; }
 .aeris-chat .dir-btns button { background: #c0507c; }
 .aeris-chat .dir-btns button:last-child:not(:only-child) { background: transparent; color: #a0587a; border: 1.5px solid #f0b6cc; }
+
+/* 白板（精簡版）：目標 / 目前狀態 / Next Step */
+.wb-card h3 { margin: 20px 0 8px; }
+.wb-val { font-size: 17px; font-weight: 700; display: inline; }
+.st-chips { flex-wrap: wrap; margin-bottom: 8px; }
+.st-chips .chip { font-size: 11.5px; letter-spacing: .04em; }
+.st-chips .chip.on { color: #fff; border-color: transparent; }
+.st-chips .st-TODO.on { background: #7a7a8a; } .st-chips .st-PENDING.on { background: #d99a1c; } .st-chips .st-BLOCK.on { background: #d92a47; }
+.st-chips .st-ON-PROCESS.on { background: #2f7be0; } .st-chips .st-FINISH.on { background: #1b9a62; }
+.wb-now { margin-top: 8px; font-size: 15px; color: #1f1a33; } .wb-now time { margin-left: 6px; font-size: 12px; color: #8a7a98; }

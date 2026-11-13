@@ -83,24 +83,24 @@
     const finish = (p, msg) => { render({ msg, buttons: [ok] }); };
     const goalStep = (p, pre = "") => render({
       msg: `${pre}<b>${esc(p.name)}</b> 要做到什麼程度才算完成？`,
-      input: { ph: "例如：上架 10 個商品 / 月營收 3 萬 / 簽滿 5 位租客", submit: (t) => { window.Store.setGoal(p.id, t); milestoneStep(p, `記下了：「${esc(t)}」。`); } },
+      input: { ph: "例如：上架 10 個商品 / 月營收 3 萬 / 簽滿 5 位租客", submit: (t) => { window.Store.setGoal(p.id, t); nextStep(p, `記下了：「${esc(t)}」。<br>`); } },
       buttons: [later(p)],
     });
-    const milestoneStep = (p, pre = "") => render({
-      msg: `${pre}那要拆成哪幾個里程碑？（用逗號分隔，我會用它自動算完成度）`,
-      input: { ph: "例如：確定商品、做好封面、上架第一批、拿到第一筆訂單", submit: (t) => { const n = window.Store.addMilestones(p.id, t); finish(p, `收到 ${n} 個里程碑。完成度現在是 <b>${p.progress}%</b>，之後你記錄進度時我會自動比對打勾。`); } },
+    const nextStep = (p, pre = "") => render({
+      msg: `${pre}<b>${esc(p.name)}</b> 的 Next Step 是什麼？`,
+      input: { ph: "下一步要做什麼？", submit: (t) => { window.Store.setNext(p.id, t); finish(p, `記下了：「${esc(t)}」。`); } },
       buttons: [later(p)],
     });
     const staleStep = (p, d, pre = "") => render({
-      msg: `${pre}<b>${esc(p.name)}</b> 已經 <b>${d}</b> 天沒有更新了。最近做了什麼，或卡在哪裡？`,
-      input: { ph: "例如：在等廠商回覆 / 已完成封面設計", submit: (t) => { const r = window.Store.addUpdate(p.id, { type: "事件", text: t }); finish(p, `已記錄。${r && r.ticked.length ? `並自動打勾：${esc(r.ticked.join("、"))}。` : ""}`); } },
+      msg: `${pre}<b>${esc(p.name)}</b> 已經 <b>${d}</b> 天沒有更新了。現在是什麼狀態？`,
+      input: { ph: "更新目前狀態…", submit: (t) => { window.Store.setNote(p.id, t); finish(p, "已更新。"); } },
       buttons: [later(p)],
     });
-    const nextMsStep = (p, m, pre = "") => render({
-      msg: `${pre}下一個里程碑是「<b>${esc(m.text)}</b>」，完成了嗎？`,
+    const nextDoneStep = (p, pre = "") => render({
+      msg: `${pre}Next Step「<b>${esc(p.next)}</b>」做完了嗎？`,
       buttons: [
-        { label: "完成了", fn: () => { window.Store.toggleMilestone(p.id, m.id); finish(p, `太好了！<b>${esc(p.name)}</b> 的完成度更新為 <b>${p.progress}%</b>。`); } },
-        { label: "還沒，補充進度", fn: () => render({ msg: `目前做到哪了？`, input: { ph: "簡短描述目前狀況", submit: (t) => { window.Store.addUpdate(p.id, { type: "事件", title: `${m.text}：進行中`, text: t }); finish(p, "已記錄，我會再追蹤。"); } }, buttons: [later(p)] }) },
+        { label: "做完了", fn: () => { window.Store.setNext(p.id, ""); nextStep(p, "太好了！"); } },
+        { label: "還沒", fn: () => render({ msg: "現在是什麼狀態？", input: { ph: "更新目前狀態…", submit: (t) => { window.Store.setNote(p.id, t); finish(p, "已更新。"); } }, buttons: [later(p)] }) },
         later(p),
       ],
     });
@@ -108,18 +108,15 @@
     const startTalk = () => {
       const p = projectNow(), st = H.st(p), real = (p.updates || []).filter((u) => !/專案頁建立/.test(u.title))[0];
       const intro = inRoom >= 0 ? `${window.PERSONA === "aeris" ? "Aeris" : "David"}，我正在檢查 <b>${esc(p.name)}</b> 的白板。` : `${window.PERSONA === "aeris" ? "Aeris" : "David"}，我剛巡到 <b>${esc(p.name)}</b>。`;
-      const report = `${intro}目前<b>${esc(st.label)}</b>，完成度 <b>${p.progress}%</b>（${esc(p.progressReason || "")}）。${real ? `最近一次更新：${esc(real.title)}（${esc(String(real.date).replace(/-/g, "."))}）。` : "還沒有實際的進度紀錄。"}`;
+      const report = `${intro}${p.wbStatus ? `目前狀態 <b>${esc(p.wbStatus)}</b>${p.wbNote ? `：${esc(p.wbNote)}` : ""}。` : "目前狀態還沒設定。"}`;
       talk = { pid: p.id }; state = "talk";
       const snoozed = (snooze[p.id] || 0) > Date.now();
       const d = window.Store.daysSinceUpdate(p);
-      const open = (p.milestones || []).find((m) => !m.done);
-      const noGoal = P.filter((x) => !x.goal).length;
       if (snoozed) return finish(p, report);
       if (!p.goal) return goalStep(p, report + "<br><br>");
-      if (!(p.milestones || []).length) return milestoneStep(p, report + "<br><br>");
+      if (!p.next) return nextStep(p, report + "<br><br>");
       if (d == null || d >= 7) return staleStep(p, d == null ? "好多" : d, report + "<br><br>");
-      if (open) return nextMsStep(p, open, report + "<br><br>");
-      return finish(p, report + `<br><br>目標「${esc(p.goal)}」的里程碑都完成了，做得好！${noGoal ? `另外還有 ${noGoal} 個專案沒設定目標。` : ""}`);
+      return nextDoneStep(p, report + "<br><br>");
     };
 
     /* ----- 每幀 ----- */

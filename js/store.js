@@ -15,7 +15,7 @@
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const load = () => { try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { data = {}; } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} };
-  const rec = (pid) => (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [] });
+  const rec = (pid) => (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "" });
   const emit = () => window.dispatchEvent(new CustomEvent("store:change"));
 
   const norm = (s) => String(s || "").toLowerCase().replace(/[\s,.;:!?，。；：！？、'"()（）\-_/]+/g, "");
@@ -42,6 +42,7 @@
     p.updates = [...r.updates.slice().sort((a, b) => b.at - a.at), ...p._base.updates];
     p.goal = r.goal || "";
     p.milestones = r.milestones || [];
+    p.wbStatus = r.status || ""; p.wbNote = r.note || ""; p.wbNoteAt = r.noteAt || ""; p.next = r.next || "";   // 白板三格：目標 / 目前狀態（TODO…FINISH + 一句話）/ Next Step
     const ev = evaluate(p);
     p.progress = ev.progress; p.progressMode = ev.mode; p.progressReason = ev.reason;
     if (ev.mode === "milestone" && ev.progress >= 100 && p._base.status !== "live") p.suggestStatus = "live"; else p.suggestStatus = null;
@@ -68,6 +69,9 @@
       return { update: u, ticked };
     },
     setGoal(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).goal = String(text).trim(); save(); apply(p); emit(); },
+    setStatus(pid, st) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.status = r.status === st ? "" : st; save(); apply(p); emit(); },
+    setNote(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; text = String(text).trim(); if (!text) return; const r = rec(pid); r.note = text; r.noteAt = today(); save(); api.addUpdate(pid, { type: "進度", text }); },
+    setNext(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).next = String(text).trim(); save(); apply(p); emit(); },
     addMilestones(pid, list) {
       const p = P.find((x) => x.id === pid); if (!p) return 0;
       const items = (Array.isArray(list) ? list : String(list).split(/[\n,，;；、]+/)).map((s) => s.trim()).filter(Boolean);
@@ -79,9 +83,9 @@
     removeMilestone(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.milestones = r.milestones.filter((x) => x.id !== id); save(); apply(p); emit(); },
     exportText() {
       const out = {};
-      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length) out[pid] = { goal: r.goal, milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
+      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length || r.status || r.note || r.next) out[pid] = { goal: r.goal, status: r.status || "", note: r.note || "", next: r.next || "", milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
       return JSON.stringify(out, null, 2);
     },
-    hasData: () => Object.keys(data).some((k) => data[k].updates.length || data[k].goal || data[k].milestones.length),
+    hasData: () => Object.keys(data).some((k) => data[k].updates.length || data[k].goal || data[k].milestones.length || data[k].status || data[k].next),
   });
 })();
