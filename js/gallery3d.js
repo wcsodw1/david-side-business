@@ -451,13 +451,14 @@
       for (const [z0, z1] of [[-DECK_HD, 3.4], [6.2, DECK_HD]]) { const g2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, z1 - z0), glass); g2.position.set(0.05, 0.55, (z0 + z1) / 2); scene.add(g2); }   // 西側欄杆：南邊留一個缺口通往船尾甲板
       const rl = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 3.4 + DECK_HD), brass); rl.position.set(0.05, 1.08, (-DECK_HD + 3.4) / 2); scene.add(rl); const rl2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, DECK_HD - 6.2), brass); rl2.position.set(0.05, 1.08, (6.2 + DECK_HD) / 2); scene.add(rl2); }
     // 路燈
-    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 2.2 });
+    const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 0.1 });   // 路燈燈泡（亮度由 lights.js 依天色控制）
+    const lampPts = [];                                                                                                // 所有路燈位置，給 lights.js 做光暈與近燈照明
     for (let x = ENTRY + 4; x < WORLD_W; x += SPACING) {
       if (x > COURT_CX - HX - 1 && x < COURT_CX + HXE + 1) continue;
       for (const z of [-DECK_HD + 0.35, DECK_HD - 0.35]) {
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.6, 10), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.5, metalness: 0.5 }));
         pole.position.set(x, 1.3, z); scene.add(pole);
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), lampMat); bulb.position.set(x, 2.7, z); scene.add(bulb);
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), lampMat); bulb.position.set(x, 2.7, z); scene.add(bulb); lampPts.push({ x, y: 2.7, z });
       }
     }
 
@@ -1242,7 +1243,9 @@
       flowers(15.6, 1.9, 2.6, 0.9); flowers(21.0, 1.9, 2.4, 0.9); flowers(7.0, 5.0, 2.8, 1.0);
       const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35); };
       bench(14.4, 0.6); bench(20.0, -0.6); bench(14.0, 6.6); bench(23.4, 1.6);
-      for (const [x, z] of [[13.0, -0.9], [16.8, -2.0], [18.6, 1.0], [22.2, -1.2], [24.6, 0.9]]) { mk(new THREE.CylinderGeometry(0.035, 0.045, 1.5, 8), M(0x15121f, 0.5, 0.5), x, 0.75, z); mk(new THREE.SphereGeometry(0.12, 12, 9), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 2 }), x, 1.58, z, false); }
+      for (const [x, z] of [[13.0, -0.9], [16.8, -2.0], [18.6, 1.0], [22.2, -1.2], [24.6, 0.9], [15.2, -4.4], [19.8, -4.8], [20.6, -2.6], [19.0, 2.4], [14.6, 3.2], [24.4, 5.0], [17.0, 7.0], [9.0, 2.2], [6.0, 5.0]]) {   // 公園路燈（晚上自動亮、走近更亮）
+        mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); mk(new THREE.SphereGeometry(0.15, 14, 10), lampMat, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z });
+      }
       // 池塘（有睡蓮與石頭）
       { const PX = 19.0, PZ = 5.2, pr = 3.0, ps = 0.78;
         const pw = new THREE.Mesh(new THREE.CircleGeometry(pr, 40), new THREE.MeshStandardMaterial({ color: 0x3a8fc0, roughness: 0.05, metalness: 0.3, emissive: 0x12405e, emissiveIntensity: 0.35 })); pw.rotation.x = -PI / 2; pw.scale.set(1, ps, 1); pw.position.set(PX, 0.03, PZ); scene.add(pw);
@@ -1688,7 +1691,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1887,6 +1890,7 @@
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
     if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Lights) try { window.Lights.mount(ctx); } catch (err) { console.error("燈光載入失敗：", err); }
     if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
     if (window.Ship) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
@@ -1907,7 +1911,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Lights) window.Lights.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
