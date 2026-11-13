@@ -13,6 +13,9 @@ window.SITE = {
   name: "David's Side Business",
   tagline: "A place where dreams come true",
   taglineZh: '把夢想變成 "Real"',
+  // 二樓房間的海報照片：把圖片放進 img/posters/，再把檔名依序寫在這裡（例如 ["p1.jpg", "p2.jpg"]）。
+  // 留空 = 用程式畫的舞台風格海報。⚠ 這個 repo 是公開的，請只放你有權使用的圖片。
+  posterPhotos: [],
 };
 
 window.STATUS = {

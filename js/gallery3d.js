@@ -1256,11 +1256,18 @@
         };
         const drawPoster2 = (g, w, h, st) => { drawPoster(g, w, h, st); g.textAlign = "center"; g.fillStyle = st === 2 ? "rgba(0,0,0,.55)" : "rgba(255,255,255,.7)"; g.font = "600 30px 'Noto Sans TC', sans-serif"; g.fillText("P A R K   C H A N Y E O L", w / 2, h - 28); };
         const frameM = M(0xf4f1ea, 0.5);
+        let posterN = 0;
+        const PHOTOS = (window.SITE && window.SITE.posterPhotos) || [];   // 要放真正的照片：把圖片放進 img/posters/，並把檔名依序寫進 data/projects.js 的 SITE.posterPhotos
         const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
-          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso);
+          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso); const photo = PHOTOS.length ? PHOTOS[posterN++ % PHOTOS.length] : null;
           const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
           const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
           const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.18 })); pl.position.z = 0.02; grp.add(pl);
+          if (photo) new THREE.TextureLoader().load("img/posters/" + photo, (t) => {      // 有照片就換上去（裁成海報比例、填滿）
+            if ("colorSpace" in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; t.anisotropy = 8;
+            const pa = pw / ph, ia = t.image.width / t.image.height; if (ia > pa) { t.repeat.x = pa / ia; t.offset.x = (1 - t.repeat.x) / 2; } else { t.repeat.y = ia / pa; t.offset.y = (1 - t.repeat.y) / 2; }
+            pl.material.map = t; pl.material.emissiveMap = t; pl.material.needsUpdate = true;
+          });
         };
         const NZ = Z0 + 0.08, EX = X1 - 0.08;
         poster(1.3, 1.55, NZ, 0, 0); poster(2.45, 1.55, NZ, 0, 1); poster(2.0, 0.55, NZ, 0, 3, 0.5, 0.75);                         // 北牆（床頭那側）
@@ -1899,6 +1906,7 @@
       const inWater = pos.x > POOL.x0 && pos.x < POOL.x1 && pos.z > POOL.z0 && pos.z < POOL.z1 && lvl === 0;
       if (inWater !== wasSwim) { wasSwim = inWater; if (window.Music) window.Music.sfx("splash", pos.x, pos.z, 1.3); }
       swimT = lerp(swimT, inWater ? 1 : 0, Math.min(1, dt * 5));
+      if (swimT < 0.01 && !wake) { av.root.rotation.order = "XYZ"; av.root.rotation.x = 0; av.root.rotation.z = 0; }   // 修正：開場動畫之後角色身體殘留的歪斜（倒著走）
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
         wake.t += dt; const T = wake.t, bx = 2.55, by = (window.PERSONA === "aeris" ? UY : 0) + 0.74, ex = 3.5, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
