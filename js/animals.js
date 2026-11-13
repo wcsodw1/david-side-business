@@ -22,60 +22,97 @@
   const rand = (a, b) => a + Math.random() * (b - a);
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
 
-  /* ---------- 四足動物模型（面朝 +z） ---------- */
+  /* ---------- 四足動物模型（面朝 +z）：毛皮紋理、肚皮漸層、兩節腿、脖子、耳內側、鬍鬚、眼睛高光 ---------- */
+  const furTexCache = {};
+  const furTex = (THREE, kind) => {
+    if (furTexCache[kind]) return furTexCache[kind];
+    const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d");
+    g.fillStyle = "#f4f4f4"; g.fillRect(0, 0, 128, 128);
+    for (let i = 0; i < 1800; i++) { const v = 205 + Math.random() * 50; g.strokeStyle = `rgba(${v},${v},${v},${0.1 + Math.random() * 0.22})`; g.lineWidth = 0.6 + Math.random() * 0.7; const x = Math.random() * 128, y = Math.random() * 128, l = 3 + Math.random() * 6, a = kind === "stripe" ? 1.2 + Math.random() * 0.4 : Math.random() * 6.28; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+    if (kind === "stripe") for (let i = 0; i < 9; i++) { g.fillStyle = "rgba(90,90,100,.22)"; g.fillRect(0, i * 15 + Math.random() * 4, 128, 4 + Math.random() * 3); }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 3); if ("colorSpace" in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    return (furTexCache[kind] = t);
+  };
+
   function quad(THREE, o) {
-    const M = (c, r = 0.85) => new THREE.MeshStandardMaterial({ color: c, roughness: r, envMapIntensity: 0.4 });
-    const fur = M(o.col), belly = M(o.belly || o.col), dark = M(o.dark || 0x2a2018, 0.7), light = M(o.light || o.col);
+    const tex = furTex(THREE, o.stripe ? "stripe" : "fur");
+    const M = (c, r = 0.9, withTex = true) => new THREE.MeshStandardMaterial({ color: c, roughness: r, envMapIntensity: 0.35, map: withTex ? tex : null });
+    const fur = M(o.col), light = M(o.light || o.col), dark = M(o.dark || 0x2a2018, 0.6, false), sock = M(o.sock || o.col), pink = M(0xf2a6b4, 0.7, false), white = M(0xffffff, 0.3, false);
     const root = new THREE.Group(), body = new THREE.Group(); root.add(body);
     const add = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
-    const [L, H, W] = o.body, lh = o.legH, by = lh + H * 0.5;
-    const torso = add(new THREE.SphereGeometry(0.5, 16, 12), fur, body, 0, by, 0); torso.scale.set(W, H, L);
-    if (o.belly) { const b = add(new THREE.SphereGeometry(0.5, 14, 10), belly, body, 0, by - H * 0.18, 0.02); b.scale.set(W * 0.9, H * 0.7, L * 0.92); }
-    const legs = [];
-    for (const [sx, sz] of [[-1, 1], [1, -1], [1, 1], [-1, -1]]) {   // 對角線一組
-      const hip = new THREE.Group(); hip.position.set(sx * W * 0.32, lh + H * 0.12, sz * L * 0.3); body.add(hip);
-      add(new THREE.CylinderGeometry(o.legR, o.legR * 0.75, lh + H * 0.12, 8), fur, hip, 0, -(lh + H * 0.12) / 2, 0);
-      add(new THREE.SphereGeometry(o.legR * 1.1, 8, 6), dark, hip, 0, -(lh + H * 0.12) + 0.01, 0.01).scale.set(1, 0.6, 1.4);
-      legs.push(hip);
+    const sph = (r, ws = 24, hs = 16) => new THREE.SphereGeometry(r, ws, hs);
+    const [L, H, W] = o.body, lh = o.legH, by = lh + H * 0.5, up = new THREE.Vector3(0, 1, 0);
+    const limb = (a, b, r0, r1, mat, parent) => { const d = b.clone().sub(a), len = d.length(), m = new THREE.Mesh(new THREE.CylinderGeometry(r1, r0, len, 12), mat); m.position.copy(a).add(b).multiplyScalar(0.5); m.quaternion.setFromUnitVectors(up, d.normalize()); m.castShadow = true; parent.add(m); return m; };
+
+    // 身體：背部顏色 → 肚皮顏色的漸層（頂點色）
+    const bodyGeo = sph(0.5, 32, 22), pos = bodyGeo.attributes.position, cols = [], cTop = new THREE.Color(o.col), cBel = new THREE.Color(o.belly || o.col);
+    for (let i = 0; i < pos.count; i++) { const k = Math.min(1, Math.max(0, (0.5 - pos.getY(i)) / 0.75)), c = cTop.clone().lerp(cBel, k * k); cols.push(c.r, c.g, c.b); }
+    bodyGeo.setAttribute("color", new THREE.Float32BufferAttribute(cols, 3));
+    const torso = add(bodyGeo, new THREE.MeshStandardMaterial({ vertexColors: true, map: tex, roughness: 0.92, envMapIntensity: 0.35 }), body, 0, by, 0); torso.scale.set(W, H, L);
+    add(sph(0.5), fur, body, 0, by + H * 0.02, L * 0.3).scale.set(W * 0.98, H * 0.95, L * 0.4);                 // 胸 / 肩
+    add(sph(0.5), fur, body, 0, by + H * (o.haunch ? 0.12 : 0.0), -L * 0.28).scale.set(W * 1.02, H * (o.haunch || 0.95), L * (o.haunch ? 0.5 : 0.42));   // 臀 / 後腿肌肉
+    if (o.chest) add(sph(0.5), M(o.chest), body, 0, by - H * 0.12, L * 0.38).scale.set(W * 0.6, H * 0.7, L * 0.25);   // 胸前白毛
+
+    // 腿：大腿 + 小腿（會彎）+ 腳掌
+    const legs = [], hipY = lh + H * 0.14;
+    for (const [sx, sz] of [[-1, 1], [1, -1], [1, 1], [-1, -1]]) {
+      const front = sz > 0, hip = new THREE.Group(); hip.position.set(sx * W * 0.32, hipY, sz * L * 0.3); body.add(hip);
+      const u = hipY * 0.5, l2 = hipY - u;
+      limb(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -u, front ? 0 : 0.03), o.legR * (front ? 1.15 : 1.5), o.legR * 0.85, fur, hip);
+      const knee = new THREE.Group(); knee.position.set(0, -u, front ? 0 : 0.03); hip.add(knee);
+      add(sph(o.legR * 0.95, 10, 8), fur, knee, 0, 0, 0);
+      limb(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -l2 + 0.03, front ? 0 : -0.03), o.legR * 0.8, o.legR * 0.62, sock, knee);
+      add(sph(o.legR * 1.05, 10, 8), dark, knee, 0, -l2 + 0.02, 0.015).scale.set(1, 0.6, 1.5);
+      legs.push({ hip, knee, front });
     }
-    const head = new THREE.Group(); head.position.set(0, by + H * (o.neck || 0.35), L * 0.5); body.add(head);
-    const hr = o.headR;
-    add(new THREE.SphereGeometry(hr, 14, 10), fur, head, 0, 0, hr * 0.2).scale.set(1, 0.95, 1.1);
-    add(new THREE.SphereGeometry(hr * 0.5, 10, 8), light, head, 0, -hr * 0.2, hr * 1.0).scale.set(0.9, 0.75, 1.1);   // 口鼻
-    add(new THREE.SphereGeometry(hr * 0.16, 8, 6), dark, head, 0, -hr * 0.1, hr * 1.5);                              // 鼻
+
+    // 頭 + 脖子
+    const head = new THREE.Group(), hr = o.headR, hy = by + H * (o.neck || 0.35), hz = L * 0.5 + (o.neck > 0.6 ? 0.18 : 0.02); head.position.set(0, hy, hz); body.add(head);
+    if ((o.neck || 0) > 0.5) limb(new THREE.Vector3(0, by + H * 0.15, L * 0.34), new THREE.Vector3(0, hy - hr * 0.3, hz - hr * 0.2), hr * 0.85, hr * 0.5, fur, body);
+    add(sph(hr, 26, 18), fur, head, 0, 0, hr * 0.15).scale.set(0.95, 0.95, 1.08);                                  // 頭骨
+    const mz = add(sph(hr * 0.55, 18, 12), light, head, 0, -hr * 0.22, hr * 0.92); mz.scale.set(0.88, 0.72, 1.25);   // 口鼻
+    add(sph(hr * 0.2, 12, 8), dark, head, 0, -hr * 0.05, hr * 1.55).scale.set(1.1, 0.8, 0.9);                       // 鼻頭
+    if (o.cheek) for (const sx of [-1, 1]) add(sph(hr * 0.42, 14, 10), light, head, sx * hr * 0.5, -hr * 0.3, hr * 0.7);   // 臉頰
     for (const sx of [-1, 1]) {
-      add(new THREE.SphereGeometry(hr * 0.13, 8, 6), dark, head, sx * hr * 0.42, hr * 0.2, hr * 0.82);                  // 眼
-      if (o.ear === "long") { const e = add(new THREE.CylinderGeometry(hr * 0.16, hr * 0.2, hr * 2.2, 8), fur, head, sx * hr * 0.4, hr * 1.5, -hr * 0.1); e.rotation.z = -sx * 0.18; }
-      else if (o.ear === "point") { const e = add(new THREE.ConeGeometry(hr * 0.42, hr * 0.95, 8), fur, head, sx * hr * 0.55, hr * 0.95, 0); e.rotation.z = -sx * 0.2; add(new THREE.ConeGeometry(hr * 0.24, hr * 0.6, 8), dark, head, sx * hr * 0.55, hr * 0.92, hr * 0.06).rotation.z = -sx * 0.2; }
-      else if (o.ear === "deer") { const e = add(new THREE.SphereGeometry(hr * 0.42, 8, 6), fur, head, sx * hr * 0.8, hr * 0.7, -hr * 0.1); e.scale.set(0.5, 1.1, 0.8); e.rotation.z = -sx * 0.7; }
-      else { const e = add(new THREE.SphereGeometry(hr * 0.4, 8, 6), fur, head, sx * hr * 0.72, hr * 0.7, 0); e.scale.set(0.6, 1, 0.8); }
+      add(sph(hr * 0.17, 12, 10), dark, head, sx * hr * 0.47, hr * 0.22, hr * 0.84); add(sph(hr * 0.06, 8, 6), white, head, sx * hr * 0.5, hr * 0.3, hr * 0.96);   // 眼睛 + 高光
+      if (o.ear === "long") { const e = add(sph(hr * 0.3, 12, 10), fur, head, sx * hr * 0.4, hr * 1.55, -hr * 0.1); e.scale.set(0.5, 3.0, 0.9); e.rotation.z = -sx * 0.16; const ei = add(sph(hr * 0.2, 10, 8), pink, head, sx * hr * 0.4, hr * 1.5, -hr * 0.0); ei.scale.set(0.4, 2.6, 0.5); ei.rotation.z = -sx * 0.16; }
+      else if (o.ear === "point") { const e = add(new THREE.ConeGeometry(hr * 0.45, hr * 1.1, 14), fur, head, sx * hr * 0.55, hr * 1.0, -hr * 0.1); e.rotation.z = -sx * 0.22; add(new THREE.ConeGeometry(hr * 0.28, hr * 0.7, 12), o.earIn ? M(o.earIn, 0.7, false) : dark, head, sx * hr * 0.55, hr * 0.96, hr * 0.02).rotation.z = -sx * 0.22; }
+      else if (o.ear === "deer") { const e = add(sph(hr * 0.45, 12, 10), fur, head, sx * hr * 0.85, hr * 0.75, -hr * 0.1); e.scale.set(0.45, 1.25, 0.8); e.rotation.z = -sx * 0.8; add(sph(hr * 0.3, 10, 8), pink, head, sx * hr * 0.86, hr * 0.74, -hr * 0.02).scale.set(0.3, 1.0, 0.5); }
+      else { const e = add(sph(hr * 0.5, 14, 10), dark.clone ? M(o.earCol || o.dark || 0x4a3626, 0.9) : fur, head, sx * hr * 0.78, hr * 0.5, -hr * 0.05); e.scale.set(0.42, 1.15, 0.8); e.rotation.z = -sx * 0.5; }   // 垂耳
     }
-    if (o.antlers) for (const sx of [-1, 1]) { const a = add(new THREE.CylinderGeometry(0.012, 0.018, hr * 2.4, 6), M(0x7a5a3c), head, sx * hr * 0.45, hr * 1.7, -hr * 0.05); a.rotation.z = -sx * 0.35; const b2 = add(new THREE.CylinderGeometry(0.01, 0.014, hr * 1.1, 6), M(0x7a5a3c), head, sx * hr * 0.75, hr * 2.0, -hr * 0.05); b2.rotation.z = sx * 0.5; }
-    const tail = new THREE.Group(); tail.position.set(0, by + H * 0.1, -L * 0.48); body.add(tail);
-    if (o.tail === "fluff") add(new THREE.SphereGeometry(o.tailR || 0.1, 10, 8), light, tail, 0, 0.03, -0.04);
-    else if (o.tail === "long") { const t = add(new THREE.CylinderGeometry(o.legR * 0.7, o.legR * 0.5, o.tailL || 0.5, 8), fur, tail, 0, 0.12, -0.12); t.rotation.x = -0.9; }
-    else if (o.tail === "brush") { const t = add(new THREE.SphereGeometry(0.1, 10, 8), fur, tail, 0, 0.0, -0.18); t.scale.set(0.9, 0.9, 2.6); add(new THREE.SphereGeometry(0.06, 8, 6), light, tail, 0, 0, -0.34); }
-    else add(new THREE.SphereGeometry(0.05, 8, 6), light, tail, 0, 0.0, -0.03);
-    if (o.spots) for (let i = 0; i < 7; i++) add(new THREE.SphereGeometry(0.03, 6, 5), M(0xfff1d8), body, rand(-W * 0.3, W * 0.3), by + H * 0.4, rand(-L * 0.3, L * 0.3));
+    if (o.whisk) for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) { const w = add(new THREE.CylinderGeometry(0.003, 0.002, hr * 1.5, 4), white, head, sx * hr * 0.75, -hr * 0.18 + k * hr * 0.1, hr * 1.25); w.rotation.z = Math.PI / 2 + sx * (0.1 + k * 0.12); w.rotation.y = sx * -0.2; }
+    if (o.antlers) for (const sx of [-1, 1]) { const A = M(0x6a4a2c, 0.8, false); const a = add(new THREE.CylinderGeometry(0.012, 0.022, hr * 2.6, 6), A, head, sx * hr * 0.5, hr * 1.9, -hr * 0.1); a.rotation.z = -sx * 0.3; for (const [h2, sd] of [[0.9, 0.7], [1.5, 0.55], [2.1, 0.4]]) { const t = add(new THREE.CylinderGeometry(0.008, 0.014, hr * 1.2 * sd, 5), A, head, sx * (hr * 0.5 + h2 * hr * 0.2), hr * (1.2 + h2 * 0.5), -hr * 0.1 + (h2 > 1.4 ? hr * 0.25 : 0)); t.rotation.z = sx * 0.55; } }
+    if (o.collar) add(new THREE.TorusGeometry(hr * 0.78, 0.014, 8, 20), M(o.collar, 0.5, false), body, 0, hy - hr * 0.55, hz - hr * 0.55).rotation.x = 1.2;
+    if (o.tongue) { const t = add(sph(hr * 0.17, 8, 6), pink, head, 0, -hr * 0.55, hr * 1.25); t.scale.set(0.8, 0.4, 1.4); }
+
+    // 尾巴
+    const tail = new THREE.Group(); tail.position.set(0, by + H * 0.12, -L * 0.5); body.add(tail);
+    if (o.tail === "fluff") add(sph(o.tailR || 0.1, 14, 10), light, tail, 0, 0.03, -0.05);
+    else if (o.tail === "long") { const t = add(new THREE.CylinderGeometry(o.legR * 0.55, o.legR * 0.4, o.tailL || 0.5, 10), fur, tail, 0, 0.14, -0.12); t.rotation.x = -0.95; if (o.tailTip) add(sph(o.legR * 0.5, 8, 6), M(o.tailTip, 0.8, false), tail, 0, 0.3, -0.27); }
+    else if (o.tail === "brush") { const t = add(sph(0.1, 16, 12), fur, tail, 0, 0.0, -0.2); t.scale.set(0.95, 0.95, 2.8); add(sph(0.075, 12, 10), M(o.tailTip || 0xffffff, 0.85, false), tail, 0, 0, -0.43).scale.set(1, 1, 1.4); }
+    else add(sph(0.05, 8, 6), light, tail, 0, 0.0, -0.03);
+    if (o.spots) for (let k = 0; k < 14; k++) { const sp = add(sph(0.022, 6, 5), M(0xfff1d8, 0.8, false), body, rand(-W * 0.32, W * 0.32), by + H * 0.42 + rand(-0.03, 0.02), rand(-L * 0.35, L * 0.32)); sp.scale.set(1, 0.4, 1); }
     root.scale.setScalar(o.scale || 1);
     let ph = Math.random() * 6;
     function update(dt, speed, t, lie = 0, hop = 0) {
       ph += dt * speed * (o.stride || 5);
-      const a = Math.sin(ph) * Math.min(0.8, speed * 0.55);
-      legs[0].rotation.x = a; legs[1].rotation.x = a; legs[2].rotation.x = -a; legs[3].rotation.x = -a;
-      if (lie > 0) { for (const l of legs) l.rotation.x = lerp(l.rotation.x, 1.35, lie); body.position.y = -lh * 0.7 * lie; head.rotation.x = 0.35 * lie; }
-      else { body.position.y = hop ? Math.abs(Math.sin(ph * 1.3)) * hop * Math.min(1, speed) : Math.abs(Math.sin(ph)) * 0.012 * speed; head.rotation.x = Math.sin(t * 0.7 + ph) * 0.06; }
+      const k = Math.min(0.8, speed * 0.55), a = Math.sin(ph) * k;
+      legs[0].hip.rotation.x = a; legs[1].hip.rotation.x = a; legs[2].hip.rotation.x = -a; legs[3].hip.rotation.x = -a;
+      const lift = (v) => Math.max(0, Math.cos(v)) * k * 1.1;
+      legs[0].knee.rotation.x = lift(ph + 0.4); legs[1].knee.rotation.x = lift(ph + 0.4); legs[2].knee.rotation.x = lift(ph + Math.PI + 0.4); legs[3].knee.rotation.x = lift(ph + Math.PI + 0.4);
+      if (lie > 0) { for (const l of legs) { l.hip.rotation.x = lerp(l.hip.rotation.x, 1.4, lie); l.knee.rotation.x = lerp(l.knee.rotation.x, -1.5, lie); } body.position.y = -lh * 0.72 * lie; head.rotation.x = 0.32 * lie; }
+      else { body.position.y = hop ? Math.abs(Math.sin(ph * 1.3)) * hop * Math.min(1, speed) : Math.abs(Math.sin(ph)) * 0.014 * speed; head.rotation.x = Math.sin(t * 0.7 + ph) * 0.06 + (speed > 0.2 ? Math.sin(ph * 2) * 0.05 : 0); }
       tail.rotation.y = Math.sin(t * (o.wag || 2) + ph) * (o.wagAmp || 0.25); tail.rotation.x = o.tailUp || 0;
     }
     return { root, update };
   }
 
   const KINDS = {
-    rabbit: { body: [0.42, 0.26, 0.24], legH: 0.1, legR: 0.035, headR: 0.1, ear: "long", tail: "fluff", tailR: 0.07, col: 0xcdbba5, belly: 0xf1e8dc, light: 0xf4eee6, speed: 1.2, hop: 0.1, stride: 8, flee: 4.2, wag: 0, scale: 1.0 },
-    deer: { body: [0.95, 0.42, 0.3], legH: 0.62, legR: 0.045, headR: 0.15, ear: "deer", antlers: true, tail: "short", col: 0xa87a4c, belly: 0xe9d9bf, light: 0xe9d9bf, neck: 0.75, speed: 0.8, stride: 3.5, flee: 3.6, spots: true },
-    fox: { body: [0.62, 0.28, 0.2], legH: 0.24, legR: 0.04, headR: 0.12, ear: "point", tail: "brush", col: 0xd8742c, belly: 0xf6e8d8, light: 0xfaf3ea, dark: 0x2a1a12, neck: 0.4, speed: 1.1, stride: 5.5, flee: 4.4 },
-    dog: { body: [0.62, 0.3, 0.26], legH: 0.3, legR: 0.05, headR: 0.14, ear: "round", tail: "long", tailL: 0.4, col: 0xc89a5c, belly: 0xf0dcc0, light: 0xf0dcc0, dark: 0x3a2a1e, neck: 0.45, speed: 1.0, stride: 5, wag: 7, wagAmp: 0.5, tailUp: -0.2 },
-    cat: { body: [0.46, 0.2, 0.17], legH: 0.18, legR: 0.03, headR: 0.095, ear: "point", tail: "long", tailL: 0.5, col: 0x8f8f98, belly: 0xe8e8ee, light: 0xe8e8ee, dark: 0x3a3a44, neck: 0.4, speed: 0.8, stride: 6, wag: 1.2, wagAmp: 0.35, tailUp: -0.4 },
+    rabbit: { body: [0.42, 0.28, 0.25], legH: 0.1, legR: 0.03, headR: 0.1, ear: "long", tail: "fluff", tailR: 0.07, col: 0xc9b49a, belly: 0xf3ece2, light: 0xf6f0e8, sock: 0xe9dfd0, haunch: 1.15, cheek: true, whisk: true, speed: 1.2, hop: 0.1, stride: 8, flee: 4.2, wag: 0, scale: 1.1 },
+    deer: { body: [0.98, 0.42, 0.3], legH: 0.66, legR: 0.042, headR: 0.15, ear: "deer", antlers: true, tail: "short", col: 0xa87a4c, belly: 0xefe0c6, light: 0xefe0c6, sock: 0x6a4a30, dark: 0x1e1610, neck: 0.8, speed: 0.8, stride: 3.5, flee: 3.6, spots: true, scale: 1.05 },
+    fox: { body: [0.64, 0.28, 0.2], legH: 0.24, legR: 0.04, headR: 0.12, ear: "point", tail: "brush", tailTip: 0xffffff, col: 0xd8742c, belly: 0xf6e8d8, light: 0xfaf3ea, sock: 0x2a1a12, dark: 0x1a100a, earIn: 0x2a1a12, chest: 0xfaf3ea, neck: 0.4, whisk: true, speed: 1.1, stride: 5.5, flee: 4.4 },
+    dog: { body: [0.64, 0.3, 0.26], legH: 0.3, legR: 0.05, headR: 0.14, ear: "round", earCol: 0x6a4326, tail: "long", tailL: 0.4, col: 0xc89a5c, belly: 0xf0dcc0, light: 0xf0dcc0, sock: 0xf0dcc0, dark: 0x2a1e14, collar: 0xd8352a, tongue: true, neck: 0.45, speed: 1.0, stride: 5, wag: 7, wagAmp: 0.5, tailUp: -0.2 },
+    cat: { body: [0.46, 0.2, 0.17], legH: 0.18, legR: 0.03, headR: 0.095, ear: "point", earIn: 0xf2a6b4, tail: "long", tailL: 0.5, col: 0x8f8f98, belly: 0xe8e8ee, light: 0xe8e8ee, sock: 0xe8e8ee, dark: 0x3a3a44, stripe: true, whisk: true, collar: 0x2f9bd0, neck: 0.4, speed: 0.8, stride: 6, wag: 1.2, wagAmp: 0.35, tailUp: -0.4 },
   };
 
   /* ---------- 飛鳥 ---------- */

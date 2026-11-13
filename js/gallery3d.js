@@ -13,6 +13,7 @@
   /* ---------- 版面常數（單位：公尺） ---------- */
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
+  const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
   const UY = 3.3, STAIR = { x0: 6.0, x1: 11.0, z0: -7.8, z1: -6.3 };   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
@@ -243,6 +244,18 @@
     A.torso.rotation.x = lerp(A.torso.rotation.x, -0.05, a);
   }
 
+  // 游泳姿勢（自由式）：身體前傾趴在水面、雙臂輪流划、雙腿打水；k = 0..1 混合量
+  function swimPose(A, k, t, moving) {
+    if (k < 0.01) { if (A.root.rotation.order !== "XYZ") { A.root.rotation.order = "XYZ"; A.root.rotation.x = 0; } return; }
+    A.root.rotation.order = "YXZ"; A.root.rotation.x = 1.3 * k;
+    const w = t * (moving ? 5.5 : 1.8);
+    A.armR.sh.rotation.x = lerp(A.armR.sh.rotation.x, -w, k); A.armL.sh.rotation.x = lerp(A.armL.sh.rotation.x, -(w + Math.PI), k);
+    A.armR.el.rotation.x = -0.35 * k; A.armL.el.rotation.x = -0.35 * k; A.armR.sh.rotation.z = -0.08 * k; A.armL.sh.rotation.z = 0.08 * k;
+    const kick = Math.sin(w * 2.2) * (moving ? 0.38 : 0.12);
+    A.legL.hip.rotation.x = lerp(A.legL.hip.rotation.x, kick, k); A.legR.hip.rotation.x = lerp(A.legR.hip.rotation.x, -kick, k); A.legL.knee.rotation.x = 0.12 * k; A.legR.knee.rotation.x = 0.12 * k;
+    A.head.rotation.x = -1.05 * k; A.torso.rotation.x = 0;
+  }
+
   /* ---------- 人物（程序生成，約 1.8m；漸縮的四肢、圓潤的關節、有輪廓的軀幹） ---------- */
   function buildAvatar(THREE, o = {}) {
     const M = (color, rough = 0.7, metal = 0) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: metal, envMapIntensity: 0.5 });
@@ -434,7 +447,9 @@
       const rail = new THREE.Mesh(new THREE.BoxGeometry(WORLD_W, 0.05, 0.08), brass); rail.position.set(WORLD_W / 2, 1.08, z); scene.add(rail);
       for (let x = 0; x <= WORLD_W; x += 3) { const po = new THREE.Mesh(new THREE.BoxGeometry(0.07, 1.1, 0.07), brass); po.position.set(x, 0.55, z); scene.add(po); }
     }
-    for (const x of [0.05, WORLD_W - 0.05]) { const gl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, DECK_HD * 2), glass); gl.position.set(x, 0.55, 0); scene.add(gl); }
+    { const gl = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, DECK_HD * 2), glass); gl.position.set(WORLD_W - 0.05, 0.55, 0); scene.add(gl);
+      for (const [z0, z1] of [[-DECK_HD, 3.4], [6.2, DECK_HD]]) { const g2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.05, z1 - z0), glass); g2.position.set(0.05, 0.55, (z0 + z1) / 2); scene.add(g2); }   // 西側欄杆：南邊留一個缺口通往船尾甲板
+      const rl = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, 3.4 + DECK_HD), brass); rl.position.set(0.05, 1.08, (-DECK_HD + 3.4) / 2); scene.add(rl); const rl2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, DECK_HD - 6.2), brass); rl2.position.set(0.05, 1.08, (6.2 + DECK_HD) / 2); scene.add(rl2); }
     // 路燈
     const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 2.2 });
     for (let x = ENTRY + 4; x < WORLD_W; x += SPACING) {
@@ -464,6 +479,7 @@
     const bangTex = mkTex(THREE, bangCanvas(), aniso);
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd, lv) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv });
+    addObs(0.05, (-DECK_HD + 3.4) / 2, 0.05, (3.4 + DECK_HD) / 2); addObs(0.05, (6.2 + DECK_HD) / 2, 0.05, (DECK_HD - 6.2) / 2);   // 西側欄杆（缺口 z 3.4–6.2 通往船尾）
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
 
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
@@ -853,6 +869,7 @@
         const p = players[hi], team = p.team, opp = 1 - team, dir = dirT(team), k = rally.k++;
         const type = forced || chooseType(k); lastType = type;
         const S = SHOT[type], bp = ball.position, sx = bp.x, sz = bp.z, y0 = clamp(bp.y, 0.45, 1.5);
+        if (window.Music) window.Music.sfx("hit", sx, sz, { smash: 1.5, drive: 1.3, serve: 1.1, volley: 0.9, lob: 0.8, drop: 0.55, dink: 0.45 }[type] ?? 0.9);   // 球拍擊球聲
         const segs = []; let end = false, winner = -1, recv, z1, contact;
         if (type === "net") {
           const zn = clamp(sz, -2.6, 2.6);
@@ -983,8 +1000,8 @@
             rcv.stretch = clamp((deficit - 0.1) / 0.7, 0, 1); rcv.latSign = Math.sign((flight.contact.z - rcv.z) * sd) || 1;
           }
           if (flight.t >= 1) {
-            if (!last) { flight.i++; flight.t = 0; }
-            else if (flight.end) { const w = flight.winner; flight = null; awardPoint(w); }
+            if (!last) { if (window.Music) window.Music.sfx("bounce", sg2.x1, sg2.z1); flight.i++; flight.t = 0; }                                  // 球落地聲
+            else if (flight.end) { if (window.Music) window.Music.sfx(lastType === "net" ? "net" : "bounce", sg2.x1, sg2.z1); const w = flight.winner; flight = null; awardPoint(w); }
             else {
               const rc = flight.recv, dd = Math.hypot(flight.contact.x - rc.x, flight.contact.z - rc.z);
               if (dd > 1.35) { const w = 1 - rc.team; flight = null; awardPoint(w); }          // 手搆不到 → 漏接，對方得分
@@ -1460,7 +1477,7 @@
     let lastDown = 0;
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
-    let lvl = 0, lvlS = 0, py = 0;   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
+    let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false;   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
     const tickHooks = [];
@@ -1653,7 +1670,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py, f: facing, sp: speedNow, sit: sitA }), obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1699,21 +1716,25 @@
 
     /* ----- 主迴圈 ----- */
     const fwd = new THREE.Vector3(), rgt = new THREE.Vector3();
-    let hourTick = 0, raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality = 2, stuckT = 0, stuckX = 0, stuckZ = 0;
+    let hourTick = 0, raf = 0, last = performance.now(), time = 0, qAcc = 0, qN = 0, quality3 = 0, lowN = 0, hiN = 0, stuckT = 0, stuckX = 0, stuckZ = 0;
     const tick = (now) => {
       raf = requestAnimationFrame(tick);
       const rawDt = (now - last) / 1000; last = now;
       const dt = Math.min(0.25, rawDt); time += dt;
       // 自動調畫質：太卡就降解析度 / 陰影
-      if (rawDt < 0.3 && !document.hidden) { qAcc += rawDt; qN++; }
-      if (qAcc > 2.5) {
+      // 自動調畫質（保守版）：開頭 10 秒不算（載入、編譯 shader 會卡），連續兩個 3 秒窗口都低於 20 fps 才降一級；
+      // 降的是解析度比例（0.8 → 0.62），不是一次砍到很糊；順暢（>50 fps）三個窗口後會自動升回來
+      if (rawDt < 0.3 && !document.hidden && time > 10) { qAcc += rawDt; qN++; }
+      if (qAcc > 3) {
         const fps = qN / qAcc; qAcc = 0; qN = 0;
-        if (fps < 24 && quality > 0) {
-          quality--; const pr = [0.6, 1, Math.min(window.devicePixelRatio || 1, 2)][quality];
+        const apply = () => {
+          const full = Math.min(window.devicePixelRatio || 1, 2), pr = [full, Math.max(1, full * 0.8), Math.max(0.9, full * 0.62), 0.75][quality3];
           renderer.setPixelRatio(pr); resize();
-          if (quality === 0) { sun.castShadow = false; }
-          else if (quality === 1) { sun.shadow.mapSize.set(1024, 1024); if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; } }
-        }
+          if (quality3 >= 3) sun.castShadow = false; else sun.castShadow = true;
+        };
+        if (fps < 20) { lowN++; hiN = 0; if (lowN >= 2 && quality3 < 3) { quality3++; lowN = 0; apply(); } }
+        else if (fps > 50) { hiN++; lowN = 0; if (hiN >= 3 && quality3 > 0) { quality3--; hiN = 0; apply(); } }
+        else { lowN = 0; hiN = 0; }
       }
 
       if (blocked() && (keys.l | keys.r | keys.u | keys.d | keys.q | keys.e | dbl.l | dbl.r | dbl.u | dbl.d | touch.l | touch.r | touch.u | touch.d)) clearKeys();
@@ -1749,7 +1770,7 @@
         }
         if (!sp) continue;
         lmx = mx; lmz = mz;
-        pos.x += mx * sp * sdt; pos.z += mz * sp * sdt;
+        { const wf = (pos.x > POOL.x0 && pos.x < POOL.x1 && pos.z > POOL.z0 && pos.z < POOL.z1) ? 0.55 : 1; pos.x += mx * sp * sdt * wf; pos.z += mz * sp * sdt * wf; }
         for (const o of obstacles) {
           if (o.lv !== undefined && o.lv !== lvl) continue;
           const L = o.minX - 0.3, R = o.maxX + 0.3, T = o.minZ - 0.3, B = o.maxZ + 0.3;
@@ -1758,7 +1779,8 @@
             if (m === pl) pos.x = L; else if (m === pr) pos.x = R; else if (m === pt) pos.z = T; else pos.z = B;
           }
         }
-        pos.x = clamp(pos.x, 1.2, WORLD_W - 1.2); pos.z = clamp(pos.z, -(DECK_HD - 0.5), DECK_HD - 0.5);
+        pos.x = clamp(pos.x, -10.4, WORLD_W - 1.2); pos.z = clamp(pos.z, -(DECK_HD - 0.5), DECK_HD - 0.5);
+        if (pos.x < -0.2) { const ex = (-pos.x - 1) / 10.4, lim = 7.2 * Math.sqrt(Math.max(0, 1 - ex * ex)); pos.z = clamp(pos.z, -lim, lim); }   // 船尾弧形欄杆
       }
       if (sp) facing += angDiff(facing, Math.atan2(lmx, lmz)) * Math.min(1, dt * 10);
       speedNow = lerp(speedNow, sp, Math.min(1, dt * 12));
@@ -1767,7 +1789,10 @@
         if (inSt) { py = clamp(UY * (STAIR.x1 - pos.x) / (STAIR.x1 - STAIR.x0), 0, UY); lvl = py > UY * 0.5 ? 1 : 0; } else py = lvl * UY;
         lvlS = lerp(lvlS, py / UY, Math.min(1, dt * 6)); groundPlane.constant = -py;
       }
-      av.root.position.set(pos.x, py, pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time);
+      const inWater = pos.x > POOL.x0 && pos.x < POOL.x1 && pos.z > POOL.z0 && pos.z < POOL.z1 && lvl === 0;
+      if (inWater !== wasSwim) { wasSwim = inWater; if (window.Music) window.Music.sfx("splash", pos.x, pos.z, 1.3); }
+      swimT = lerp(swimT, inWater ? 1 : 0, Math.min(1, dt * 5));
+      av.root.position.set(pos.x, lerp(py, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       sitA = lerp(sitA, sitting >= 0 ? 1 : 0, Math.min(1, dt * 6)); if (sitA > 0.01) seatPose(av, sitA);
 
       // 是否在房間裡 → 鏡頭拉近
@@ -1844,6 +1869,7 @@
     raf = requestAnimationFrame(tick);
     if (window.Director) window.Director.mount(ctx);
     if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
     if (window.Ship) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
     if (window.Animals) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
@@ -1863,7 +1889,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");

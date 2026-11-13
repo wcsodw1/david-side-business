@@ -108,10 +108,11 @@
         const px = av.root.position.x, pz = av.root.position.z;
         av.root.position.set(lerp(px || rm.x, rm.x, k), lerp(av.root.position.y, rm.y || 0, k), lerp(pz || rm.z, rm.z, k));
         av.root.rotation.y += angDiff(av.root.rotation.y, rm.f) * Math.min(1, dt * 10);
-        av.update(dt, rm.sp || 0, t); if (rm.sit > 0.5 && ctx.seatPose) ctx.seatPose(av, rm.sit);
+        if (rm.sw && ctx.POOL) av.root.position.y = lerp(av.root.position.y, ctx.POOL.surface - 0.02, k);
+        av.update(dt, rm.sp || 0, t); if (rm.sit > 0.5 && ctx.seatPose) ctx.seatPose(av, rm.sit); if (ctx.swimPose) ctx.swimPose(av, rm.sw ? 1 : 0, t, (rm.sp || 0) > 0.3);
         tag.visible = true; tag.position.set(av.root.position.x, av.root.position.y + 2.0, av.root.position.z); zzz.visible = false;
       } else {
-        const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, Math.PI / 2, 0); av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
+        const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, Math.PI / 2, 0); av.root.rotation.order = "XYZ"; av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
         av.update(dt, 0, t); av.torso.rotation.x = Math.sin(t * 1.4) * 0.02; av.head.rotation.set(0, 0.3, 0);
         tag.visible = false; zzz.visible = true; const f = (t * 0.5) % 1; zzz.position.set(b.x - 1.45 + f * 0.1, b.y + 0.4 + f * 0.5, b.z); zzz.material.opacity = 1 - f * 0.9;
         { const w = camera.position.distanceTo(zzz.position) * 0.06; zzz.scale.set(w, w, 1); }

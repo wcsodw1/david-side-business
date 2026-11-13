@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Music = { mount, unmount, state: () => (K ? { ctx: K.ac && K.ac.state, music: +K.vMusic.toFixed(2), ocean: +K.vOcean.toFixed(2), muted: K.muted, started: K.started, notes: K.notes } : null) });
+  const api = (window.Music = { mount, unmount, sfx: (k, x, z, p) => K && K.sfx && K.sfx(k, x, z, p), state: () => (K ? { ctx: K.ac && K.ac.state, music: +K.vMusic.toFixed(2), ocean: +K.vOcean.toFixed(2), muted: K.muted, started: K.started, notes: K.notes } : null) });
   let K = null;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -79,6 +79,22 @@
       }
     };
 
+    // 音效：位置感（離球場 / 門越遠越小聲）。kind: hit（球拍擊球）、bounce（落地）、net（下網）、door（自動門）、splash（水花）
+    K.sfx = (kind, x, z, power = 1) => {
+      const ac = K.ac; if (!ac || ac.state !== "running" || K.muted) return;
+      const me = ctx.getMe ? ctx.getMe() : { x: 0, z: 0 }, d = Math.hypot((x ?? me.x) - me.x, (z ?? me.z) - me.z);
+      const hall = kind === "hit" || kind === "bounce" || kind === "net";
+      const vol = Math.min(1, 9 / (4 + d * d * 0.08)) * (hall && ctx.getInside && ctx.getInside() !== ctx.sPB && me.x < (ctx.hallX0 || 0) ? 0.35 : 1);   // 在球館外只聽到悶悶的
+      if (vol < 0.03) return;
+      const t = ac.currentTime, out = ac.createGain(); out.gain.value = vol * (K.sfxVol ?? 0.7); out.connect(ac.destination);
+      const noise = (dur, f, q, gain, type = "bandpass") => { const n = ac.createBuffer(1, Math.ceil(ac.sampleRate * dur), ac.sampleRate), d0 = n.getChannelData(0); for (let i = 0; i < d0.length; i++) d0[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d0.length, 2.2); const s = ac.createBufferSource(); s.buffer = n; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const g = ac.createGain(); g.gain.value = gain; s.connect(fl); fl.connect(g); g.connect(out); s.start(t); };
+      const tone = (f0, f1, dur, gain, type = "sine") => { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(Math.max(30, f1), t + dur); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + 0.02); };
+      if (kind === "hit") { const pw = 0.6 + 0.5 * power; noise(0.05, 2300 + 500 * power, 1.6, 1.1 * pw); noise(0.03, 5200, 0.8, 0.5 * pw, "highpass"); tone(1100 + 300 * power, 520, 0.05, 0.5 * pw, "triangle"); tone(420, 300, 0.07, 0.35 * pw); }   // 「啪」：塑膠球 + 硬拍面
+      else if (kind === "bounce") { tone(780, 380, 0.045, 0.5, "triangle"); noise(0.03, 1800, 1.2, 0.35); }                                                              // 「噠」：球落地
+      else if (kind === "net") { tone(210, 120, 0.12, 0.7); noise(0.09, 700, 0.9, 0.5); }                                                                              // 「咚」：下網
+      else if (kind === "door") { noise(0.7, 900, 0.5, 0.18 * (power || 1), "lowpass"); tone(1320, 1320, 0.12, 0.08); }                                                // 門滑動 + 叮
+      else if (kind === "splash") { noise(0.5, 1400, 0.4, 0.5 * (power || 1)); tone(300, 120, 0.25, 0.25); }
+    };
     function start() {
       if (!K.ac) build();
       K.ac.resume && K.ac.resume().then(() => { K.started = true; });

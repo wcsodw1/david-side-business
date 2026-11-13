@@ -40,7 +40,9 @@
       const m = new THREE.Mesh(g, mats); m.rotation.x = PI / 2; m.position.y = top; m.castShadow = true; m.receiveShadow = true; root.add(m); return m;
     };
     const deckWood = M(0xb88c5c, 0.65), white = M(0xf2f3f5, 0.6), navy = M(0x1d2a44, 0.6), red = M(0x8a1f1f, 0.7);
-    layer(outline(1), 4.6, -0.03, [deckWood, white]);                                     // 白色上層（頂面 = 船首 / 船尾甲板）
+    const POOL = ctx.POOL;
+    const topShape = outline(1), hole = new THREE.Path(); hole.moveTo(POOL.x0, POOL.z0); hole.lineTo(POOL.x1, POOL.z0); hole.lineTo(POOL.x1, POOL.z1); hole.lineTo(POOL.x0, POOL.z1); hole.closePath(); topShape.holes.push(hole);   // 泳池挖洞
+    layer(topShape, 4.6, -0.03, [deckWood, white]);                                       // 白色上層（頂面 = 船首 / 船尾甲板）
     layer(outline(0.97, -0.1), D - 4.6 - 1.3, -4.63, [navy, navy]);                         // 深藍船身
     layer(outline(0.93, -0.3), 1.9, SEA + 1.9 - 0.45, [red, red]);                          // 紅色水線帶（一半在水下）
 
@@ -78,10 +80,50 @@
       const cx = isBow ? W : -1; return arr.slice().sort((a, b) => Math.atan2(a.y, (a.x - cx) * (isBow ? 1 : -1)) - Math.atan2(b.y, (b.x - cx) * (isBow ? 1 : -1)));
     }
 
-    // 船尾泳池與躺椅
-    const pool = add(new THREE.BoxGeometry(7, 0.06, 6), M(0x2a9ad0, 0.1, 0.1, { emissive: 0x0a4a70, emissiveIntensity: 0.4 }), -5.5, 0.03, 0, root, false);
-    add(new THREE.BoxGeometry(7.6, 0.08, 6.6), M(0xe6e2d8, 0.7), -5.5, 0.01, 0, root, false);
-    for (const [x, z] of [[-9, -3.6], [-9, -2.2], [-9, 2.2], [-9, 3.6], [-3, -4.6], [-5, -4.6], [-3, 4.6], [-5, 4.6]]) add(new THREE.BoxGeometry(0.7, 0.25, 1.8), M(0xf4f0e6, 0.8), x, 0.25, z, root, false);
+    // ===== 船尾泳池（立體、可下水）+ 休閒區 =====
+    const pcx = (POOL.x0 + POOL.x1) / 2, pcz = (POOL.z0 + POOL.z1) / 2, pw = POOL.x1 - POOL.x0, pd = POOL.z1 - POOL.z0, FLOOR = -1.8, WY = POOL.surface;
+    const tileC = document.createElement("canvas"); tileC.width = tileC.height = 256; const tg = tileC.getContext("2d");
+    tg.fillStyle = "#6cc7e8"; tg.fillRect(0, 0, 256, 256); tg.strokeStyle = "rgba(255,255,255,.55)"; tg.lineWidth = 2; for (let k = 0; k <= 256; k += 32) { tg.beginPath(); tg.moveTo(k, 0); tg.lineTo(k, 256); tg.stroke(); tg.beginPath(); tg.moveTo(0, k); tg.lineTo(256, k); tg.stroke(); }
+    for (let k = 0; k < 60; k++) { tg.strokeStyle = `rgba(255,255,255,${0.04 + Math.random() * 0.08})`; tg.lineWidth = 2 + Math.random() * 3; tg.beginPath(); const x = Math.random() * 256, y = Math.random() * 256; tg.moveTo(x, y); tg.bezierCurveTo(x + 20, y - 20, x + 40, y + 20, x + 60, y); tg.stroke(); }
+    const tileT = new THREE.CanvasTexture(tileC); tileT.wrapS = tileT.wrapT = THREE.RepeatWrapping;
+    const tileMat = (rx, ry) => { const t = tileT.clone(); t.needsUpdate = true; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); if ("colorSpace" in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; return new THREE.MeshStandardMaterial({ map: t, roughness: 0.35, metalness: 0.05 }); };
+    const pfloor = new THREE.Mesh(new THREE.PlaneGeometry(pw, pd), tileMat(pw / 1.2, pd / 1.2)); pfloor.rotation.x = -PI / 2; pfloor.position.set(pcx, FLOOR, pcz); pfloor.receiveShadow = true; root.add(pfloor);
+    for (const [wx, wz, rw, ry] of [[pcx, POOL.z0, pw, 0], [pcx, POOL.z1, pw, PI], [POOL.x0, pcz, pd, PI / 2], [POOL.x1, pcz, pd, -PI / 2]]) {      // 池壁內襯
+      const w = new THREE.Mesh(new THREE.PlaneGeometry(rw, -FLOOR), tileMat(rw / 1.2, 1.5)); w.position.set(wx, FLOOR / 2, wz); w.rotation.y = ry; root.add(w);
+    }
+    // 池緣（白色石材）
+    const cop = M(0xf4f1ea, 0.5);
+    add(new THREE.BoxGeometry(pw + 0.7, 0.1, 0.35), cop, pcx, 0.05, POOL.z0 - 0.17, root, false); add(new THREE.BoxGeometry(pw + 0.7, 0.1, 0.35), cop, pcx, 0.05, POOL.z1 + 0.17, root, false);
+    add(new THREE.BoxGeometry(0.35, 0.1, pd), cop, POOL.x0 - 0.17, 0.05, pcz, root, false); add(new THREE.BoxGeometry(0.35, 0.1, pd), cop, POOL.x1 + 0.17, 0.05, pcz, root, false);
+    // 水面：半透明、會起伏、有流動的亮紋
+    const wC = document.createElement("canvas"); wC.width = wC.height = 256; const wg = wC.getContext("2d"); wg.fillStyle = "#4fc3ee"; wg.fillRect(0, 0, 256, 256);
+    for (let k = 0; k < 70; k++) { wg.strokeStyle = `rgba(255,255,255,${0.1 + Math.random() * 0.25})`; wg.lineWidth = 1 + Math.random() * 2; wg.beginPath(); const x = Math.random() * 256, y = Math.random() * 256; for (const dx of [0, 256, -256]) { wg.moveTo(x + dx, y); wg.quadraticCurveTo(x + dx + 18, y - 8, x + dx + 36, y); } wg.stroke(); }
+    const wT = new THREE.CanvasTexture(wC); wT.wrapS = wT.wrapT = THREE.RepeatWrapping; wT.repeat.set(pw / 2, pd / 2); if ("colorSpace" in wT) wT.colorSpace = THREE.SRGBColorSpace; else wT.encoding = THREE.sRGBEncoding;
+    const waterGeo = new THREE.PlaneGeometry(pw, pd, 26, 24), water = new THREE.Mesh(waterGeo, new THREE.MeshStandardMaterial({ map: wT, color: 0xbfeaff, transparent: true, opacity: 0.66, roughness: 0.04, metalness: 0.15, envMapIntensity: 1.6, depthWrite: false }));
+    water.rotation.x = -PI / 2; water.position.set(pcx, WY, pcz); water.renderOrder = 5; root.add(water);
+    const underLight = new THREE.PointLight(0x40c8ff, 0, 9); underLight.position.set(pcx, -1.1, pcz); root.add(underLight);
+    // 池邊扶梯、漂浮的沙灘球
+    for (const dz of [-0.45, 0.45]) { const t = add(new THREE.TorusGeometry(0.32, 0.03, 8, 16, PI), M(0xd7dbe2, 0.25, 0.9), POOL.x1 + 0.03, 0.55, pcz + 1.6 + dz, root, false); t.rotation.y = PI / 2; t.rotation.z = 0; }
+    const ballC = document.createElement("canvas"); ballC.width = 256; ballC.height = 128; const bg = ballC.getContext("2d"); ["#ef476f", "#ffd166", "#06d6a0", "#118ab2", "#ffffff", "#ff9f1c"].forEach((c, i) => { bg.fillStyle = c; bg.fillRect(i * 43, 0, 44, 128); });
+    const ballT = new THREE.CanvasTexture(ballC); if ("colorSpace" in ballT) ballT.colorSpace = THREE.SRGBColorSpace; else ballT.encoding = THREE.sRGBEncoding;
+    const beach = add(new THREE.SphereGeometry(0.26, 18, 14), new THREE.MeshStandardMaterial({ map: ballT, roughness: 0.4 }), pcx + 1.2, WY + 0.15, pcz - 0.8);
+    // 躺椅（木框 + 白色軟墊 + 靠背 + 枕頭 + 毛巾）、遮陽傘、邊桌、棕櫚、沖水柱
+    const woodM = M(0xa8794a, 0.6), cush = M(0xf7f4ec, 0.85), towel = [M(0x2f9bd0, 0.9), M(0xef476f, 0.9), M(0xffd166, 0.9), M(0x06d6a0, 0.9)];
+    const lounger = (x, z, rot, ti) => {
+      const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; root.add(g);
+      for (const [lx, lz] of [[-0.3, -0.8], [0.3, -0.8], [-0.3, 0.8], [0.3, 0.8]]) add(new THREE.BoxGeometry(0.06, 0.28, 0.06), woodM, lx, 0.14, lz, g, false);
+      add(new THREE.BoxGeometry(0.72, 0.06, 1.7), woodM, 0, 0.3, 0, g); add(new THREE.BoxGeometry(0.64, 0.1, 1.0), cush, 0, 0.38, 0.28, g);
+      const back = add(new THREE.BoxGeometry(0.64, 0.1, 0.8), cush, 0, 0.62, -0.62, g); back.rotation.x = 0.7; add(new THREE.CapsuleGeometry(0.1, 0.34, 4, 8), cush, 0, 0.74, -0.95, g, false).rotation.z = PI / 2;
+      add(new THREE.BoxGeometry(0.5, 0.03, 0.9), towel[ti % 4], 0, 0.45, 0.35, g, false);
+    };
+    [[-10.0, -3.6, PI / 2, 0], [-10.0, -2.2, PI / 2, 1], [-10.0, 2.2, PI / 2, 2], [-10.0, 3.6, PI / 2, 3], [-2.0, -4.6, -PI / 2, 1], [-2.0, 4.6, -PI / 2, 0]].forEach(([x, z, r, t]) => lounger(x, z, r, t));
+    const umbrella = (x, z, col) => { add(new THREE.CylinderGeometry(0.03, 0.035, 2.4, 8), M(0xe8e8ee, 0.4, 0.5), x, 1.2, z); const cn = add(new THREE.ConeGeometry(1.5, 0.55, 12, 1, true), M(col, 0.8, 0, { side: THREE.DoubleSide }), x, 2.5, z); add(new THREE.SphereGeometry(0.05, 8, 6), M(0xe8e8ee, 0.4, 0.5), x, 2.8, z, root, false); return cn; };
+    umbrella(-10.8, -3.0, 0xffffff); umbrella(-10.8, 3.0, 0xef476f); umbrella(-1.6, -4.6, 0xffd166);
+    for (const [x, z] of [[-10.0, -2.9], [-10.0, 2.9]]) { add(new THREE.CylinderGeometry(0.25, 0.25, 0.4, 14), woodM, x, 0.2, z); add(new THREE.CylinderGeometry(0.08, 0.08, 0.16, 10), M(0xffd166, 0.5), x, 0.47, z, root, false); }
+    const palm = (x, z, h) => { const g = new THREE.Group(); g.position.set(x, 0, z); root.add(g); add(new THREE.CylinderGeometry(0.1, 0.18, h, 8), M(0x8a6a44, 0.9), 0.15, h / 2, 0, g).rotation.z = -0.08; for (let k = 0; k < 8; k++) { const f = add(new THREE.SphereGeometry(0.7, 8, 6), M(0x2f8f4a, 0.8), Math.cos(k * 0.785) * 0.8 + 0.3, h - 0.1 - (k % 2) * 0.15, Math.sin(k * 0.785) * 0.8, g, false); f.scale.set(1.5, 0.08, 0.28); f.rotation.y = -k * 0.785; f.rotation.z = -0.25; } add(new THREE.CylinderGeometry(0.4, 0.4, 0.4, 12), M(0xb4643a, 0.8), 0, 0.2, 0, g); };
+    palm(-11.0, 0.0, 3.0); palm(-1.6, 5.8, 2.6);
+    add(new THREE.CylinderGeometry(0.04, 0.05, 2.2, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 1.1, 3.9); add(new THREE.SphereGeometry(0.16, 10, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 2.25, 3.9, root, false);
+
     // 船首：繫纜柱與旗桿
     for (const z of [-3, 3]) add(new THREE.CylinderGeometry(0.2, 0.26, 0.7, 12), M(0x2a2d36, 0.5, 0.6), W + 12, 0.35, z);
     add(new THREE.CylinderGeometry(0.06, 0.08, 8, 8), M(0xe8e8ee, 0.4, 0.4), W + 17, 4, 0);
@@ -201,6 +243,7 @@
         fish.forEach((f) => { f.m.position.set(cx + f.ox + Math.sin(e.t * 2 + f.ph) * 0.4, SEA + 0.12, cz + f.oz + Math.cos(e.t * 1.7 + f.ph) * 0.4); f.m.rotation.z = dirx > 0 ? 0 : PI; f.m.scale.setScalar(clamp(Math.min(k * 8, (1 - k) * 8), 0, 1)); }); } });
     };
 
+    const splash2 = (x, z) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0.7 })); m.rotation.x = -PI / 2; m.position.set(x, WY + 0.02, z); root.add(m); Sh.ev.push({ kind: "ring", m, age: 0, upd(dt, e) { e.age += dt; const k = e.age / 1.3; m.scale.setScalar(0.4 + k * 1.8); m.material.opacity = 0.7 * (1 - k); if (k >= 1) { e.done = true; m.parent && m.parent.remove(m); } } }); };
     Sh = { root, hooks, ev: [], seaY: SEA, puffs: [], t: 0, nextD: 4, nextW: 25, nextF: 9, nextS: 13, hook: null };
     const place = (near = true) => { const side = Math.random() < 0.7 ? -1 : 1; return { x: pos.x + rand(-18, 26), z: side * rand(wH + (near ? 9 : 22), wH + (near ? 26 : 48)), dirx: 1 }; };
     Sh.spawn = (kind) => {
@@ -225,9 +268,12 @@
       // 煙囪冒煙：往船尾飄、變大、變淡
       for (const p of puffs) { p.t = (p.t + dt / 5) % 1; const k = p.t; p.sp.position.set(p.fx - k * 14, 4.5 + 8.2 + k * 3.2, 0); const s = 1.4 + k * 5; p.sp.scale.set(s, s, 1); p.sp.material.opacity = 0.6 * (1 - k); }
       flag.rotation.y = Math.sin(t * 3) * 0.35;
+      { const p = waterGeo.attributes.position; for (let k = 0; k < p.count; k++) { const x = p.getX(k), y = p.getY(k); p.setZ(k, Math.sin(x * 1.5 + t * 1.5) * 0.018 + Math.cos(y * 1.9 + t * 1.2) * 0.018); } p.needsUpdate = true; wT.offset.x = t * 0.01; wT.offset.y = t * 0.006;
+        beach.position.set(pcx + Math.sin(t * 0.23) * 1.6, WY + 0.17 + Math.sin(t * 1.7) * 0.02, pcz + Math.cos(t * 0.19) * 1.2); beach.rotation.y = t * 0.4;
+        if (ctx.getSwim && ctx.getSwim() > 0.5 && (Sh.ripT = (Sh.ripT || 0) - dt) <= 0) { Sh.ripT = 0.45; splash2(pos.x, pos.z); } }
       // 夜晚舷窗亮燈
       const sy = ctx.getSunHeight ? ctx.getSunHeight() : 1, night = clamp(1 - (sy + 0.18) / 0.3, 0, 1);
-      portMat.emissiveIntensity = 0.05 + night * 2.4;
+      portMat.emissiveIntensity = 0.05 + night * 2.4; underLight.intensity = night * 2.2;
     };
     hooks.push(Sh.hook);
     Sh.fade = fadeMats;
