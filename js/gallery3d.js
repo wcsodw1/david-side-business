@@ -459,7 +459,7 @@
       for (const z of [-DECK_HD + 0.35, DECK_HD - 0.35]) {
         const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 2.6, 10), new THREE.MeshStandardMaterial({ color: 0x15121f, roughness: 0.5, metalness: 0.5 }));
         pole.position.set(x, 1.3, z); scene.add(pole);
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), lampMat); bulb.position.set(x, 2.7, z); scene.add(bulb); lampPts.push({ x, y: 2.7, z });
+        const lm = lampMat.clone(); const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.1, 14, 10), lm); bulb.position.set(x, 2.7, z); scene.add(bulb); lampPts.push({ x, y: 2.7, z, mat: lm });
       }
     }
 
@@ -1294,7 +1294,7 @@
       const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35, undefined, 0.55); };
       bench(14.4, 1.2); bench(20.8, 2.8); bench(14.0, 6.9); bench(23.4, 2.2);
       for (const [x, z] of [[13.0, -0.9], [16.8, -2.0], [18.6, 1.0], [22.2, -1.2], [24.6, 0.9], [15.2, -4.4], [19.8, -4.8], [20.6, -2.6], [19.0, 2.4], [14.6, 3.2], [24.4, 5.0], [17.0, 7.0], [9.0, 2.2], [6.0, 5.0]]) {   // 公園路燈（晚上自動亮、走近更亮）
-        mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); mk(new THREE.SphereGeometry(0.15, 14, 10), lampMat, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z });
+        mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); { const lm = lampMat.clone(); mk(new THREE.SphereGeometry(0.15, 14, 10), lm, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z, mat: lm }); }
       }
       // 池塘（有睡蓮與石頭）
       { const PX = 19.0, PZ = 5.2, pr = 3.0, ps = 0.78;

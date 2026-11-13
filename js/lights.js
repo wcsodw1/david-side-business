@@ -1,6 +1,6 @@
 /* ============================================================
    夜間燈光：
-   · 天黑後所有路燈自動亮起（燈泡發光 + 光暈）；你走近的那幾盞會更亮，並真的照亮地面
+   · 天黑後路燈是熄的；你走近（約 9 公尺內）才會亮起（燈泡發光 + 光暈 + 照亮地面），走遠就慢慢熄掉
    · 匹克球場有明亮的場館照明（天花板燈條 + 強光），晚上打球很亮
    · 白天燈是熄的
    ============================================================ */
@@ -24,7 +24,7 @@
       return { x: p.x, y: p.y, z: p.z, sp, on: 0 };
     });
     // 會真的照亮地面的燈：只給離你最近的 3 盞（其他只有光暈，省效能）
-    const pool = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffd9a0, 0, 12); l.position.set(0, 2.4, 0); root.add(l); return l; });
+    const pool = [0, 1, 2].map(() => { const l = new THREE.PointLight(0xffd9a0, 0, 9); l.position.set(0, 2.4, 0); root.add(l); return l; });
 
     // 匹克球場照明：天花板燈條 + 兩盞強光
     const CX = ctx.COURT_CX, barMat = new THREE.MeshStandardMaterial({ color: 0xf4f6ff, emissive: 0xdfe8ff, emissiveIntensity: 0.1, roughness: 0.4 });
@@ -34,18 +34,18 @@
     L = { root, hooks, lamps, pool, flood, barMat, night: 0, courtI: 0 };
     L.hook = (dt) => {
       const sy = ctx.getSunHeight ? ctx.getSunHeight() : 1, night = clamp(1 - (sy + 0.18) / 0.3, 0, 1); L.night = night;
-      lampMat.emissiveIntensity = 0.1 + night * 1.8;
       // 近的燈更亮（走過去亮）
       const near = [];
       for (const l of lamps) {
-        const d = Math.hypot(pos.x - l.x, pos.z - l.z), target = night > 0.02 ? (d < 11 ? 1 : 0.4) : 0;
-        l.on = lerp(l.on, target, Math.min(1, dt * 3));
+        const d = Math.hypot(pos.x - l.x, pos.z - l.z), target = night > 0.02 && d < 9 ? 1 : 0;   // 人走過去才亮，離開就熄
+        l.on = lerp(l.on, target, Math.min(1, dt * (target ? 3.5 : 1.2)));      // 亮得快、慢慢熄
+        if (l.mat) l.mat.emissiveIntensity = 0.08 + night * l.on * 1.3;
         const dc = ctx.camera.position.distanceTo(l.sp.position), fade = clamp(dc / 14, 0.25, 1);   // 離鏡頭越近光暈越小，避免疊成一片白
-        l.sp.material.opacity = night * (0.22 + 0.5 * l.on) * fade; const s = (1.1 + 1.7 * l.on) * (0.55 + 0.45 * fade); l.sp.scale.set(s, s, 1);
-        if (night > 0.05) near.push([d, l]);
+        l.sp.material.opacity = night * l.on * 0.38 * fade; const s = (0.7 + 1.1 * l.on) * (0.55 + 0.45 * fade); l.sp.scale.set(s, s, 1);
+        if (night > 0.05 && l.on > 0.05) near.push([d, l]);
       }
       near.sort((a, b) => a[0] - b[0]);
-      pool.forEach((pl, i) => { const t = near[i] ? near[i][1] : null; if (t) { pl.position.x = lerp(pl.position.x, t.x, Math.min(1, dt * 6)); pl.position.y = t.y; pl.position.z = lerp(pl.position.z, t.z, Math.min(1, dt * 6)); } pl.intensity = lerp(pl.intensity, t ? 1.7 * night * (near[i][0] < 11 ? 1 : 0.3) : 0, Math.min(1, dt * 4)); });
+      pool.forEach((pl, i) => { const t = near[i] ? near[i][1] : null; if (t) { pl.position.x = lerp(pl.position.x, t.x, Math.min(1, dt * 6)); pl.position.y = t.y; pl.position.z = lerp(pl.position.z, t.z, Math.min(1, dt * 6)); } pl.intensity = lerp(pl.intensity, t ? 1.0 * night * t.on : 0, Math.min(1, dt * 4)); });
       // 球場：晚上全亮（白天也有一點室內光）
       L.courtI = lerp(L.courtI, night, Math.min(1, dt * 2));
       barMat.emissiveIntensity = 0.15 + L.courtI * 2.6; flood.forEach((f) => (f.intensity = L.courtI * 2.2));
