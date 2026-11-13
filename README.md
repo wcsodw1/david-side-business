@@ -29,3 +29,12 @@ printf '新密碼' | shasum -a 256
 ```bash
 python3 -m http.server 5173
 ```
+
+## 圖片授權 / Image credits
+
+二樓海報使用的照片來自 Wikimedia Commons，皆為 **CC BY 4.0**（需標註作者）：
+
+- `img/posters/chanyeol-1.jpg` — 作者 ggbye1127（來源 https://ggbye1127.tistory.com/79），Commons 檔名：`Chanyeol during the Exo Planet 5 – Exploration concert on December 2019.jpg`
+- `img/posters/chanyeol-2.png` — 作者 OXO（來源 http://ohxo.tistory.com/248），Commons 檔名：`Park Chan-yeol at Melon Music Awards on November 19, 2016.png`
+
+授權全文：https://creativecommons.org/licenses/by/4.0/

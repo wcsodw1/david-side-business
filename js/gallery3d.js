@@ -1272,6 +1272,10 @@
         const NZ = Z0 + 0.08, EX = X1 - 0.08;
         poster(1.3, 1.55, NZ, 0, 0); poster(2.45, 1.55, NZ, 0, 1); poster(2.0, 0.55, NZ, 0, 3, 0.5, 0.75);                         // 北牆（床頭那側）
         poster(7.2, 1.5, NZ, 0, 2); poster(8.4, 1.5, NZ, 0, 4); poster(9.6, 1.5, NZ, 0, 0); poster(10.8, 1.5, NZ, 0, 3);          // 北牆（樓梯口上方，從上往下看最明顯）
+        if (PHOTOS.length) {   // CC BY 4.0 要求標註作者與授權：在海報牆下方放一塊說明牌
+          const cr = mkTex(THREE, decalCanvas(1024, 120, (g, w, h) => { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2218"; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = "#2a2218"; g.textAlign = "center"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("Photos: ggbye1127 · OXO — CC BY 4.0 — via Wikimedia Commons", w / 2, 50); g.font = "500 28px 'Noto Sans TC', sans-serif"; g.fillText("海報照片：ggbye1127、OXO（CC BY 4.0，來源 Wikimedia Commons）", w / 2, 92); }), aniso);
+          const cp = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.4), new THREE.MeshStandardMaterial({ map: cr, roughness: 0.7 })); cp.position.set(9.0, UY + 0.5, NZ + 0.01); scene.add(cp);
+        }
         poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
       }
 
