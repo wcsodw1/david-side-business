@@ -1226,6 +1226,33 @@
       U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 7.6, 0.8, -1.0); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 7.6, 1.7, -1.0, false);
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
 
+      // 二樓牆上的海報：卜燦烈（程式畫的舞台風格海報，用剪影與燈光，不是本人照片；之後可以換成你自己的圖）
+      { const NAME = "卜燦烈";
+        const drawPoster = (g, w, h, st) => {
+          const lg = (c0, c1, c2) => { const q = g.createLinearGradient(0, 0, w, h); q.addColorStop(0, c0); q.addColorStop(0.55, c1); q.addColorStop(1, c2); g.fillStyle = q; g.fillRect(0, 0, w, h); };
+          const stars = (n, a) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(255,255,255,${a * Math.random()})`; g.fillRect(Math.random() * w, Math.random() * h * 0.7, 2, 2); } };
+          const person = (cx, base, sc, col) => { g.fillStyle = col; g.beginPath(); g.arc(cx, base - 270 * sc, 30 * sc, 0, 7); g.fill(); g.beginPath(); g.moveTo(cx - 52 * sc, base - 225 * sc); g.quadraticCurveTo(cx, base - 250 * sc, cx + 52 * sc, base - 225 * sc); g.lineTo(cx + 40 * sc, base - 100 * sc); g.lineTo(cx + 30 * sc, base); g.lineTo(cx + 8 * sc, base); g.lineTo(cx, base - 95 * sc); g.lineTo(cx - 8 * sc, base); g.lineTo(cx - 30 * sc, base); g.lineTo(cx - 40 * sc, base - 100 * sc); g.closePath(); g.fill(); };
+          const beam = (x0, col) => { const q = g.createLinearGradient(x0, 0, x0, h * 0.9); q.addColorStop(0, col); q.addColorStop(1, "rgba(255,255,255,0)"); g.fillStyle = q; g.beginPath(); g.moveTo(x0 - 6, 0); g.lineTo(x0 + 6, 0); g.lineTo(x0 + 120, h * 0.9); g.lineTo(x0 - 120, h * 0.9); g.fill(); };
+          g.textAlign = "center";
+          if (st === 0) { lg("#0b0a1f", "#2a1055", "#0b0a1f"); stars(120, 0.9); beam(w * 0.3, "rgba(120,200,255,.5)"); beam(w * 0.7, "rgba(255,120,200,.5)"); person(w / 2, h * 0.86, 1.25, "#05050c"); g.fillStyle = "#fff"; g.font = "800 120px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.16); g.fillStyle = "#9fd8ff"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("S T A G E", w / 2, h * 0.22); }
+          else if (st === 1) { lg("#ff9a5c", "#ff4f7a", "#3b1a6a"); g.fillStyle = "rgba(255,240,200,.95)"; g.beginPath(); g.arc(w / 2, h * 0.45, 130, 0, 7); g.fill(); g.fillStyle = "#1a0f33"; for (let i = 0; i < 9; i++) { const bw = 40 + Math.random() * 50, bh = 90 + Math.random() * 200; g.fillRect(i * 58, h - bh, bw, bh); } person(w / 2, h * 0.9, 1.15, "#0a0618"); g.fillStyle = "#fff"; g.font = "800 112px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.14); }
+          else if (st === 2) { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.fillStyle = "#111"; g.beginPath(); g.arc(w / 2, h * 0.55, 190, 0, 7); g.fill(); g.fillStyle = "#e23b3b"; g.fillRect(0, h * 0.78, w, 16); person(w / 2, h * 0.92, 1.3, "#f4f1ea"); g.fillStyle = "#111"; g.font = "800 126px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.17); g.font = "600 30px 'Noto Sans TC', sans-serif"; g.fillText("E N C O R E", w / 2, h * 0.23); }
+          else if (st === 3) { lg("#031b34", "#0a4a73", "#02101f"); stars(200, 1); for (let i = 0; i < 5; i++) { g.strokeStyle = `rgba(120,220,255,${0.15 + i * 0.07})`; g.lineWidth = 3; g.beginPath(); g.arc(w / 2, h * 0.62, 70 + i * 55, Math.PI, 0); g.stroke(); } person(w / 2, h * 0.9, 1.2, "#020a14"); g.fillStyle = "#cfefff"; g.font = "800 118px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.15); }
+          else { lg("#22082f", "#7a1f6a", "#ff7a59"); for (let i = 0; i < 14; i++) { g.fillStyle = `rgba(255,255,255,${0.05 + Math.random() * 0.12})`; g.beginPath(); g.moveTo(w / 2, h * 0.6); const a = i * 0.45; g.lineTo(w / 2 + Math.cos(a) * 700, h * 0.6 + Math.sin(a) * 700); g.lineTo(w / 2 + Math.cos(a + 0.18) * 700, h * 0.6 + Math.sin(a + 0.18) * 700); g.fill(); } person(w / 2, h * 0.92, 1.3, "#12041a"); g.fillStyle = "#ffe9a8"; g.font = "800 122px 'Noto Sans TC', sans-serif"; g.fillText(NAME, w / 2, h * 0.16); g.fillStyle = "#fff"; g.font = "600 30px 'Noto Sans TC', sans-serif"; g.fillText("L I V E", w / 2, h * 0.225); }
+        };
+        const frameM = M(0xf4f1ea, 0.5);
+        const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
+          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster(g, w, h, st)), aniso);
+          const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
+          const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
+          const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.18 })); pl.position.z = 0.02; grp.add(pl);
+        };
+        const NZ = Z0 + 0.08, EX = X1 - 0.08;
+        poster(1.3, 1.55, NZ, 0, 0); poster(2.45, 1.55, NZ, 0, 1); poster(2.0, 0.55, NZ, 0, 3, 0.5, 0.75);                         // 北牆（床頭那側）
+        poster(7.2, 1.5, NZ, 0, 2); poster(8.4, 1.5, NZ, 0, 4); poster(9.6, 1.5, NZ, 0, 0); poster(10.8, 1.5, NZ, 0, 3);          // 北牆（樓梯口上方，從上往下看最明顯）
+        poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
+      }
+
       // 門口地墊與信箱
       const homeT = mkTex(THREE, decalCanvas(512, 200, (c, w, h) => { c.fillStyle = "#6a4a2e"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 78px Georgia, serif"; c.fillText("HOME", w / 2, 118); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("David & ARIES", w / 2, 168); }), aniso);
       const mat0 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.6), new THREE.MeshStandardMaterial({ map: homeT, roughness: 1 })); mat0.rotation.x = -PI / 2; mat0.rotation.z = PI / 2; mat0.position.set(X1 + 0.9, 0.04, (DW0 + DW1) / 2); scene.add(mat0);
