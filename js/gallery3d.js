@@ -1251,6 +1251,7 @@
           const seat = U(new THREE.SphereGeometry(1, 18, 14), m, SC.x + SC.R * c, 0.3, SC.z + SC.R * sn); seat.scale.set(0.46 * k, 0.34 * k, 0.52 * k); seat.rotation.y = phi;                         // 坐墊
           const back = U(new THREE.SphereGeometry(1, 18, 14), m, SC.x + (SC.R + 0.3) * c, 0.62, SC.z + (SC.R + 0.3) * sn); back.scale.set(0.46 * k, 0.5 * k, 0.28 * k); back.rotation.y = phi;         // 靠背（朝外）
           addObs(SC.x + (SC.R + 0.12) * c, SC.z + (SC.R + 0.12) * sn, 0.4, 0.4, 1, 0.62);
+          chairSpots.push({ x: SC.x + (SC.R - 0.05) * c, z: SC.z + (SC.R - 0.05) * sn, face: Math.atan2(-c, -sn), front: { x: SC.x + (SC.R - 1.0) * c, z: SC.z + (SC.R - 1.0) * sn }, sofa: true });   // 坐墊位置、面向地毯、起身時站的位置
         }
         // 頭：接在第一節前面（朝向北邊樓梯方向）
         const th = TH0 * d2r, c = Math.cos(th), sn = Math.sin(th), fx = sn, fz = -c, hx = SC.x + SC.R * c + fx * 0.62, hz = SC.z + SC.R * sn + fz * 0.62;
@@ -1646,7 +1647,7 @@
       if (s === 0) goRoute([...pre, anchor(0)], thenOpen ? () => H.office() : null);
       else goRoute([...pre, anchor(s)]);
     };
-    const chairNearIdx = () => { if (sitting >= 0 || inside !== sPB || sPB <= 0) return -1; for (let c = 0; c < chairSpots.length; c++) { const f = chairSpots[c].front; if (Math.hypot(pos.x - f.x, pos.z - f.z) < 1.3) return c; } return -1; };
+    const chairNearIdx = () => { if (sitting >= 0) return -1; let best = -1, bd = 1e9; for (let c = 0; c < chairSpots.length; c++) { const q = chairSpots[c]; if (q.sofa ? lvl !== 1 : (inside !== sPB || sPB <= 0)) continue; const d = Math.hypot(pos.x - q.front.x, pos.z - q.front.z); if (d < (q.sofa ? 0.85 : 1.3) && d < bd) { bd = d; best = c; } } return best; };
     const stand = () => { if (sitting < 0) return; const c = chairSpots[sitting]; pos.x = c.front.x; pos.z = c.front.z; sitting = -1; };
     const sitDown = (c) => { sitting = c; pos.x = chairSpots[c].x; pos.z = chairSpots[c].z; facing = chairSpots[c].face; cancelRoute(); };
     const activate = () => {
@@ -1994,7 +1995,7 @@
         promptKey = pk; nearIdx = inside >= 0 ? -1 : nn; dots.forEach((d, i) => d.classList.toggle("on", i === nn));
         lastInfoS = (inside < 0 && sitting < 0 && cn < 0 && nn > 0) ? nn : 0; renderInfo(lastInfoS);
         if (sitting >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 起身　或按任意方向鍵"; prompt.hidden = false; }
-        else if (cn >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 坐下休息"; prompt.hidden = false; }
+        else if (cn >= 0) { prompt.innerHTML = chairSpots[cn].sofa ? "<kbd>Enter</kbd> 坐在毛毛蟲沙發上" : "<kbd>Enter</kbd> 坐下休息"; prompt.hidden = false; }
         else if (nn >= 0) {
           prompt.innerHTML = inside >= 0
             ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ← 或滾輪下滑出門</small>`
