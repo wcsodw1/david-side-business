@@ -15,7 +15,7 @@
   // 穿搭（參考使用者的照片）：David = 黑色短袖 T、淺色長褲、白色球鞋、銀色項鍊、黑框眼鏡；ARIES = 深灰寬鬆 T、深色寬褲、白球鞋
   const OPTS = {
     david: { blazer: 0x7b5b4e, shirt: 0x7b5b4e, pants: 0x2b2725, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
-    aeris: { blazer: 0x141417, shirt: 0x141417, pants: 0xe8e5de, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x2a1a13 },
+    aeris: { blazer: 0x141417, shirt: 0x141417, pants: 0xe8e5de, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x1c1210 },
   };
   const api = (window.Faces = { apply, opts: (who) => OPTS[who] });
   const cache = {};
@@ -32,13 +32,13 @@
       nose: { w: 0.125, tipY: -0.2, shade: 0.2 }, stubble: 0.16, freckles: 0, blush: 0.05,
     },
     aeris: {
-      skin: "#f2cdb6", skinShade: "#d9a58b", hair: "#44291f", hairHi: "#97684f", lip: "#e08f8a", iris: "#3a2316",
-      W: 0.094, H: 0.118, D: 0.102, taper: 0.15, sq: 0, long: 0.02, chin: 0.006, brow: 0.003, browY: 0.285, socket: 0.003, eyeX: 0.375, eyeY: 0.04,
-      noseH: 0.009, noseW: 0.8, cheek: 0.008, lip3d: 0.0062, mouthY: -0.5,
-      eye: { hw: 0.165, hh: 0.088, iris: 0.074, tilt: -0.01, crease: 1, lash: 1, liner: 0.5 },
-      brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.026, arch: 0.026, slope: 0.0, color: "#6a4838", n: 150 },
-      mouth: { w: 0.16, up: 0.036, lo: 0.074, sad: -0.006 },
-      nose: { w: 0.1, tipY: -0.19, shade: 0.14 }, stubble: 0, freckles: 130, blush: 0.42,
+      skin: "#f6dac8", skinShade: "#e0b4a0", hair: "#1c1210", hairHi: "#52403a", lip: "#dc8478", iris: "#24150e",
+      W: 0.092, H: 0.119, D: 0.1, taper: 0.19, sq: 0, long: 0.035, chin: 0.005, brow: 0.0025, browY: 0.285, socket: 0.0025, eyeX: 0.37, eyeY: 0.04,
+      noseH: 0.0085, noseW: 0.72, cheek: 0.006, lip3d: 0.0066, mouthY: -0.5,
+      eye: { hw: 0.175, hh: 0.082, iris: 0.08, tilt: 0.02, crease: 1, lash: 1, liner: 0.6 },
+      brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.02, arch: 0.012, slope: 0.0, color: "#2a1c16", n: 150 },
+      mouth: { w: 0.15, up: 0.036, lo: 0.078, sad: -0.004 },
+      nose: { w: 0.09, tipY: -0.19, shade: 0.12 }, stubble: 0, freckles: 0, blush: 0.3,
     },
   };
 
@@ -292,7 +292,7 @@
     seed = 23;
     const hair = who === "david" ? davidHair(THREE, s) : aerisHair(THREE, s); head.add(hair);
     const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.25, metalness: 0.9 });
-    if (who === "aeris") for (const sx of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.011, 0.0017, 8, 20), silver); ring.position.set(sx * (s.W + 0.004), 0.04, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小耳環
+    if (who === "aeris") for (const sx of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0016, 8, 28), silver); ring.position.set(sx * (s.W + 0.004), 0.028, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小耳環
     if (who === "david") {   // 黑框眼鏡
       const rr = (w, h, r) => { const sh = new THREE.Shape(), x = -w / 2, y = -h / 2; sh.moveTo(x + r, y); sh.lineTo(x + w - r, y); sh.quadraticCurveTo(x + w, y, x + w, y + r); sh.lineTo(x + w, y + h - r); sh.quadraticCurveTo(x + w, y + h, x + w - r, y + h); sh.lineTo(x + r, y + h); sh.quadraticCurveTo(x, y + h, x, y + h - r); sh.lineTo(x, y + r); sh.quadraticCurveTo(x, y, x + r, y); return sh; };
       const outer = rr(0.052, 0.036, 0.0135); outer.holes.push(rr(0.0455, 0.0295, 0.0105));
@@ -308,6 +308,7 @@
       const br = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.005, 0.005), frameM); br.position.set(0, gy + 0.008, gz + 0.002); head.add(br);   // 鼻樑架
     }
     if (who === "david" && av.torso) { const chain = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.0035, 6, 48), silver); chain.position.set(0, 0.6, 0.008); chain.rotation.x = PI / 2 + 0.25; av.torso.add(chain); }   // 銀色項鍊
+    if (who === "aeris" && av.torso) for (const [rad, y, tilt] of [[0.064, 0.6, 0.22], [0.05, 0.575, 0.5]]) { const ch = new THREE.Mesh(new THREE.TorusGeometry(rad, 0.0016, 6, 48), silver); ch.position.set(0, y, 0.01); ch.rotation.x = PI / 2 + tilt; av.torso.add(ch); }   // 細銀項鍊（兩條）
     // 短袖：手肘以下改成皮膚（T 恤袖子到上臂）
     try {
       const skinMat = av.armL.wr.children[0].material;
