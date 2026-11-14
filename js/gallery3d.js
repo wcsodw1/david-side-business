@@ -1169,9 +1169,9 @@
       for (const z of [DW0, DW1]) mk(new THREE.BoxGeometry(0.16, 2.1, 0.12), bronze, X1, 1.05, z);
       // 窗（東牆，一樓 + 二樓）
       const paneM = new THREE.MeshStandardMaterial({ color: 0xbfe0ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.45, emissive: 0x4a6a90, emissiveIntensity: 0.3 });
-      for (const [z, y] of [[-6.0, 1.5], [-0.7, 1.5], [-2.4, UY + 1.5], [-5.6, UY + 1.5], [-0.9, UY + 1.5]]) { mk(new THREE.BoxGeometry(0.05, 1.2, 1.4), paneM, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 1.3, 0.08), bronze, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 0.08, 1.5), bronze, X1 + 0.09, y, z, false); }
+      for (const [z, y] of [[-6.0, 1.5], [-0.7, 1.5]]) { mk(new THREE.BoxGeometry(0.05, 1.2, 1.4), paneM, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 1.3, 0.08), bronze, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 0.08, 1.5), bronze, X1 + 0.09, y, z, false); }
       // 二樓地板（中間留樓梯口）：四塊，頂面 = UY
-      const slabM = new THREE.MeshStandardMaterial({ color: 0xdcc7a0, roughness: 0.6, transparent: true });
+      const slabM = new THREE.MeshStandardMaterial({ color: 0xeadfc8, roughness: 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
       const slab = (x0, x1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.22, z1 - z0), slabM); m.position.set((x0 + x1) / 2, UY - 0.11, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat: slabM, grp: "H2" }); };
       slab(X0, STAIR.x0, Z0, Z1); slab(STAIR.x1, X1, Z0, Z1); slab(STAIR.x0, STAIR.x1, STAIR.z1, Z1); slab(STAIR.x0, STAIR.x1, Z0, STAIR.z0);
 
@@ -1236,7 +1236,7 @@
         for (let i = 0; i < 256; i += 256 / 34) { g2.fillStyle = "rgba(120,92,70,.55)"; g2.fillRect(0, i, 256, 1.6); g2.fillStyle = "rgba(255,255,255,.12)"; g2.fillRect(0, i + 2, 256, 2); }
         g2.fillStyle = "rgba(150,120,90,.35)"; for (const x of [0, 128]) g2.fillRect(x, 0, 3, 256);
         const lt = new THREE.CanvasTexture(cv); lt.wrapS = lt.wrapT = THREE.RepeatWrapping; if (THREE.sRGBEncoding) lt.encoding = THREE.sRGBEncoding;
-        const LX = 3.0, LZ = -3.0, LY = UY + 2.15, R = 0.36;
+        const LX = 8.2, LZ = -2.8, LY = UY + 2.15, R = 0.36;
         const shade = new THREE.Mesh(new THREE.SphereGeometry(R, 40, 28), new THREE.MeshStandardMaterial({ map: lt, emissiveMap: lt, emissive: 0xffd9a0, emissiveIntensity: 0.55, roughness: 0.95 }));
         shade.position.set(LX, LY, LZ); shade.scale.y = 0.97; scene.add(shade);
         const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.018, 20), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 })); cap.position.set(LX, LY + R * 0.97 + 0.01, LZ); scene.add(cap);
@@ -1245,24 +1245,75 @@
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
       }
-      bed(1.75, -3.6, 1.98, pinkB, UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
+      bed(1.75, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
-      U(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.6, 1.1, Z0 + 0.4); addObs(4.6, Z0 + 0.4, 0.75, 0.32, 1);                         // 衣櫃
+      U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 4.68, 1.0, -0.95); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.4, 1.0, -0.95 + dz); addObs(4.68, -0.95, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       U(new THREE.BoxGeometry(1.5, 0.05, 0.6), M(0xf4e4ec, 0.5), 3.4, 0.74, -0.9); for (const dx of [-0.65, 0.65]) U(new THREE.BoxGeometry(0.05, 0.74, 0.05), dk, 3.4 + dx, 0.37, -0.9);
       U(new THREE.BoxGeometry(0.9, 1.1, 0.04), M(0xdfe8f4, 0.1, 0.8), 3.4, 1.35, -1.15); U(new THREE.BoxGeometry(0.4, 0.4, 0.4), M(0xe9a9c0, 0.8), 3.4, 0.22, -0.4); addObs(3.4, -0.75, 0.85, 0.45, 1, 0.8);     // 梳妝台 + 鏡子 + 小凳
-      U(new THREE.BoxGeometry(0.4, 2.2, 1.8), bedF, X1 - 0.3, 1.1, -3.4); addObs(X1 - 0.3, -3.4, 0.25, 0.95, 1);                       // 書櫃
-      for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) U(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.11 + r * 0.17 + 0.5) % 1, 0.35, 0.5), 0.8), X1 - 0.55, 0.4 + r * 0.5, -4.1 + k * 0.3, false);
-      const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(6.3, UY + 0.012, -2.4); rugP.receiveShadow = true; scene.add(rugP);
+      const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(8.2, UY + 0.012, -2.8); rugP.receiveShadow = true; scene.add(rugP);
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
       U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 9.6, 0.8, -0.6); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 9.6, 1.7, -0.6, false);
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
+
+      /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
+      { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.48, UY); addObs(x, z, w / 2, d / 2, 1); };
+        // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
+        shell(0.12, 4.6, 5.0, -5.7); shell(0.12, 2.8, 5.0, -1.0);
+        for (const z of [-3.4, -2.4]) U(new THREE.BoxGeometry(0.16, 2.1, 0.1), brown, 5.0, 1.05, z);
+        { const leaf = U(new THREE.BoxGeometry(0.9, 2.05, 0.04), brown, 4.55, 1.03, -3.4); leaf.rotation.y = 0; }   // 門片（打開、貼著牆）
+        // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
+        shell(0.12, 2.4, 2.8, -6.8); shell(1.0, 0.12, 1.0, -5.6); shell(0.4, 0.12, 2.6, -5.6);
+        for (const x of [1.5, 2.4]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
+        { const lf = U(new THREE.BoxGeometry(0.04, 2.05, 0.85), brown, 2.45, 1.03, -5.2); }
+        // 浴室：大理石牆面（腰線以下）+ 灰地磚
+        const mc = document.createElement("canvas"); mc.width = mc.height = 256; const mg = mc.getContext("2d"); mg.fillStyle = "#f4f4f2"; mg.fillRect(0, 0, 256, 256);
+        for (let k = 0; k < 14; k++) { mg.strokeStyle = `rgba(110,112,118,${0.12 + Math.random() * 0.2})`; mg.lineWidth = 0.8 + Math.random() * 1.8; mg.beginPath(); let x = Math.random() * 256, y = 0; mg.moveTo(x, y); while (y < 256) { x += (Math.random() - 0.35) * 22; y += 12 + Math.random() * 14; mg.lineTo(x, y); } mg.stroke(); }
+        const mt = new THREE.CanvasTexture(mc); mt.wrapS = mt.wrapT = THREE.RepeatWrapping; if (THREE.sRGBEncoding) mt.encoding = THREE.sRGBEncoding;
+        const marble = new THREE.MeshStandardMaterial({ map: mt, roughness: 0.18, metalness: 0.05 });
+        const pnl = (w, h, x, y, z, ry) => { const q = new THREE.Mesh(new THREE.PlaneGeometry(w, h), marble); q.position.set(x, UY + y, z); q.rotation.y = ry; scene.add(q); return q; };
+        pnl(2.2, 1.3, 1.65, 0.65, -7.92, 0); pnl(2.4, 1.3, 0.57, 0.65, -6.8, PI / 2); pnl(2.4, 1.3, 2.73, 0.65, -6.8, -PI / 2);
+        { const bf = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.4), new THREE.MeshStandardMaterial({ color: 0xb6b8bc, roughness: 0.3 })); bf.rotation.x = -PI / 2; bf.position.set(1.65, UY + 0.014, -6.8); bf.receiveShadow = true; scene.add(bf); }
+        const por = M(0xffffff, 0.2);
+        // 馬桶
+        U(new THREE.BoxGeometry(0.4, 0.4, 0.18), por, 1.95, 0.62, -7.8); const bowl = U(new THREE.CylinderGeometry(0.19, 0.15, 0.38, 20), por, 1.95, 0.2, -7.55); bowl.scale.z = 1.35; U(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 20), por, 1.95, 0.4, -7.55).scale.z = 1.35; addObs(1.95, -7.6, 0.25, 0.35, 1);
+        // 立柱洗手台 + 圓鏡
+        U(new THREE.CylinderGeometry(0.07, 0.09, 0.62, 12), por, 2.45, 0.31, -7.62); const basin = U(new THREE.SphereGeometry(0.24, 18, 10, 0, PI * 2, 0, PI / 2), por, 2.45, 0.66, -7.6); basin.scale.set(1, 0.5, 0.8); addObs(2.45, -7.6, 0.26, 0.26, 1);
+        U(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), M(0xc9cdd3, 0.2, 0.9), 2.45, 0.82, -7.8);
+        { const mr = U(new THREE.CircleGeometry(0.3, 32), M(0xe3edf6, 0.05, 0.85), 2.45, 1.45, -7.9); mr.rotation.y = 0; }
+        // 淋浴間（西北角）：蓮蓬頭、水管、小門檻
+        U(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), M(0xc9cdd3, 0.2, 0.9), 0.62, 1.15, -7.4); { const rs = U(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), M(0xc9cdd3, 0.2, 0.9), 0.7, 1.82, -7.4); rs.rotation.z = PI / 2 + 0.5; }
+        U(new THREE.BoxGeometry(0.04, 0.06, 1.0), wh, 1.52, 0.03, -7.4);
+        // 長條窗：客廳東牆（含淺藍天空 + 遠方大樓），金色窗框，下方白色嵌入式矮櫃
+        const sk = document.createElement("canvas"); sk.width = 512; sk.height = 128; const sg = sk.getContext("2d"), gr = sg.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, "#9ccdf5"); gr.addColorStop(1, "#e4f0fb"); sg.fillStyle = gr; sg.fillRect(0, 0, 512, 128);
+        sg.fillStyle = "rgba(255,255,255,.85)"; for (const [cx, cy, r] of [[90, 30, 22], [120, 36, 28], [330, 24, 20], [360, 30, 26], [440, 40, 18]]) { sg.beginPath(); sg.arc(cx, cy, r, 0, 7); sg.fill(); }
+        for (let k = 0; k < 18; k++) { sg.fillStyle = `rgba(${170 + (k % 4) * 12},${176 + (k % 3) * 10},${186 + (k % 5) * 6},.95)`; const bw = 26 + (k * 37) % 40, bh = 22 + (k * 53) % 50; sg.fillRect(k * 30 - 6, 128 - bh, bw, bh); }
+        const st = new THREE.CanvasTexture(sk); if (THREE.sRGBEncoding) st.encoding = THREE.sRGBEncoding;
+        const skyM = new THREE.MeshBasicMaterial({ map: st, toneMapped: false });
+        { const w = 6.8, cz = -3.9, X = X1 - 0.075;                                         // 客廳（東牆）
+          const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(X, UY + 1.6, cz); q.rotation.y = -PI / 2; scene.add(q);
+          const bar = (sw, sh, sd, z, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(sd, sh, sw), gold); b.position.set(X - 0.02, UY + y, z); scene.add(b); };
+          bar(w + 0.1, 0.07, 0.06, cz, 0.95); bar(w + 0.1, 0.07, 0.06, cz, 2.25); for (let k = 0; k <= 6; k++) bar(0.05, 1.3, 0.06, cz - w / 2 + (w * k) / 6, 1.6);
+          const cur = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.5, 0.34), M(0x8a5a2a, 0.9)); cur.position.set(X - 0.08, UY + 1.55, cz - w / 2 - 0.12); scene.add(cur); }
+        { const w = 1.8, cx = 3.95, Z = Z0 + 0.075;                                          // 臥室（北牆）
+          const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(cx, UY + 1.6, Z); scene.add(q);
+          const bar = (sw, sh, x, y, horiz) => { const b = new THREE.Mesh(new THREE.BoxGeometry(horiz ? sw : 0.05, horiz ? 0.07 : sh, 0.06), gold); b.position.set(x, UY + y, Z + 0.02); scene.add(b); };
+          bar(w + 0.1, 0.07, cx, 0.95, true); bar(w + 0.1, 0.07, cx, 2.25, true); for (let k = 0; k <= 3; k++) bar(0.05, 1.3, cx - w / 2 + (w * k) / 3, 1.6, false);
+          const cur = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.5, 0.14), M(0x8a5a2a, 0.9)); cur.position.set(cx - w / 2 - 0.12, UY + 1.55, Z + 0.09); scene.add(cur); }
+        // 嵌入式矮櫃（窗下，三個開放格）
+        { const cx = 11.62, z0 = -7.2, z1 = -1.2, cw = M(0xfbfaf6, 0.85), inn = M(0xe6e6e2, 0.9);
+          U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.85, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.03, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.04, 0.8, z1 - z0), inn, cx + 0.255, 0.44, (z0 + z1) / 2);
+          for (const z of [-7.2, -6.5, -5.8, -3.9, -1.2]) U(new THREE.BoxGeometry(0.55, 0.82, 0.07), cw, cx, 0.43, z);
+          addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
+        // 冷氣（客廳北牆高處、臥室北牆高處）
+        for (const x of [8.6, 3.95]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 2.45, Z0 + 0.14); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 2.36, Z0 + 0.25); }
+      }
 
       // 毛毛蟲沙發：圍著圓地毯東側的一整條弧形沙發 —— 8 節毛茸茸的綠色身體（每一節都能坐）+ 笑笑的頭（眼睛、腮紅、觸角）
       { const fc = mkCanvas(128, 128), fg = fc.getContext("2d"); fg.fillStyle = "#808080"; fg.fillRect(0, 0, 128, 128);
         for (let i = 0; i < 1100; i++) { const x = Math.random() * 128, y = Math.random() * 128, l = 3 + Math.random() * 5, a = Math.random() * 6.28; fg.strokeStyle = Math.random() < 0.5 ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.35)"; fg.lineWidth = 1.2; fg.beginPath(); fg.moveTo(x, y); fg.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); fg.stroke(); }
         const furT = mkTex(THREE, fc, aniso); furT.wrapS = furT.wrapT = THREE.RepeatWrapping; furT.repeat.set(2, 2);
         const fur = (h, l = 0.4) => new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(h, 0.6, l), roughness: 1, bumpMap: furT, bumpScale: 1.6 });
-        const SC = { x: 6.3, z: -2.4, R: 2.0 }, N = 8, TH0 = -60, STEP = 17, d2r = PI / 180;
+        const SC = { x: 8.2, z: -2.8, R: 2.0 }, N = 8, TH0 = -60, STEP = 17, d2r = PI / 180;
         for (let i = 0; i < N; i++) {
           const th = (TH0 + i * STEP) * d2r, c = Math.cos(th), sn = Math.sin(th), phi = -(th + PI / 2), m = fur(0.36 - i * 0.014, 0.4 + (i % 2) * 0.05), k = i === N - 1 ? 0.82 : 1;
           const seat = U(new THREE.SphereGeometry(1, 18, 14), m, SC.x + SC.R * c, 0.3, SC.z + SC.R * sn); seat.scale.set(0.46 * k, 0.34 * k, 0.52 * k); seat.rotation.y = phi;                         // 坐墊
@@ -1315,7 +1366,6 @@
           });
         };
         const NZ = Z0 + 0.08, EX = X1 - 0.08;
-        poster(1.3, 1.55, NZ, 0, 0); poster(2.45, 1.55, NZ, 0, 1); poster(2.0, 0.55, NZ, 0, 3, 0.5, 0.75);                         // 北牆（床頭那側）
         poster(7.2, 1.5, NZ, 0, 2); poster(8.4, 1.5, NZ, 0, 4); poster(9.6, 1.5, NZ, 0, 0); poster(10.8, 1.5, NZ, 0, 3);          // 北牆（樓梯口上方，從上往下看最明顯）
         if (PHOTOS.length) {   // CC BY 4.0 要求標註作者與授權：在海報牆下方放一塊說明牌
           const cr = mkTex(THREE, decalCanvas(1024, 120, (g, w, h) => { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2218"; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = "#2a2218"; g.textAlign = "center"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("Photos: ggbye1127 · OXO · SHAQ Photo — CC BY 4.0 — via Wikimedia Commons (resized)", w / 2, 50); g.font = "500 28px 'Noto Sans TC', sans-serif"; g.fillText("海報照片：ggbye1127、OXO、SHAQ Photo（CC BY 4.0，來源 Wikimedia Commons，已縮小尺寸）", w / 2, 92); }), aniso);
