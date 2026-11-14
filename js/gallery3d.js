@@ -1297,8 +1297,12 @@
       flowers(15.6, 1.9, 2.6, 0.9); flowers(21.0, 1.9, 2.4, 0.9); flowers(7.0, 5.0, 2.8, 1.0);
       const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35, undefined, 0.55); };
       bench(14.4, 1.2); bench(20.8, 2.8); bench(14.0, 6.9); bench(23.4, 2.2);
-      for (const [x, z] of [[13.0, -0.9], [16.8, -2.0], [18.6, 1.0], [22.2, -1.2], [24.6, 0.9], [15.2, -4.4], [19.8, -4.8], [20.6, -2.6], [19.0, 2.4], [14.6, 3.2], [24.4, 5.0], [17.0, 7.0], [9.0, 2.2], [6.0, 5.0]]) {   // 公園路燈（晚上自動亮、走近更亮）
-        mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); { const lm = lampMat.clone(); mk(new THREE.SphereGeometry(0.15, 14, 10), lm, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z, mat: lm }); }
+      { // 路燈只放在走道（石板小徑）兩側，左右交錯、約每 4.6 公尺一盞，不亂放
+        const lamp = (x, z) => { mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); const lm = lampMat.clone(); mk(new THREE.SphereGeometry(0.15, 14, 10), lm, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z, mat: lm }); };
+        let acc = 2.2, side = 1;
+        for (let k = 0; k < pathPts.length - 1; k++) { const [ax, az] = pathPts[k], [bx, bz] = pathPts[k + 1], len = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / len, uz = (bz - az) / len;
+          while (acc < len) { lamp(ax + ux * acc - uz * 1.6 * side, az + uz * acc + ux * 1.6 * side); side = -side; acc += 4.6; } acc -= len; }
+        lamp(4.4, 5.6); lamp(-1.6, 5.6);   // 通往船尾的小徑
       }
       // 池塘（有睡蓮與石頭）
       { const PX = 19.0, PZ = 5.2, pr = 3.0, ps = 0.78;
@@ -1785,7 +1789,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 

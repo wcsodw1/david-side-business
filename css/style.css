@@ -642,3 +642,9 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .news-pop small { display: block; font: 800 10px var(--font); letter-spacing: .16em; color: #8a3a2a; text-transform: uppercase; }
 .news-pop b { display: block; margin-top: 2px; font: 800 17px Georgia, 'Noto Serif TC', serif; }
 .news-pop p { margin-top: 4px; font-size: 13.5px; line-height: 1.45; } .news-pop em { font-style: normal; font-weight: 800; font-size: 11px; letter-spacing: .08em; color: #8a7a98; margin-right: 4px; }
+
+/* 音樂開關：右上角，NEWS 報紙的左邊 */
+.music-btn { position: fixed; right: 92px; top: 92px; z-index: 62; width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.35); background: rgba(20,17,43,.62); color: #fff; font-size: 20px; line-height: 1; cursor: pointer; backdrop-filter: blur(6px); box-shadow: 0 4px 14px rgba(0,0,0,.3); }
+.music-btn:hover { background: rgba(40,34,80,.8); }
+body.locked .music-btn { display: none; }
+@media (max-width: 960px) { .music-btn { right: 72px; top: 84px; width: 40px; height: 40px; font-size: 18px; } }
