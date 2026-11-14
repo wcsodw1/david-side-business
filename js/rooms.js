@@ -344,7 +344,7 @@
       /* ===== Coffee Shop：咖啡廳 ===== */
       "cafe"(K) {
         const { M, E, GL, box, cyl, sph, pln, tx, obs, rnd } = K;
-        K.floor((c, w, h, X, Z, pxm) => { const s0 = 0.4 * pxm; for (let y = 0; y < h; y += s0) for (let x = 0; x < w; x += s0) { c.fillStyle = ((x / s0 + y / s0) | 0) % 2 ? "#e8d9bf" : "#8a5a3a"; c.fillRect(x, y, s0 + 1, s0 + 1); } c.fillStyle = "rgba(40,20,10,.35)"; c.font = "800 70px Georgia"; c.textAlign = "center"; ft("COFFEE & BEANS", X(0.1), Z(-2.1)); });
+        K.floor((c, w, h, X, Z, pxm, ft) => { const s0 = 0.4 * pxm; for (let y = 0; y < h; y += s0) for (let x = 0; x < w; x += s0) { c.fillStyle = ((x / s0 + y / s0) | 0) % 2 ? "#e8d9bf" : "#8a5a3a"; c.fillRect(x, y, s0 + 1, s0 + 1); } c.fillStyle = "rgba(40,20,10,.35)"; c.font = "800 70px Georgia"; c.textAlign = "center"; ft("COFFEE & BEANS", X(0.1), Z(-2.1)); });
         K.walls((c, w, h) => { c.fillStyle = "#6b4630"; c.fillRect(0, 0, w, h); c.fillStyle = "#f0e2c8"; c.fillRect(0, h * 0.68, w, h * 0.32); c.fillStyle = "#3a2416"; c.fillRect(0, h * 0.68, w, 8); c.fillStyle = "rgba(255,255,255,.06)"; for (let x = 0; x < w; x += 64) c.fillRect(x, 0, 3, h * 0.68); });
         // 吧台 + 咖啡機 + 磨豆機
         { const q = K.grp(2.6, 0, -3.5); box(0.7, 1.0, 2.3, M(0x3a2416, 0.6), 0, 0.5, 0, { p: q, k: 1 }); box(0.82, 0.06, 2.42, M(0xe8d9bf, 0.35), -0.04, 1.03, 0, { p: q, k: 1 });
