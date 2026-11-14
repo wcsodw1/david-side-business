@@ -482,6 +482,7 @@
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd, lv, h) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv, h });   // h：障礙物高度（≤0.85 的可以用 Space 跳過去）
     addObs(0.05, (-DECK_HD + 1.4) / 2, 0.05, (1.4 + DECK_HD) / 2); addObs(0.05, (6.6 + DECK_HD) / 2, 0.05, (DECK_HD - 6.6) / 2);   // 西側欄杆（缺口 z 1.4–6.6 通往船尾）
+    const akari = { k: 0 };   // 二樓和紙燈：有人在二樓才亮
     const roomLights = [];   // 房間 / 辦公室的室內燈：白天幾乎不亮、天黑才亮
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
 
@@ -1240,7 +1241,7 @@
         shade.position.set(LX, LY, LZ); shade.scale.y = 0.97; scene.add(shade);
         const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.018, 20), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 })); cap.position.set(LX, LY + R * 0.97 + 0.01, LZ); scene.add(cap);
         const cordH = UY + WT - (LY + R * 0.97); const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, cordH, 6), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.6 })); cord.position.set(LX, LY + R * 0.97 + cordH / 2, LZ); scene.add(cord);
-        const lp = new THREE.PointLight(0xffd9a0, 0.9, 8); lp.position.set(LX, LY, LZ); lp.userData.base = 0.9; roomLights.push(lp); scene.add(lp);
+        const lp = new THREE.PointLight(0xffd9a0, 0.9, 8); lp.position.set(LX, LY, LZ); lp.userData.base = 0.9; akari.light = lp; akari.mat = shade.material; lp.intensity = 0; shade.material.emissiveIntensity = 0.06; scene.add(lp);
       }
       bed(1.75, -3.6, 1.98, pinkB, UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
@@ -2034,6 +2035,7 @@
         boardMats[s].emissiveIntensity = lerp(boardMats[s].emissiveIntensity, on && inside >= 0 ? 0.25 : 0.1, k);
         pools[s].material.opacity = lerp(pools[s].material.opacity, on ? 0.34 : 0.14, k);
       }
+      if (akari.light) { akari.k += ((lvl === 1 ? 1 : 0) - akari.k) * Math.min(1, dt * 4); akari.light.intensity = akari.light.userData.base * akari.k; akari.mat.emissiveIntensity = 0.06 + 0.7 * akari.k; }
       { const nk = skyU.night.value; for (const l of roomLights) l.intensity = l.userData.base * (0.1 + 0.9 * nk); }
       bangs.forEach((b, s) => { if (b && b.visible) { const k = 1 + Math.sin(time * 5 + s) * 0.12, sc = camera.position.distanceTo(b.position) * 0.05 * k; b.scale.set(sc, sc, 1); b.position.y = (s === 0 ? 3.3 : 2.9) + Math.sin(time * 2.4 + s) * 0.08; } });
       for (const h of tickHooks) h(dt, time);
