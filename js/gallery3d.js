@@ -1295,6 +1295,17 @@
         { const dm = M(0x6b4a33, 0.6);   // 臥室門（走道北牆 x 3.3~4.3）：門框 + 門楣 + 打開靠邊的門片
           for (const x of [3.3, 4.3]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm, x, 1.05, -0.55); U(new THREE.BoxGeometry(1.1, 0.1, 0.16), dm, 3.8, 2.1, -0.55);
           const lf = U(new THREE.BoxGeometry(0.04, 2.0, 0.92), M(0x8a6444, 0.6), 4.22, 1.0, -1.05); U(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), M(0xd9c9a0, 0.3, 0.8), 4.2, 1.0, -1.45).rotation.x = PI / 2; }
+        { const dm2 = M(0x6b4a33, 0.6), lm2 = M(0x8a6444, 0.6), kn = M(0xd9c9a0, 0.3, 0.8);   // 其他門口也都有門：門框（鉸鏈側）+ 門楣 + 半開的門片
+          const door = (hx, hz, th, lx, lz, lw, alongZ) => {
+            const c = Math.cos(th), s = Math.sin(th), cx = hx + 0.45 * s, cz = hz + 0.45 * c;
+            const lf = U(new THREE.BoxGeometry(0.04, 2.0, 0.9), lm2, cx, 1.0, cz); lf.rotation.y = th;
+            U(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), kn, hx + 0.82 * s, 1.0, hz + 0.82 * c).rotation.x = PI / 2;
+            U(new THREE.BoxGeometry(alongZ ? 0.16 : 0.1, 2.1, alongZ ? 0.1 : 0.16), dm2, hx, 1.05, hz);
+            U(alongZ ? new THREE.BoxGeometry(0.16, 0.1, lw) : new THREE.BoxGeometry(lw, 0.1, 0.16), dm2, lx, 2.1, lz); };
+          door(2.0, -6.6, 1.22, 2.0, -6.1, 1.0, true);        // 浴室門（西牆，朝臥室打開）
+          door(0.5, -0.65, 1.48, 0.5, -0.15, 1.0, true);      // 西邊出口門（走道盡頭）
+          door(5.5, -0.55, 1.48, 5.5, -0.07, 0.95, true);     // 走道通客廳的門
+        }
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 7.45, 5.5, -4.275);   // 走道東端（右下角）不砌牆
         // 浴室：x 3.2~5.5（東牆 = 隔間牆，直接靠牆）、z -8~-5.6；門在西牆（面向左側）z -6.6~-5.6
