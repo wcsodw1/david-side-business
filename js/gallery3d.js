@@ -1349,6 +1349,8 @@
         for (let k = 0; k < 18; k++) { sg.fillStyle = `rgba(${170 + (k % 4) * 12},${176 + (k % 3) * 10},${186 + (k % 5) * 6},.95)`; const bw = 26 + (k * 37) % 40, bh = 22 + (k * 53) % 50; sg.fillRect(k * 30 - 6, 128 - bh, bw, bh); }
         const st = new THREE.CanvasTexture(sk); if (THREE.sRGBEncoding) st.encoding = THREE.sRGBEncoding;
         const skyM = new THREE.MeshBasicMaterial({ map: st, toneMapped: false });
+        { const dayC = new THREE.Color(0xffffff), nightC = new THREE.Color(0x141c3a), tmp = new THREE.Color();   // 窗外的天空隨時間變亮 / 變暗（夜晚是深藍色）
+          tickHooks.push(() => { tmp.copy(dayC).lerp(nightC, Math.min(1, skyU.night.value)); skyM.color.copy(tmp); }); }
         { const w = 6.8, cz = -3.9, X = X1 - 0.075;                                         // 客廳（東牆）
           const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(X, UY + 1.6, cz); q.rotation.y = -PI / 2; scene.add(q);
           const bar = (sw, sh, sd, z, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(sd, sh, sw), gold); b.position.set(X - 0.02, UY + y, z); scene.add(b); };
