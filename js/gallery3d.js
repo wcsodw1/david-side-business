@@ -1229,6 +1229,19 @@
 
       /* ---- 二樓：Aeris 的房間（lv 1）---- */
       const U = (geo, mat, x, y, z, cast = true) => mk(geo, mat, x, UY + y, z, cast);
+      { // 二樓吊燈：和紙圓球燈籠（Akari 風）：橫向竹骨 + 兩條縱向接縫，從天花板垂下
+        const cv = document.createElement("canvas"); cv.width = 256; cv.height = 256; const g2 = cv.getContext("2d");
+        g2.fillStyle = "#f3e6c9"; g2.fillRect(0, 0, 256, 256);
+        for (let i = 0; i < 256; i += 256 / 34) { g2.fillStyle = "rgba(120,92,70,.55)"; g2.fillRect(0, i, 256, 1.6); g2.fillStyle = "rgba(255,255,255,.12)"; g2.fillRect(0, i + 2, 256, 2); }
+        g2.fillStyle = "rgba(150,120,90,.35)"; for (const x of [0, 128]) g2.fillRect(x, 0, 3, 256);
+        const lt = new THREE.CanvasTexture(cv); lt.wrapS = lt.wrapT = THREE.RepeatWrapping; if (THREE.sRGBEncoding) lt.encoding = THREE.sRGBEncoding;
+        const LX = 3.0, LZ = -3.0, LY = UY + 2.15, R = 0.36;
+        const shade = new THREE.Mesh(new THREE.SphereGeometry(R, 40, 28), new THREE.MeshStandardMaterial({ map: lt, emissiveMap: lt, emissive: 0xffd9a0, emissiveIntensity: 0.55, roughness: 0.95 }));
+        shade.position.set(LX, LY, LZ); shade.scale.y = 0.97; scene.add(shade);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.018, 20), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.5 })); cap.position.set(LX, LY + R * 0.97 + 0.01, LZ); scene.add(cap);
+        const cordH = UY + WT - (LY + R * 0.97); const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, cordH, 6), new THREE.MeshStandardMaterial({ color: 0xf2f2ee, roughness: 0.6 })); cord.position.set(LX, LY + R * 0.97 + cordH / 2, LZ); scene.add(cord);
+        const lp = new THREE.PointLight(0xffd9a0, 0.9, 8); lp.position.set(LX, LY, LZ); lp.userData.base = 0.9; roomLights.push(lp); scene.add(lp);
+      }
       bed(1.75, -3.6, 1.98, pinkB, UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       U(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.6, 1.1, Z0 + 0.4); addObs(4.6, Z0 + 0.4, 0.75, 0.32, 1);                         // 衣櫃
