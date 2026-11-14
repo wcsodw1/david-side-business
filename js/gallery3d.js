@@ -1286,8 +1286,6 @@
         // 門在東端（x 10.2~11.2），進來就是客廳
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 6.8, 5.5, -4.6); shell(0.12, 0.6, 5.5, 0.1);
-        for (const z of [-1.2, -0.2]) U(new THREE.BoxGeometry(0.16, 2.1, 0.1), brown, 5.5, 1.05, z);
-        { const leaf = U(new THREE.BoxGeometry(0.04, 2.05, 0.9), brown, 5.38, 1.03, -1.7); leaf.rotation.y = 0; }   // 門片（打開、貼著牆）
         // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
         shell(0.12, 2.4, 2.8, -6.8); shell(1.0, 0.12, 1.0, -5.6); shell(0.4, 0.12, 2.6, -5.6);
         for (const x of [1.5, 2.4]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
