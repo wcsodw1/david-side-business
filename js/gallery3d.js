@@ -1260,8 +1260,24 @@
       bed(1.75, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 4.68, 1.0, -0.95); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.4, 1.0, -0.95 + dz); addObs(4.68, -0.95, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
-      U(new THREE.BoxGeometry(1.5, 0.05, 0.6), M(0xf4e4ec, 0.5), 3.4, 0.74, -0.9); for (const dx of [-0.65, 0.65]) U(new THREE.BoxGeometry(0.05, 0.74, 0.05), dk, 3.4 + dx, 0.37, -0.9);
-      U(new THREE.BoxGeometry(0.9, 1.1, 0.04), M(0xdfe8f4, 0.1, 0.8), 3.4, 1.35, -1.15); U(new THREE.BoxGeometry(0.4, 0.4, 0.4), M(0xe9a9c0, 0.8), 3.4, 0.22, -0.4); addObs(3.4, -0.75, 0.85, 0.45, 1, 0.8);     // 梳妝台 + 鏡子 + 小凳
+      { // 書桌 / 梳妝桌：木頭桌面（有厚度）、一側抽屜櫃、另一側桌腳、橢圓立鏡（有木框與支架）、檯燈、筆電、椅子
+        const dw = M(0xc89a62, 0.55), dwD = M(0xa8793f, 0.6), dx = 3.4, dz = -0.95;
+        U(new THREE.BoxGeometry(1.5, 0.05, 0.62), dw, dx, 0.745, dz); U(new THREE.BoxGeometry(1.46, 0.04, 0.58), dwD, dx, 0.7, dz);
+        U(new THREE.BoxGeometry(0.45, 0.68, 0.56), dw, dx + 0.52, 0.35, dz); for (const yy of [0.22, 0.5]) { U(new THREE.BoxGeometry(0.4, 0.2, 0.012), dwD, dx + 0.52, yy, dz + 0.286); U(new THREE.BoxGeometry(0.1, 0.014, 0.014), M(0xe9e3d4, 0.3, 0.8), dx + 0.52, yy + 0.04, dz + 0.3); }   // 抽屜 + 把手
+        for (const sz of [-0.27, 0.27]) U(new THREE.BoxGeometry(0.05, 0.72, 0.05), dwD, dx - 0.7, 0.36, dz + sz);
+        const mc = document.createElement("canvas"); mc.width = 128; mc.height = 192; const mg = mc.getContext("2d"), mgr = mg.createLinearGradient(0, 0, 128, 192); mgr.addColorStop(0, "#f4f9ff"); mgr.addColorStop(0.45, "#cfe0ef"); mgr.addColorStop(1, "#9db8d0"); mg.fillStyle = mgr; mg.fillRect(0, 0, 128, 192);
+        mg.fillStyle = "rgba(255,255,255,.55)"; mg.beginPath(); mg.moveTo(20, 0); mg.lineTo(50, 0); mg.lineTo(10, 192); mg.lineTo(-20, 192); mg.fill();   // 斜斜的反光
+        const mt = new THREE.CanvasTexture(mc); if (THREE.sRGBEncoding) mt.encoding = THREE.sRGBEncoding;
+        const mrr = new THREE.Mesh(new THREE.CircleGeometry(1, 40), new THREE.MeshBasicMaterial({ map: mt, toneMapped: false })); mrr.scale.set(0.34, 0.5, 1); mrr.position.set(dx - 0.1, UY + 1.45, dz - 0.19); scene.add(mrr);
+        const fr = new THREE.Mesh(new THREE.TorusGeometry(1, 0.06, 8, 40), dwD); fr.scale.set(0.34, 0.5, 0.5); fr.position.set(dx - 0.1, UY + 1.45, dz - 0.19); scene.add(fr);
+        for (const s of [-1, 1]) { const lg = U(new THREE.BoxGeometry(0.04, 0.5, 0.04), dwD, dx - 0.1 + s * 0.22, 0.99, dz - 0.19); lg.rotation.z = -s * 0.15; }
+        U(new THREE.BoxGeometry(0.5, 0.04, 0.12), dwD, dx - 0.1, 0.8, dz - 0.19);
+        U(new THREE.BoxGeometry(0.34, 0.015, 0.23), M(0xdcdde2, 0.4, 0.5), dx - 0.45, 0.78, dz + 0.02); { const lt = U(new THREE.BoxGeometry(0.34, 0.22, 0.012), M(0x1a1c22, 0.3, 0.4), dx - 0.45, 0.89, dz - 0.1); lt.rotation.x = -0.25; }   // 筆電
+        U(new THREE.CylinderGeometry(0.05, 0.06, 0.02, 14), M(0xf2f2ee, 0.5), dx + 0.5, 0.78, dz - 0.15); U(new THREE.CylinderGeometry(0.008, 0.008, 0.3, 6), M(0xf2f2ee, 0.5), dx + 0.5, 0.94, dz - 0.15); U(new THREE.ConeGeometry(0.08, 0.1, 14, 1, true), M(0xffe9b8, 0.7), dx + 0.5, 1.12, dz - 0.15);   // 檯燈
+        // 椅子（面向書桌）
+        U(new THREE.BoxGeometry(0.42, 0.05, 0.4), M(0xe9a9c0, 0.8), dx - 0.2, 0.45, dz + 0.62); U(new THREE.BoxGeometry(0.42, 0.4, 0.04), M(0xe9a9c0, 0.8), dx - 0.2, 0.7, dz + 0.82);
+        for (const sx of [-0.17, 0.17]) for (const sz of [-0.16, 0.16]) U(new THREE.BoxGeometry(0.035, 0.45, 0.035), dk, dx - 0.2 + sx, 0.225, dz + 0.62 + sz);
+      }
       const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(8.2, UY + 0.012, -2.8); rugP.receiveShadow = true; scene.add(rugP);
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
       U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 9.6, 0.8, -0.6); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 9.6, 1.7, -0.6, false);
