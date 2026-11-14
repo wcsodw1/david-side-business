@@ -1259,8 +1259,8 @@
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
       }
-      bed(3.7, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
-      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 2.9, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 2.9, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
+      { const _bc = scene.children.length; bed(4.4, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) scene.children[k].position.x = 8.8 - scene.children[k].position.x; }   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
+      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 5.2, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 5.2, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       const SHOW_BEDROOM_EXTRAS = false;   // 臥室的衣櫃 / 書桌 / 鏡子 / 椅子先移除（要放回來改成 true）
       if (SHOW_BEDROOM_EXTRAS) {U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       }
@@ -1712,7 +1712,7 @@
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
     const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 3.7;           // 起床後站在自己那一側的床邊
-    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 4.5, z: bedZ };
+    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 3.6, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -2080,7 +2080,7 @@
       if (swimT < 0.01 && !wake) { av.root.rotation.order = "XYZ"; av.root.rotation.x = 0; av.root.rotation.z = 0; }   // 修正：開場動畫之後角色身體殘留的歪斜（倒著走）
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
-        wake.t += dt; const T = wake.t, bx = 4.5, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        wake.t += dt; const T = wake.t, bx = 3.6, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
         if (T < 2.2) { av.root.position.set(bx, by, bedZ); av.root.quaternion.copy(lieQ); av.torso.rotation.x = Math.sin(T * 1.6) * 0.02; }              // 躺著（輕輕呼吸）
         else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), lerp(bedZ, standZ, e)); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
         else {
