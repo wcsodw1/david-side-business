@@ -1204,6 +1204,8 @@
       };
       // （一樓沒有床：床在二樓，兩個人睡同一張雙人床）
 
+      const SHOW_1F_FURNITURE = false;   // 一樓家具先全部移除（要放回來改成 true）
+      if (SHOW_1F_FURNITURE) {
       mk(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.4, 1.1, Z0 + 0.4); addObs(4.4, Z0 + 0.4, 0.75, 0.32, 0);                       // 衣櫃
       mk(new THREE.BoxGeometry(1.5, 0.05, 0.75), wood, 2.2, 0.75, -3.9); for (const dx of [-0.65, 0.65]) for (const dz of [-0.3, 0.3]) mk(new THREE.BoxGeometry(0.05, 0.75, 0.05), dk, 2.2 + dx, 0.37, -3.9 + dz);
       mk(new THREE.BoxGeometry(0.5, 0.03, 0.34), M(0x2a2550, 0.4, 0.4), 2.2, 0.79, -3.8); { const lt = mk(new THREE.BoxGeometry(0.46, 0.3, 0.02), M(0x101018, 0.4, 0.3), 2.2, 0.95, -4.15); lt.rotation.x = -0.2; }
@@ -1237,6 +1239,7 @@
       for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) mk(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.13 + r * 0.2) % 1, 0.32, 0.42), 0.8), X0 + 0.6, 0.4 + r * 0.5, -2.1 + k * 0.3, false);
       mk(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 6.9, 0.8, -4.9); mk(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.6 }), 6.9, 1.7, -4.9, false);
       { const pg = new THREE.Group(); mk(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xff9b78, 0.7), 1.6, 0.2, -0.1); for (let k = 0; k < 8; k++) { const a = k * 2.4; mk(new THREE.SphereGeometry(0.19, 10, 8), M(0x3f9a6a, 0.85), 1.6 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.1 + Math.sin(a) * 0.12, false); } }
+      }   // /SHOW_1F_FURNITURE
 
       /* ---- 二樓：Aeris 的房間（lv 1）---- */
       const U = (geo, mat, x, y, z, cast = true) => mk(geo, mat, x, UY + y, z, cast);
