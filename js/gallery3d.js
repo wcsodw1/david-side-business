@@ -1339,7 +1339,8 @@
       }
 
       // 毛毛蟲沙發：圍著圓地毯東側的一整條弧形沙發 —— 8 節毛茸茸的綠色身體（每一節都能坐）+ 笑笑的頭（眼睛、腮紅、觸角）
-      { const fc = mkCanvas(128, 128), fg = fc.getContext("2d"); fg.fillStyle = "#808080"; fg.fillRect(0, 0, 128, 128);
+      const SHOW_CATERPILLAR = false;   // 毛毛蟲沙發先移除（要放回來改成 true）
+      if (SHOW_CATERPILLAR) { const fc = mkCanvas(128, 128), fg = fc.getContext("2d"); fg.fillStyle = "#808080"; fg.fillRect(0, 0, 128, 128);
         for (let i = 0; i < 1100; i++) { const x = Math.random() * 128, y = Math.random() * 128, l = 3 + Math.random() * 5, a = Math.random() * 6.28; fg.strokeStyle = Math.random() < 0.5 ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.35)"; fg.lineWidth = 1.2; fg.beginPath(); fg.moveTo(x, y); fg.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); fg.stroke(); }
         const furT = mkTex(THREE, fc, aniso); furT.wrapS = furT.wrapT = THREE.RepeatWrapping; furT.repeat.set(2, 2);
         const fur = (h, l = 0.4) => new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(h, 0.6, l), roughness: 1, bumpMap: furT, bumpScale: 1.6 });
