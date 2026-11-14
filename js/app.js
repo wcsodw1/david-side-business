@@ -229,6 +229,7 @@
         <li class="kb-row" data-pid="${esc(p.id)}" style="--c:${accent(P.indexOf(p))}">
           <a class="kb-name" href="#/p/${esc(p.id)}">${esc(p.name)}</a>${showChip ? chip(eff(p)) : ""}
           <span class="kb-now ${p.wbNote ? "" : "none"}" title="${esc(p.wbNote || "")}">${esc(p.wbNote || "（還沒有更新）")}</span>
+          <span class="kb-pg" title="完成度 ${p.progress ?? 0}%"><i style="width:${p.progress ?? 0}%"></i><b>${p.progress ?? 0}%</b></span>
           <span class="kb-upd">
             <button type="button" class="kb-btn" aria-label="更新 ${esc(p.name)}">✎ 更新</button>
             <form class="kb-form" autocomplete="off">
@@ -282,7 +283,6 @@
                   <div><b>${avg}<small>%</small></b><span>平均進度</span></div>
                 </div>
                 ${board}
-                <div class="gauges">${P.map(gauge).join("")}</div>
                 <div class="energy"><span>整體分布</span><div class="seg">${seg}</div></div>
               </div>
               <div class="stand"></div>

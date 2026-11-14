@@ -773,3 +773,9 @@ body.locked .music-btn { display: none; }
 .office-sched { margin-top: 26px; padding: 18px 20px 20px; border-radius: 16px; background: #f6f3ea; color: #2a2038; border: 6px solid #cfd3dc; }
 .office-sched .sch { margin-top: 0; }
 .office-sched .sch-head b { font-size: 12px; letter-spacing: .24em; color: #8a7a98; }
+
+/* 看板每一列的完成度（取代原本重複的圓環儀表） */
+.kb-pg { position: relative; flex: 0 0 auto; width: 92px; height: 18px; border-radius: 99px; background: rgba(255,255,255,.1); overflow: hidden; display: inline-flex; align-items: center; }
+.kb-pg i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); opacity: .85; }
+.kb-pg b { position: relative; width: 100%; text-align: center; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
+@media (max-width: 640px) { .kb-pg { order: 2; width: 72px; } }
