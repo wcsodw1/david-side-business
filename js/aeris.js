@@ -20,7 +20,7 @@
 
   /* ----- Aeris 外觀（NPC 與玩家模式共用）：長髮、淡紫洋裝、髮夾小花 ----- */
   function makeLook(THREE, buildAvatar) {
-    const SKIN = 0xf2cdb6, HAIR = 0x1c1210, DRESS = 0x141417, COLLAR = 0x141417, PANTS = 0xe8e5de, PI = Math.PI;
+    const SKIN = 0xf2cdb6, HAIR = 0x1c1210, DRESS = 0xeab9c6, COLLAR = 0xeab9c6, PANTS = 0xeab9c6, PI = Math.PI;
     const av = buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: PANTS, skin: SKIN, hair: HAIR, shoe: 0xf2f2f2 });
     const M = (color, rough = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, envMapIntensity: 0.5, ...extra });
     const add = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
