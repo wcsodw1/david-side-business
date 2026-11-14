@@ -53,6 +53,8 @@
       if (m.geometry.type === "ConeGeometry") m.scale.set(0.65, 0.6, 0.65);
     }
     av.torso.children.forEach((m) => { if (m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });
+    // 女生的窄肩：肩線內縮、肩頭與上臂變細
+    for (const arm of [av.armL, av.armR]) { const sd = Math.sign(arm.sh.position.x); arm.sh.position.set(sd * 0.158, 0.49, 0); arm.sh.children.slice(0, 3).forEach((m) => m.scale.multiplyScalar(0.8)); }
     { const sm = add(new THREE.TorusGeometry(0.017, 0.0028, 6, 16, PI * 0.8), M(0xc95f73, 0.5), h, 0, 0.034, 0.092); sm.rotation.z = PI * 1.1; sm.scale.set(1, 1, 0.25); }  // 貼著臉的微笑
     av.root.scale.setScalar(0.92);
     return { av, back, skirt, strands };
