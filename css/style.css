@@ -1023,3 +1023,8 @@ body.locked .santa-fab { display: none; }
   .office-ai .cv.side-on .cv-side { display: flex; }
   .office-ai .cv-toggle { display: inline-block; }
 }
+
+/* 新版本提示 */
+.upd-bar { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 20px; border-radius: 999px; background: #2a1f17; color: #f7f2e8; font: 600 14px var(--font); letter-spacing: .04em; box-shadow: 0 14px 34px rgba(0,0,0,.35); animation: fadeUp .3s ease; }
+.upd-bar [data-r] { padding: 7px 16px; border-radius: 999px; border: 0; background: #e3651d; color: #fff; font: 700 13px var(--font); cursor: pointer; }
+.upd-bar [data-x] { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: #f7f2e8; font-size: 16px; cursor: pointer; opacity: .7; }
