@@ -15,7 +15,7 @@
   // 穿搭（參考使用者的照片）：David = 黑色短袖 T、淺色長褲、白色球鞋、銀色項鍊、黑框眼鏡；ARIES = 深灰寬鬆 T、深色寬褲、白球鞋
   const OPTS = {
     david: { blazer: 0x141417, shirt: 0x141417, pants: 0xe8e5de, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
-    aeris: { blazer: 0x3a3d43, shirt: 0x3a3d43, pants: 0x25272d, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x2a1a13 },
+    aeris: { blazer: 0x7b5b4e, shirt: 0x7b5b4e, pants: 0x2b2725, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x2a1a13 },
   };
   const api = (window.Faces = { apply, opts: (who) => OPTS[who] });
   const cache = {};
@@ -32,13 +32,13 @@
       nose: { w: 0.125, tipY: -0.2, shade: 0.2 }, stubble: 0.16, freckles: 0, blush: 0.05,
     },
     aeris: {
-      skin: "#eec4a6", skinShade: "#d49e82", hair: "#2a1a13", hairHi: "#6a4632", lip: "#d98a7e", iris: "#3a2214",
-      W: 0.093, H: 0.118, D: 0.102, taper: 0.17, sq: 0, long: 0.02, chin: 0.006, brow: 0.003, browY: 0.285, socket: 0.003, eyeX: 0.375, eyeY: 0.04,
-      noseH: 0.009, noseW: 0.8, cheek: 0.0055, lip3d: 0.0062, mouthY: -0.5,
+      skin: "#f2cdb6", skinShade: "#d9a58b", hair: "#44291f", hairHi: "#97684f", lip: "#e08f8a", iris: "#3a2316",
+      W: 0.094, H: 0.118, D: 0.102, taper: 0.15, sq: 0, long: 0.02, chin: 0.006, brow: 0.003, browY: 0.285, socket: 0.003, eyeX: 0.375, eyeY: 0.04,
+      noseH: 0.009, noseW: 0.8, cheek: 0.008, lip3d: 0.0062, mouthY: -0.5,
       eye: { hw: 0.165, hh: 0.088, iris: 0.074, tilt: -0.01, crease: 1, lash: 1, liner: 0.5 },
-      brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.03, arch: 0.026, slope: 0.0, color: "#3a281f", n: 240 },
-      mouth: { w: 0.17, up: 0.038, lo: 0.068, sad: -0.004 },
-      nose: { w: 0.1, tipY: -0.19, shade: 0.14 }, stubble: 0, freckles: 360, blush: 0.3,
+      brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.026, arch: 0.026, slope: 0.0, color: "#6a4838", n: 150 },
+      mouth: { w: 0.16, up: 0.036, lo: 0.074, sad: -0.006 },
+      nose: { w: 0.1, tipY: -0.19, shade: 0.14 }, stubble: 0, freckles: 130, blush: 0.42,
     },
   };
 
@@ -88,7 +88,7 @@
     for (let i = 0; i < 3500; i++) { g.fillStyle = `rgba(${srand() < 0.5 ? "255,235,220" : "120,70,50"},${srnd(0.015, 0.05)})`; g.beginPath(); g.arc(srnd(0, S), srnd(0, S), srnd(1, 3.5), 0, 7); g.fill(); }   // 皮膚細微顆粒
     const blob = (cx, cy, rx, ry, col, a) => { g.save(); g.translate(X(cx), Y(cy)); g.scale(1, ry / rx); const q = g.createRadialGradient(0, 0, 0, 0, 0, R(rx)); q.addColorStop(0, col.replace("A", a)); q.addColorStop(1, col.replace("A", 0)); g.fillStyle = q; g.beginPath(); g.arc(0, 0, R(rx), 0, 7); g.fill(); g.restore(); };
     // 腮紅 + 臉頰紅暈 + 額頭高光 + 眼窩淡影
-    for (const sx of [-1, 1]) { blob(sx * 0.5, -0.17, 0.26, 0.17, "rgba(226,110,100,A)", s.blush); blob(sx * s.eyeX, s.eyeY + 0.02, 0.22, 0.13, "rgba(150,90,70,A)", 0.12); blob(sx * 0.62, -0.5, 0.2, 0.22, "rgba(120,70,50,A)", 0.1); }
+    for (const sx of [-1, 1]) { blob(sx * 0.5, -0.16, 0.28, 0.2, "rgba(238,112,126,A)", s.blush); blob(sx * s.eyeX, s.eyeY + 0.02, 0.22, 0.13, "rgba(150,90,70,A)", 0.12); blob(sx * 0.62, -0.5, 0.2, 0.22, "rgba(120,70,50,A)", 0.1); }
     blob(0, 0.5, 0.35, 0.18, "rgba(255,248,240,A)", 0.1);
     blob(0, -0.88, 0.3, 0.1, "rgba(130,80,60,A)", 0.14);   // 下巴下緣陰影
 
@@ -245,7 +245,7 @@
     // 後面的長髮：貼著後腦與脖子垂到背上（波浪）
     const nA = 90, nT = 30, pos = [], uvs = [], idx = [];
     for (let ia = 0; ia <= nA; ia++) for (let it = 0; it <= nT; it++) {
-      const f = ia / nA, a = (96 + f * 168) * D2R, t = it / nT, wave = Math.sin(a * 9 + t * 6) * 0.006 * t, bot = -0.4 + 0.04 * Math.sin(a * 4) - 0.02 * Math.abs(Math.cos(a)), y = 0.1 + (bot - 0.1) * t;
+      const f = ia / nA, a = (96 + f * 168) * D2R, t = it / nT, wave = Math.sin(a * 9 + t * 6) * 0.012 * t, bot = -0.4 + 0.04 * Math.sin(a * 4) - 0.02 * Math.abs(Math.cos(a)), y = 0.1 + (bot - 0.1) * t;
       const rx = 0.106 + 0.07 * sm(0.0, 1, t) + wave, rz = 0.1 + 0.075 * sm(0.0, 1, t) + wave;
       pos.push(Math.sin(a) * rx, y, Math.cos(a) * rz - 0.01 * t); uvs.push(f * 3, 1 - t);
     }
@@ -253,25 +253,26 @@
     const bg = new THREE.BufferGeometry(); bg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); bg.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2)); bg.setIndex(idx); bg.computeVertexNormals();
     const back = new THREE.Mesh(bg, mat); back.castShadow = true; grp.add(back);
     // 臉兩側的長髮束：從頭頂中分線 → 沿著頭皮到太陽穴 → 垂過肩膀落在胸前（一綹一綹，有波浪）
-    const nL = 9;
+    const nL = 12;
     for (const sx of [-1, 1]) for (let i = 0; i < nL; i++) {
       const u = i / (nL - 1), pts = [];
       const As = sx * (0.05 + 0.1 * u), ths = (12 + 8 * u) * D2R, At = sx * (1.18 + 0.28 * u), tht = (96 + 6 * (1 - u)) * D2R;
       for (let f = 0; f <= 1.001; f += 0.25) pts.push(P(As + (At - As) * Math.pow(f, 0.8), ths + (tht - ths) * Math.pow(f, 0.9), 1.07 + 0.03 * Math.sin(Math.PI * f) + 0.01 * (i % 3)));
-      const th = pts[pts.length - 1], w = (k) => Math.sin(i * 1.9 + k * 2.2) * 0.006;
+      const th = pts[pts.length - 1], w = (k) => Math.sin(i * 1.9 + k * 2.2) * 0.013;
       pts.push(new THREE.Vector3(sx * (Math.abs(th.x) + 0.012), th.y - 0.05, th.z * 0.9 + 0.014));
       pts.push(new THREE.Vector3(sx * (0.128 + 0.012 * u + w(1)), -0.06, 0.092 + 0.01 * u));
-      pts.push(new THREE.Vector3(sx * (0.138 + 0.014 * u + w(2)), -0.17, 0.118 + 0.01 * u));
-      pts.push(new THREE.Vector3(sx * (0.142 + 0.016 * u + w(3)), -0.29 - 0.03 * u, 0.124 + 0.008 * u));
-      pts.push(new THREE.Vector3(sx * (0.145 + 0.016 * u + w(4)), -0.38 - 0.04 * (i % 4) / 3, 0.12));
-      ribbon(pts, 0.036 + 0.004 * (i % 2), 40, 0.5);
+      const L = -0.3 - 0.11 * (((i * 37) % 10) / 10), fl = 0.012 + 0.03 * (((i * 53) % 10) / 10);   // 長短不一的層次、髮尾往外翹
+      pts.push(new THREE.Vector3(sx * (0.138 + 0.014 * u + w(2)), -0.17 + 0.02 * (L + 0.3), 0.118 + 0.01 * u));
+      pts.push(new THREE.Vector3(sx * (0.142 + 0.016 * u + w(3) + 0.4 * fl), L * 0.8, 0.124 + 0.008 * u));
+      pts.push(new THREE.Vector3(sx * (0.145 + 0.016 * u + w(4) + fl), L, 0.122 + 0.012 * (i % 3)));
+      ribbon(pts, 0.05 + 0.005 * (i % 2), 40, 0.8);
     }
     // 通透的空氣瀏海：從中分線往兩側帶開，髮尾落在眉毛到顴骨之間（細髮絲，看得到額頭）
-    const nB = 13;
+    const nB = 17;
     for (const sx of [-1, 1]) for (let i = 0; i < nB; i++) {
       const u = i / (nB - 1), As = sx * 0.03, Am = sx * (0.35 + 0.25 * u), Ae = sx * (0.7 + 0.35 * u), pts = [];
-      pts.push(P(As, 18 * D2R, 1.06)); pts.push(P(Am, (52 + 8 * u) * D2R, 1.07)); pts.push(P(Ae * 0.9, (74 + 8 * u) * D2R, 1.075)); pts.push(P(Ae, (90 + 14 * u) * D2R, 1.06 - 0.01 * u));
-      ribbon(pts, 0.011, 22, 0.7);
+      pts.push(P(As, 18 * D2R, 1.06)); pts.push(P(Am, (52 + 8 * u) * D2R, 1.07)); pts.push(P(Ae * 0.9, (74 + 8 * u) * D2R, 1.075)); pts.push(P(Ae, (92 + 18 * u) * D2R, 1.06 - 0.01 * u));
+      ribbon(pts, 0.015, 22, 0.8);
     }
     return grp;
   }
