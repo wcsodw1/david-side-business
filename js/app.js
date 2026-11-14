@@ -11,6 +11,7 @@
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
   const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
+  let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
@@ -216,11 +217,36 @@
           <span class="g-last">${esc((latest(p) || {}).title || "—")}</span>
         </a>`;
       const cols = ["backlog", "idea", "building", "live", "paused"];
-      const board = cols.map((k) => `
-        <div class="wb-col">
-          <h3><i class="pill-dot" style="background:${S[k].color}"></i>${esc(S[k].label)}<span>${by(k).length}</span></h3>
-          ${by(k).map((p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></a>`).join("") || `<p class="wb-empty">—</p>`}
-        </div>`).join("");
+      // 看板兩頁：第 1 頁 = ON-PROCESS（最左，滑鼠移過去像窗戶向右展開，秀出 Current Status / Next Step）+ TODO（最右）；第 2 頁 = Backlog（以及 PENDING / BLOCK / FINISH 等其他）
+      const eff = (p) => p.wbStatus || ({ building: "ON PROCESS", idea: "TODO", live: "FINISH", paused: "PENDING", backlog: "BACKLOG" }[p.status] || "TODO");   // 白板有填就用白板的狀態，沒填就由專案狀態換算
+      const CLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH", BACKLOG: "BACKLOG" };
+      const chip = (e) => `<span class="ps-chip ps-${CLS[e] || "TODO"}">${esc(e === "ON PROCESS" ? "ON-PROCESS" : e)}</span>`;
+      const bucket = (p) => { const e = eff(p); return e === "ON PROCESS" ? "proc" : e === "TODO" ? "todo" : e === "BACKLOG" ? "back" : "other"; };
+      const inB = (b) => P.filter((p) => bucket(p) === b);
+      const stk = (p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></a>`;
+      const winCard = (p) => `
+        <a class="sticky wb-proc" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}" aria-label="${esc(p.name)}：移過去看目前狀態與 Next Step">
+          <span class="wb-main"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></span>
+          <span class="st-win">
+            <span class="win-pane"><em>A · Current Status</em>${chip(eff(p))}<span class="win-t">${esc(p.wbNote || "（還沒有更新）")}</span></span>
+            <span class="win-pane"><em>B · Next Step</em><span class="win-t">${esc(p.next || "（還沒有設定）")}</span></span>
+          </span>
+        </a>`;
+      const col = (title, dot, n, body) => `<div class="wb-col"><h3><i class="pill-dot" style="background:${dot}"></i>${title}<span>${n}</span></h3>${body || `<p class="wb-empty">—</p>`}</div>`;
+      const others = inB("other");
+      const board = `
+        <div class="wb-pager" role="tablist">
+          <button type="button" data-wbp="0" class="${wbPage === 0 ? "on" : ""}" role="tab">1 · 進行中 / 待辦</button>
+          <button type="button" data-wbp="1" class="${wbPage === 1 ? "on" : ""}" role="tab">2 · Backlog</button>
+        </div>
+        <div class="wb-cols wb-page" data-wbpage="0" ${wbPage === 0 ? "" : "hidden"}>
+          ${col("ON-PROCESS", "#2f7be0", inB("proc").length, inB("proc").map(winCard).join(""))}
+          ${col("TODO", "#7a7a8a", inB("todo").length, inB("todo").map(stk).join(""))}
+        </div>
+        <div class="wb-cols wb-page" data-wbpage="1" ${wbPage === 1 ? "" : "hidden"}>
+          ${col("Backlog", S.backlog ? S.backlog.color : "#7fb4ff", inB("back").length, inB("back").map(stk).join(""))}
+          ${col("其他", "#9aa3b2", others.length, others.map((p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b>${chip(eff(p))}</a>`).join(""))}
+        </div>`;
       const seg = cols.map((k) => `<i style="flex:${by(k).length};background:${S[k].color}" title="${esc(S[k].label)} ${by(k).length}"></i>`).join("");
       return `
         <section class="page office">
@@ -233,7 +259,7 @@
           <div class="office-room">
             <aside class="whiteboard">
               <h2>看板 · KANBAN</h2>
-              <div class="wb-cols">${board}</div>
+              <div class="wb-board">${board}</div>
             </aside>
 
             <div class="monitor">
@@ -389,6 +415,9 @@
         else { $("#officeErr", app).textContent = "密碼不正確"; f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake"); pw.select(); }
       });
     } else if (seg === "office") {
+      $$("[data-wbp]", app).forEach((b) => b.addEventListener("click", () => { wbPage = +b.dataset.wbp; $$("[data-wbp]", app).forEach((x) => x.classList.toggle("on", x === b)); $$("[data-wbpage]", app).forEach((x) => (x.hidden = +x.dataset.wbpage !== wbPage)); }));
+      // 觸控裝置沒有「滑鼠移過去」：第一次點進行中的卡片先展開，再點一次才進專案
+      $$(".wb-proc", app).forEach((c) => c.addEventListener("click", (e) => { if (matchMedia("(hover: none)").matches && !c.classList.contains("open")) { e.preventDefault(); $$(".wb-proc.open", app).forEach((x) => x.classList.remove("open")); c.classList.add("open"); } }));
       const om = $("[data-office-ai]", app);
       if (om && window.AIChat) window.AIChat.mount(om, { id: "__office", name: "辦公室", office: true, projects: P });
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };

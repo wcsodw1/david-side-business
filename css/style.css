@@ -337,7 +337,7 @@ body:not(.dim) footer.foot-note { display: none; }
 
 /* ---------- 辦公室頁面 ---------- */
 .page.office { max-width: 1400px; }
-.office-room { display: grid; grid-template-columns: 250px minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
+.office-room { display: grid; grid-template-columns: 300px minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
 .office-room h2 { font-size: 12px; letter-spacing: .24em; color: var(--ink-3); font-weight: 700; margin-bottom: 14px; }
 
 .whiteboard { background: #f6f3ea; color: #2a2038; border-radius: 12px; padding: 18px 16px 20px; border: 6px solid #cfd3dc; box-shadow: 0 18px 40px rgba(0,0,0,.4); }
@@ -397,7 +397,6 @@ body:not(.dim) footer.foot-note { display: none; }
 
 @media (max-width: 1100px) {
   .office-room { grid-template-columns: 1fr; }
-  .wb-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0 22px; }   /* 寬螢幕單欄時，便利貼不要拉成整排、互相重疊 */
   .monitor { order: -1; }
   .kpis { grid-template-columns: repeat(3, 1fr); }
 }
@@ -686,3 +685,27 @@ body.locked .music-btn { display: none; }
 .yt-mini.on { opacity: .92; pointer-events: auto; transform: none; }
 .yt-mini iframe { width: 100%; height: 100%; display: block; }
 @media (max-width: 700px) { .yt-mini { width: 150px; height: 85px; bottom: 150px; } }
+
+/* 辦公室看板：兩頁（1 進行中 / 待辦、2 Backlog）+ ON-PROCESS 卡片像窗戶向右展開 */
+.wb-pager { display: flex; gap: 6px; margin: -4px 0 12px; }
+.wb-pager button { flex: 1; padding: 6px 8px; border-radius: 99px; border: 1.5px solid #d8d2c4; background: transparent; color: #6b5f7c; font: 700 11.5px var(--font); cursor: pointer; }
+.wb-pager button.on { background: #2b2540; border-color: #2b2540; color: #fff; }
+.wb-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; align-items: start; }
+.wb-cols[hidden] { display: none; }
+.whiteboard { overflow: visible; }
+.wb-proc { display: block; position: relative; }
+.wb-proc .wb-main { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.wb-proc:hover, .wb-proc:focus-visible, .wb-proc.open { z-index: 30; }
+.st-win { position: absolute; left: calc(100% - 3px); top: 0; width: 260px; min-height: 100%; box-sizing: border-box; padding: 10px 14px 12px; border-radius: 3px 10px 10px 3px; background: #fffdf4; border-left: 5px solid var(--c); box-shadow: 8px 6px 22px rgba(0,0,0,.28); display: flex; flex-direction: column; gap: 8px; font-weight: 400;
+  transform-origin: left center; transform: perspective(700px) rotateY(-90deg); opacity: 0; pointer-events: none; transition: transform .38s cubic-bezier(.2,.8,.25,1), opacity .25s; }
+.wb-proc:hover .st-win, .wb-proc:focus-visible .st-win, .wb-proc.open .st-win { transform: perspective(700px) rotateY(0); opacity: 1; pointer-events: auto; }
+.win-pane { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+.win-pane em { font-style: normal; font-size: 10.5px; letter-spacing: .08em; font-weight: 800; color: #8a7a98; }
+.win-t { font-size: 12.5px; line-height: 1.45; color: #2a2038; white-space: pre-wrap; word-break: break-word; }
+.ps-BACKLOG { background: #7fb4ff; }
+.wb-col .sticky .ps-chip { font-size: 9.5px; padding: 1px 7px; }
+@media (max-width: 640px) {
+  .st-win { position: static; width: auto; min-height: 0; max-height: 0; padding: 0 12px; margin-top: 0; overflow: hidden; transform: none; box-shadow: none; transition: max-height .35s, padding .35s, opacity .25s; }
+  .wb-proc:hover .st-win, .wb-proc.open .st-win { max-height: 240px; padding: 10px 12px; margin-top: 8px; }
+  .wb-proc { flex-direction: column; }
+}
