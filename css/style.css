@@ -337,7 +337,7 @@ body:not(.dim) footer.foot-note { display: none; }
 
 /* ---------- 辦公室頁面 ---------- */
 .page.office { max-width: 1400px; }
-.office-room { display: grid; grid-template-columns: minmax(0, 1fr) 270px; gap: 22px; align-items: start; }
+.office-room { display: grid; grid-template-columns: minmax(0, 1fr); gap: 22px; align-items: start; }
 .office-room h2 { font-size: 12px; letter-spacing: .24em; color: var(--ink-3); font-weight: 700; margin-bottom: 14px; }
 
 .whiteboard { background: #f6f3ea; color: #2a2038; border-radius: 12px; padding: 18px 16px 20px; border: 6px solid #cfd3dc; box-shadow: 0 18px 40px rgba(0,0,0,.4); }
@@ -779,3 +779,7 @@ body.locked .music-btn { display: none; }
 .kb-pg i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); opacity: .85; }
 .kb-pg b { position: relative; width: 100%; text-align: center; font-size: 11px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.5); }
 @media (max-width: 640px) { .kb-pg { order: 2; width: 72px; } }
+
+/* 看板列內的最近更新日期 / NEW（公佈欄已合併進來） */
+.kb-t { flex: 0 0 auto; font-size: 11px; font-variant-numeric: tabular-nums; color: rgba(244,240,255,.55); letter-spacing: .04em; }
+.kb-new { flex: 0 0 auto; font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: .08em; padding: 1px 7px; border-radius: 6px; border: 1.5px solid #ff6b81; color: #ff8a9a; }

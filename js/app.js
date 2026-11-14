@@ -225,10 +225,11 @@
       const bucket = (p) => { const e = eff(p); return e === "ON PROCESS" ? "proc" : e === "TODO" ? "todo" : e === "BACKLOG" ? "back" : "other"; };
       const inB = (b) => P.filter((p) => bucket(p) === b);
       const OPTS = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"];
-      const row = (p, showChip) => `
+      const lastReal = (p) => (p.updates || []).find((u) => !/專案頁建立/.test(u.title));   // 最近一筆真正的更新（略過自動建立的那筆）
+      const row = (p, showChip) => { const u = lastReal(p), txt = p.wbNote || (u ? u.title : ""), when = p.wbNote ? p.wbNoteAt : (u ? u.date : ""), isNew = !!(u && window.News && window.News.isUnread && window.News.isUnread(p, u)); return `
         <li class="kb-row" data-pid="${esc(p.id)}" style="--c:${accent(P.indexOf(p))}">
           <a class="kb-name" href="#/p/${esc(p.id)}">${esc(p.name)}</a>${showChip ? chip(eff(p)) : ""}
-          <span class="kb-now ${p.wbNote ? "" : "none"}" title="${esc(p.wbNote || "")}">${esc(p.wbNote || "（還沒有更新）")}</span>
+          <span class="kb-now ${txt ? "" : "none"}" title="${esc(txt)}">${esc(txt || "（還沒有更新）")}</span>${isNew ? `<em class="kb-new">NEW</em>` : ""}${when ? `<time class="kb-t">${esc(String(when).slice(5).replace("-", "."))}</time>` : ""}
           <span class="kb-pg" title="完成度 ${p.progress ?? 0}%"><i style="width:${p.progress ?? 0}%"></i><b>${p.progress ?? 0}%</b></span>
           <span class="kb-upd">
             <button type="button" class="kb-btn" aria-label="更新 ${esc(p.name)}">✎ 更新</button>
@@ -240,7 +241,7 @@
               <button type="submit">送出更新</button>
             </form>
           </span>
-        </li>`;
+        </li>`; };
       const sect = (title, dot, list, showChip) => `
         <section class="kb-sec">
           <h3><i class="pill-dot" style="background:${dot}"></i>${title}<span>${list.length}</span></h3>
@@ -293,14 +294,6 @@
               </div>
             </div>
 
-            <aside class="bulletin">
-              <h2>公佈欄 · 最新動態</h2>
-              ${allUps.map((u) => `
-                <a class="note" href="#/p/${esc(u.p.id)}" style="--c:${accent(u.i)}">
-                  <time>${fmt(u.date)} · ${esc(u.p.name)}</time>
-                  <b>${esc(u.title)}</b>${window.News && window.News.isUnread(u.p, u) ? `<em class="new">NEW</em>` : ""}
-                </a>`).join("") || `<p class="empty">還沒有紀錄。</p>`}
-            </aside>
           </div>
           <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(P, accent) : ""}</section>
           <section class="office-ai" aria-label="辦公室 AI 總管">
