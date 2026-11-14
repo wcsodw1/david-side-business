@@ -1322,7 +1322,7 @@
             if (frame === "z") { U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz + lw); U(new THREE.BoxGeometry(0.16, 0.1, lw + 0.1), dm2, hx, 2.1, cz); }
             else { U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx - lw, 1.05, hz); U(new THREE.BoxGeometry(lw + 0.1, 0.1, 0.16), dm2, cx, 2.1, hz); }
             doors.push({ pv, th0, th1, cx: cx ?? hx, cz: cz ?? hz, k: 0 }); };
-          door(2.0, -6.6, 0, 1.4, 1.0, "z", 2.0, -6.1);                 // 浴室門（西牆，往浴室裡開）
+          door(2.0, -7.3, 0, -1.4, 1.0, "z", 2.0, -6.8);                // 浴室門（西牆正中間，往臥室裡開）
           door(0.5, -0.65, 0, 1.48, 1.0, "z", 0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
           door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);
           door(8.4, Z1, -PI / 2, -PI, 1.0, "x", 7.9, Z1);             // 右邊樓梯上來的門（南牆 x 7.4~8.4，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
@@ -1338,7 +1338,7 @@
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 7.45, 5.5, -4.275);   // 走道東端（右下角）不砌牆
         // 浴室：x 3.2~5.5（東牆 = 隔間牆，直接靠牆）、z -8~-5.6；門在西牆（面向左側）z -6.6~-5.6
-        shell(0.12, 1.4, 2.0, -7.3); shell(3.5, 0.12, 3.75, -5.6);
+        shell(0.12, 0.7, 2.0, -7.65); shell(0.12, 0.7, 2.0, -5.95); shell(3.5, 0.12, 3.75, -5.6);   // 浴室西牆：門洞在牆的正中間 z -7.3~-6.3
         // 浴室：大理石牆面（腰線以下）+ 灰地磚
         const mc = document.createElement("canvas"); mc.width = mc.height = 256; const mg = mc.getContext("2d"); mg.fillStyle = "#f4f4f2"; mg.fillRect(0, 0, 256, 256);
         for (let k = 0; k < 14; k++) { mg.strokeStyle = `rgba(110,112,118,${0.12 + Math.random() * 0.2})`; mg.lineWidth = 0.8 + Math.random() * 1.8; mg.beginPath(); let x = Math.random() * 256, y = 0; mg.moveTo(x, y); while (y < 256) { x += (Math.random() - 0.35) * 22; y += 12 + Math.random() * 14; mg.lineTo(x, y); } mg.stroke(); }
