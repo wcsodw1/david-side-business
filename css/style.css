@@ -916,3 +916,19 @@ body.locked .music-btn { display: none; }
 @media (max-width: 900px) { .office-ai .ai-panes.n2, .office-ai .ai-panes.n3, .office-ai .ai-panes.n4 { grid-template-columns: 1fr; } }
 
 .ai-acts .read { color: #6b5a4a; font-size: .92em; } .office-ai .ai-acts .read { color: var(--hm-ink-2); }
+
+/* AISO1 終端機（辦公室，本機啟動器版） */
+.office-ai .tm-mount { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--hm-line); }
+.office-ai .tm-bar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.office-ai .tm-title { font: 600 13px var(--font); letter-spacing: .32em; color: var(--hm-orange); text-transform: uppercase; }
+.office-ai .tm-tabs { display: flex; gap: 6px; flex-wrap: wrap; } .office-ai .tm-sp { flex: 1; }
+.office-ai .tm-tab { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 8px 0 14px; border-radius: 2px; border: 1px solid var(--hm-line); background: transparent; color: var(--hm-ink-2); font: 600 12.5px var(--font); letter-spacing: .06em; cursor: pointer; }
+.office-ai .tm-tab.on { background: var(--hm-ink); color: var(--hm-paper); border-color: var(--hm-ink); }
+.office-ai .tm-tab.dead { opacity: .6; } .office-ai .tm-tab i { font-style: normal; font-size: 15px; padding: 0 4px; opacity: .7; } .office-ai .tm-tab i:hover { opacity: 1; color: var(--hm-orange); }
+.office-ai .tm-new { height: 36px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--hm-ink); background: var(--hm-ink); color: var(--hm-paper); font: 600 13px var(--font); letter-spacing: .08em; cursor: pointer; }
+.office-ai .tm-new:hover { background: var(--hm-orange); border-color: var(--hm-orange); } .office-ai .tm-new:disabled { opacity: .5; cursor: default; }
+.office-ai .tm-body { height: min(60vh, 520px); padding: 12px 6px 12px 14px; border-radius: 2px; background: #1b1410; border: 1px solid #3a2c22; box-shadow: inset 0 0 0 1px rgba(227,101,29,.08); }
+.office-ai .tm-body[hidden] { display: none; }
+.office-ai .tm-term { height: 100%; } .office-ai .tm-term[hidden] { display: none; }
+.office-ai .tm-note, .office-ai .tm-off { font-size: 14px; line-height: 1.7; color: var(--hm-ink-2); margin: 0; }
+.office-ai .tm-off b, .office-ai .tm-note b { color: var(--hm-ink); }

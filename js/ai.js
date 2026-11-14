@@ -365,14 +365,14 @@
     let ids = [1]; try { const v = JSON.parse(localStorage.getItem(PANES_KEY) || "[1]"); if (Array.isArray(v) && v.length) ids = v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 4); } catch (_) {}
     if (!ids.length) ids = [1];
     const keep = () => { try { localStorage.setItem(PANES_KEY, JSON.stringify(ids)); } catch (_) {} };
-    let timer = 0;
+    let timer = 0, slotsCool = 0;
     const slots = async () => {   // AISO1 正在算幾個 / 總共幾個
       const box = el.querySelector("[data-slots]"); if (!box || !el.isConnected) { clearInterval(timer); return; }
-      if (cfg.provider !== "aiso1") { box.textContent = ""; return; }
+      if (cfg.provider !== "aiso1" || Date.now() < slotsCool) { if (cfg.provider !== "aiso1") box.textContent = ""; return; }
       try { const r = await fetch(baseOf().replace(/\/v1$/, "") + "/slots", { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined }); const j = await r.json();
         if (Array.isArray(j)) { const busy = j.filter((x) => x.is_processing).length, waiting = Object.values(sessions).filter((x) => x.pending).length - busy;
           box.innerHTML = `AISO1 並行 <b>${busy}</b> / ${j.length} 個 slot 運算中${waiting > 0 ? `　·　${waiting} 個排隊` : ""}`; box.classList.toggle("busy", busy > 0); } }
-      catch (_) { box.textContent = ""; }
+      catch (_) { box.textContent = ""; slotsCool = Date.now() + 20000; }   // 連不到就先停 20 秒，不要一直刷錯誤
     };
     const draw = () => {
       el.innerHTML = `<div class="ai-multi-bar"><span class="ai-slots" data-slots></span><span class="ai-sp"></span>${ids.length < 4 ? `<button type="button" class="ai-add" data-add>＋ 再開一個視窗</button>` : ""}</div>

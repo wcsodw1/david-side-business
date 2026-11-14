@@ -300,6 +300,7 @@
             <h2>AI 總管 · 全部專案</h2>
             <p class="oa-sub">我看得到每個專案白板上的目標、狀態和 Next Step。可以問：「現在該先做哪個？」「哪個專案卡住了？」</p>
             <div class="ai-mount" data-office-ai></div>
+            <div class="tm-mount" data-aiso-term></div>
           </section>
         </section>`;
     },
@@ -431,6 +432,7 @@
         const y = scrollY; render(); scrollTo(0, y);
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
+      const tmEl = $("[data-aiso-term]", app); if (tmEl && window.AisoTerm) window.AisoTerm.mount(tmEl);   // AISO1 終端機（只在本機啟動器版可用）
       const om = $("[data-office-ai]", app);
       if (om && window.AIChat) (window.AIChat.mountMulti || window.AIChat.mount)(om, { id: "__office", name: "辦公室", office: true, projects: P });
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
