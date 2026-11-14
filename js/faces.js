@@ -14,8 +14,8 @@
   const D2R = PI / 180;
   // 穿搭（參考使用者的照片）：David = 黑色短袖 T、淺色長褲、白色球鞋、銀色項鍊、黑框眼鏡；ARIES = 深灰寬鬆 T、深色寬褲、白球鞋
   const OPTS = {
-    david: { blazer: 0x141417, shirt: 0x141417, pants: 0xe8e5de, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
-    aeris: { blazer: 0x7b5b4e, shirt: 0x7b5b4e, pants: 0x2b2725, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x2a1a13 },
+    david: { blazer: 0x7b5b4e, shirt: 0x7b5b4e, pants: 0x2b2725, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
+    aeris: { blazer: 0x141417, shirt: 0x141417, pants: 0xe8e5de, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x2a1a13 },
   };
   const api = (window.Faces = { apply, opts: (who) => OPTS[who] });
   const cache = {};
