@@ -1597,7 +1597,7 @@
     camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
-    const tickHooks = [];
+    const tickHooks = [], interact = [];   // interact：站在附近按 Enter 可觸發的東西（例如辦公室機器人）
 
     if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
@@ -1650,10 +1650,12 @@
     const chairNearIdx = () => { if (sitting >= 0) return -1; let best = -1, bd = 1e9; for (let c = 0; c < chairSpots.length; c++) { const q = chairSpots[c]; if (q.sofa ? lvl !== 1 : (inside !== sPB || sPB <= 0)) continue; const d = Math.hypot(pos.x - q.front.x, pos.z - q.front.z); if (d < (q.sofa ? 0.85 : 1.3) && d < bd) { bd = d; best = c; } } return best; };
     const stand = () => { if (sitting < 0) return; const c = chairSpots[sitting]; pos.x = c.front.x; pos.z = c.front.z; sitting = -1; };
     const sitDown = (c) => { sitting = c; pos.x = chairSpots[c].x; pos.z = chairSpots[c].z; facing = chairSpots[c].face; cancelRoute(); };
+    const nearAct = () => ((sitting >= 0 || inside >= 0 || chairNearIdx() >= 0) ? null : interact.find((a) => (a.lvl === undefined || a.lvl === lvl) && Math.hypot(pos.x - a.x, pos.z - a.z) < a.r && (!a.when || a.when())) || null);
     const activate = () => {
       if (!ov.hidden) return;
       if (sitting >= 0) return stand();
       { const cn = chairNearIdx(); if (cn >= 0) return goRoute([chairSpots[cn].front], () => sitDown(cn)); }
+      { const ia = nearAct(); if (ia) return ia.fn(); }
       if (inside >= 0) return toBoard(inside);
       if (nearIdx === 0) return H.office();
       if (nearIdx > 0) enterRoom(nearIdx);
@@ -1663,7 +1665,7 @@
 
     /* ----- 輸入 ----- */
     const typing = (e) => /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
-    const blocked = () => document.body.classList.contains("locked") || document.body.classList.contains("news-open") || document.body.classList.contains("board-open") || document.body.classList.contains("dir-typing");
+    const blocked = () => document.body.classList.contains("locked") || document.body.classList.contains("news-open") || document.body.classList.contains("board-open") || document.body.classList.contains("dir-typing") || document.body.classList.contains("robot-open");
     // 雙擊「← / A」＝退出一層：白板 → 館長對話 → 房間 / 球場（有東西可退時優先於「雙擊跑步」）
     const dblBackExit = () => {
       if (!ov.hidden) { closeBoard(); return true; }
@@ -1775,6 +1777,7 @@
           const u = mouse.pickU || pickHit(e);
           if (u) {
             if (u.kind === "office") toStation(0, true);
+            else if (u.kind === "act") { sitting >= 0 && stand(); goRoute([u.stand], () => u.act()); }
             else if (u.kind === "board") toBoard(u.station);
             else if (u.kind === "door") (inside === u.station ? exitRoom() : enterRoom(u.station));
             else if (u.kind === "room" && inside !== u.station) enterRoom(u.station);
@@ -1818,7 +1821,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, rowOf, L2W, addObs, mkTex, aniso, interact, pickables, officeZ: -ROW_DZ - 1.0, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -1990,12 +1993,13 @@
         stationsX.forEach((sx, s) => { const a = anchor(s), d = Math.hypot(pos.x - a.x, pos.z - a.z); if (d < bd) { bd = d; best = s; } });
         nn = bd < (best === 0 ? NEAR + 0.6 : NEAR) ? best : -1;
       }
-      const cn = chairNearIdx(), pk = sitting >= 0 ? "sit" : cn >= 0 ? "chair" + cn : (inside >= 0 ? "in" : "out") + nn;
+      const cn = chairNearIdx(), ia = nearAct(), pk = sitting >= 0 ? "sit" : cn >= 0 ? "chair" + cn : ia ? "ia" + ia.id : (inside >= 0 ? "in" : "out") + nn;
       if (pk !== promptKey) {
-        promptKey = pk; nearIdx = inside >= 0 ? -1 : nn; dots.forEach((d, i) => d.classList.toggle("on", i === nn));
-        lastInfoS = (inside < 0 && sitting < 0 && cn < 0 && nn > 0) ? nn : 0; renderInfo(lastInfoS);
+        promptKey = pk; nearIdx = inside >= 0 || ia ? -1 : nn; dots.forEach((d, i) => d.classList.toggle("on", i === nn));
+        lastInfoS = (inside < 0 && sitting < 0 && cn < 0 && !ia && nn > 0) ? nn : 0; renderInfo(lastInfoS);
         if (sitting >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 起身　或按任意方向鍵"; prompt.hidden = false; }
         else if (cn >= 0) { prompt.innerHTML = chairSpots[cn].sofa ? "<kbd>Enter</kbd> 坐在毛毛蟲沙發上" : "<kbd>Enter</kbd> 坐下休息"; prompt.hidden = false; }
+        else if (ia) { prompt.innerHTML = ia.html; prompt.hidden = false; }
         else if (nn >= 0) {
           prompt.innerHTML = inside >= 0
             ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ← 或滾輪下滑出門</small>`
@@ -2036,6 +2040,8 @@
     if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
     if (window.Ship) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
+    if (window.Robot) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
+    if (window.Rooms) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
     if (window.Animals) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
@@ -2053,7 +2059,7 @@
     window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
-    if (window.Director) window.Director.unmount(); if (window.Lights) window.Lights.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
+    if (window.Director) window.Director.unmount(); if (window.Lights) window.Lights.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Rooms) window.Rooms.unmount(); if (window.Robot) window.Robot.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
     S.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { for (const k in m) if (m[k] && m[k].isTexture) m[k].dispose(); m.dispose(); }); } });
     S.renderer.dispose(); S.renderer.forceContextLoss && S.renderer.forceContextLoss(); S.cv.remove();
     S = null; api.active = false; document.body.classList.remove("gl3d");
