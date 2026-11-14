@@ -328,7 +328,10 @@
       </div>
       <div class="ai-msgs" role="log"></div>
       <div class="ai-prev"></div>
-      <form class="ai-form"><button type="button" class="ai-att" data-att aria-label="附加圖片">📎</button><textarea rows="1" placeholder="輸入訊息…（Enter 送出，Shift+Enter 換行，可貼上或拖進圖片）"></textarea><button type="submit" data-send>送出</button><input type="file" accept="image/*" multiple hidden></form>
+      <form class="ai-form ai-composer"><textarea rows="1" placeholder="想問什麼，都可以寫在這裡⋯" aria-label="訊息"></textarea>
+        <div class="ai-comp-row"><button type="button" class="ai-att" data-att aria-label="附加圖片" title="附加圖片（也可以直接貼上或拖進來）"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5 12.6 19.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg></button>
+          <span class="ai-comp-hint">Enter 送出　·　Shift + Enter 換行</span><button type="submit" data-send>送出</button></div>
+        <input type="file" accept="image/*" multiple hidden></form>
     </div>`;
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
     const title = () => {
@@ -343,7 +346,7 @@
       const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型。<br><b>${esc(LAUNCH_HELP)}</b><br><br>在線上網站直接連的話：<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
       msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${x.read ? " read" : ""}${m.undone && !x.read ? " undone" : ""}">${x.fail ? "✗" : x.read ? "⌕" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
-      msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
+      msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出"; sendBtn.classList.toggle("stop", !!s.pending);
       const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);
       msgs.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", () => {   // 還原成這次改動前的白板資料，重新整理讓藝廊全部重畫
         const m = s.msgs[+b.dataset.undo]; if (!m || !m.undo || !confirm("把這次 AI 做的改動全部復原？")) return;
@@ -356,7 +359,9 @@
     q(".ai-form").addEventListener("submit", (e) => { e.preventDefault(); go(); });
     // 中文輸入法選字的 Enter 不算送出（Safari 的 isComposing 不可靠，所以也看 keyCode 229）；回覆中按 Enter 不會停止，要停只能按「停止」鈕
     ta.addEventListener("keydown", (e) => { if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.keyCode === 229) return; e.preventDefault(); if (!s.pending) go(); });
-    ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(140, ta.scrollHeight) + "px"; });
+    // 輸入框跟著文字長高（最多到視窗高度的 45%，再多就在框內捲動）
+    const grow = () => { ta.style.height = "auto"; const max = Math.round(innerHeight * 0.45); ta.style.height = Math.min(max, ta.scrollHeight) + "px"; ta.style.overflowY = ta.scrollHeight > max ? "auto" : "hidden"; };
+    ta.addEventListener("input", grow); ta.addEventListener("paste", () => setTimeout(grow, 0));
     const addFiles = async (fs) => { for (const f of [...fs].filter((x) => /^image\//.test(x.type)).slice(0, 4 - draft.length)) { try { draft.push(await fileToImg(f)); } catch (_) {} } paintPrev(); };
     q("[data-att]").addEventListener("click", () => file.click()); file.addEventListener("change", () => { addFiles(file.files); file.value = ""; });
     ta.addEventListener("paste", (e) => { const fs = [...(e.clipboardData ? e.clipboardData.files : [])]; if (fs.length) { e.preventDefault(); addFiles(fs); } });

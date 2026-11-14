@@ -1028,3 +1028,27 @@ body.locked .santa-fab { display: none; }
 .upd-bar { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 20px; border-radius: 999px; background: #2a1f17; color: #f7f2e8; font: 600 14px var(--font); letter-spacing: .04em; box-shadow: 0 14px 34px rgba(0,0,0,.35); animation: fadeUp .3s ease; }
 .upd-bar [data-r] { padding: 7px 16px; border-radius: 999px; border: 0; background: #e3651d; color: #fff; font: 700 13px var(--font); cursor: pointer; }
 .upd-bar [data-x] { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: #f7f2e8; font-size: 16px; cursor: pointer; opacity: .7; }
+
+/* ============ 輸入區：Hermès / Chanel 式的一張卡片（隨文字長高） ============ */
+:is(.ai, .office-ai) .ai-form.ai-composer { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 16px 18px 12px; border: 1px solid var(--hm-line, #d9ccb6); border-radius: 24px; background: #fffdf8;
+  box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 22px 44px -32px rgba(42,31,23,.45); transition: border-color .25s, box-shadow .25s; }
+:is(.ai, .office-ai) .ai-form.ai-composer:focus-within { border-color: var(--hm-orange, #e3651d); box-shadow: 0 0 0 4px rgba(227,101,29,.10), 0 26px 50px -30px rgba(42,31,23,.5); }
+:is(.ai, .office-ai) .ai-form.ai-composer textarea { flex: none; width: 100%; min-height: 30px; max-height: 45vh; padding: 2px 4px; border: 0; border-radius: 0; outline: none; box-shadow: none; background: transparent; resize: none; overflow-y: hidden;
+  font: 400 17px/1.7 var(--font); letter-spacing: .01em; color: var(--hm-ink, #2a1f17); transition: height .12s ease; }
+:is(.ai, .office-ai) .ai-form.ai-composer textarea:focus { border: 0; box-shadow: none; }
+:is(.ai, .office-ai) .ai-form.ai-composer textarea::placeholder { font: italic 500 17px/1.7 var(--hm-serif-tc, "Noto Serif TC", serif); color: #b3a38f; -webkit-text-fill-color: #b3a38f; letter-spacing: .03em; }
+.ai-comp-row { display: flex; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid rgba(217,204,182,.55); }
+:is(.ai, .office-ai) .ai-form.ai-composer .ai-att { flex: none; width: 38px; height: 38px; min-height: 0; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--hm-line, #d9ccb6); background: transparent; color: var(--hm-ink-2, #6b5a4a); letter-spacing: 0; transition: color .2s, border-color .2s, background .2s; }
+:is(.ai, .office-ai) .ai-form.ai-composer .ai-att:hover { color: var(--hm-orange, #e3651d); border-color: var(--hm-orange, #e3651d); background: #fbf3e9; }
+.ai-comp-hint { flex: 1; min-width: 0; font: 500 10.5px var(--font); letter-spacing: .22em; color: #b3a38f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send] { flex: none; height: 42px; min-height: 0; padding: 0 22px 0 24px; border: 0; border-radius: 999px; background: var(--hm-ink, #2a1f17); color: var(--hm-paper, #f7f2e8);
+  font: 600 13px var(--font); letter-spacing: .3em; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; transition: background .25s, transform .15s; }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]::after { content: ""; width: 18px; height: 1px; background: currentColor; box-shadow: 4px -3px 0 -0.5px transparent; position: relative; }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]::before { content: "→"; order: 2; font: 400 16px/1 var(--hm-serif, serif); letter-spacing: 0; }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]::after { display: none; }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]:hover { background: var(--hm-orange, #e3651d); }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]:active { transform: scale(.97); }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop { background: var(--hm-orange, #e3651d); }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop::before { content: "■"; font-size: 10px; }
+@media (max-width: 640px) { .ai-comp-hint { display: none; } :is(.ai, .office-ai) .ai-form.ai-composer { padding: 12px 14px 10px; border-radius: 20px; } }
+.ai-bar button { white-space: nowrap; flex: none; } .office-ai .ai-bar { flex-wrap: nowrap; } .office-ai .ai-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
