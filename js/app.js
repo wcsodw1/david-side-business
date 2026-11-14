@@ -10,6 +10,8 @@
      ============================================================ */
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
+  const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
+  const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   window.PERSONA = "david";
@@ -184,6 +186,18 @@
 
 
     office() {
+      if (!officeOpen()) return `
+        <section class="page office office-locked">
+          <a class="back-btn" href="#/" data-office-back>← 返回藝廊 <kbd>Esc</kbd></a>
+          <form class="office-gate" id="officeGate" autocomplete="off">
+            <p class="eyebrow">OFFICE</p>
+            <h1>辦公室</h1>
+            <p>這裡有全部專案的儀表板和 AI 總管，請輸入辦公室密碼。</p>
+            <input type="password" id="officePw" placeholder="辦公室密碼" autocomplete="off" aria-label="辦公室密碼">
+            <button type="submit">進入辦公室</button>
+            <p class="og-err" id="officeErr" role="alert"></p>
+          </form>
+        </section>`;
       const n = P.length || 1;
       const avg = Math.round(P.reduce((a, p) => a + (p.progress || 0), 0) / n);
       const by = (k) => P.filter((p) => p.status === k);
@@ -252,6 +266,11 @@
                 </a>`).join("") || `<p class="empty">還沒有紀錄。</p>`}
             </aside>
           </div>
+          <section class="office-ai" aria-label="辦公室 AI 總管">
+            <h2>AI 總管 · 全部專案</h2>
+            <p class="oa-sub">我看得到每個專案白板上的目標、狀態和 Next Step。可以問：「現在該先做哪個？」「哪個專案卡住了？」</p>
+            <div class="ai-mount" data-office-ai></div>
+          </section>
         </section>`;
     },
 
@@ -362,7 +381,16 @@
       const jm = $("[data-jmount]", app), pi = P.findIndex((x) => x.id === arg);
       if (jm && pi >= 0) { jm.innerHTML = window.Journal.card(P[pi], pi, GH, { page: true }); window.Journal.bind(jm, P[pi], pi, GH, { rerender: () => { const y = scrollY; render(); scrollTo(0, y); } }); }
     }
-    if (seg === "office") {
+    if (seg === "office" && !officeOpen()) {
+      const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);
+      if (f) f.addEventListener("submit", async (e) => {
+        e.preventDefault(); const v = pw.value.trim(); if (!v) return;
+        if (await sha256(v) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} render(); }
+        else { $("#officeErr", app).textContent = "密碼不正確"; f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake"); pw.select(); }
+      });
+    } else if (seg === "office") {
+      const om = $("[data-office-ai]", app);
+      if (om && window.AIChat) window.AIChat.mount(om, { id: "__office", name: "辦公室", office: true, projects: P });
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
       tick(); clockTimer = setInterval(tick, 1000);
     }
@@ -382,7 +410,7 @@
     render();
   }
   function lock() {
-    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); } catch (_) {}
+    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); } catch (_) {}
     location.hash = "";
     if (window.News) window.News.unmount();
     app.hidden = true; nav.hidden = true; app.innerHTML = "";

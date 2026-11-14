@@ -43,7 +43,12 @@
   });
 
   /* ---------- 呼叫 AI ---------- */
-  const sysPrompt = (p) => `你是「${p.name}${p.zh ? "（" + p.zh + "）" : ""}」這個專案白板上的助理，用繁體中文、簡潔直接地回答。` +
+  // 辦公室總管：看得到所有專案的目標 / 狀態 / Next Step（取自 p.projects，每次送出時即時讀取）
+  const officePrompt = (p) => `你是 David 的 Side Business「辦公室總管」AI，用繁體中文、簡潔直接地回答。` +
+    `原則：不要每題都套大框架，簡單問題簡單答；除了回答問題，也要指出 David 可能沒想到但重要的問題；建議要能執行、能衡量、能驗證（診斷瓶頸 → 小規模實驗 → 驗證，而不是只鼓勵繼續做）。` +
+    `以下是目前所有專案的白板資料（需要時再引用，不要整份複述）：\n` +
+    (p.projects || []).map((q) => `- ${q.name}${q.zh ? "（" + q.zh + "）" : ""}｜目標：${q.goal || "未設定"}｜狀態：${q.wbStatus || "未設定"}${q.wbNote ? "（" + q.wbNote + "）" : ""}｜Next Step：${q.next || "未設定"}`).join("\n");
+  const sysPrompt = (p) => p.office ? officePrompt(p) : `你是「${p.name}${p.zh ? "（" + p.zh + "）" : ""}」這個專案白板上的助理，用繁體中文、簡潔直接地回答。` +
     `專案目標：${p.goal || "尚未設定"}。目前狀態：${p.wbStatus || "未設定"}${p.wbNote ? "（" + p.wbNote + "）" : ""}。Next Step：${p.next || "尚未設定"}。需要時可以參考這些資訊，不需要時不要複述。`;
   const dataParts = (u) => { const m = /^data:(.*?);base64,(.*)$/.exec(u) || []; return { type: m[1] || "image/jpeg", data: m[2] || "" }; };
 
@@ -105,7 +110,7 @@
     const title = () => { q(".ai-title").textContent = `AI · ${cfg.provider === "openai" ? "OpenAI" : "Claude"} · ${modelOf()}`; };
     const paintPrev = () => { prev.innerHTML = draft.map((u, i) => `<span class="ai-th"><img src="${u}" alt=""><button type="button" data-rm="${i}" aria-label="移除">×</button></span>`).join(""); prev.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => { draft.splice(+b.dataset.rm, 1); paintPrev(); })); };
     const paint = () => {
-      const empty = !cfg.key ? `<p class="ai-empty">先按右上角 ⚙ 貼上你的 API Key，就能開始聊天。</p>` : `<p class="ai-empty">問我關於「${esc(p.name)}」的任何事。可以丟文字或圖片。</p>`;
+      const empty = !cfg.key ? `<p class="ai-empty">先按右上角 ⚙ 貼上你的 API Key，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}"><div class="ai-b">${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}</div></div>`).join("") : empty) + (s.pending ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div></div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
     };
