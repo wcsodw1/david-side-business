@@ -73,7 +73,7 @@
   }
 
   // 專案一有更新就從 NEWS 圖示旁彈出提示卡（約 7 秒後自動收起；點一下打開報紙）
-  const KIND_LABEL = { status: "狀態", note: "目前狀態", next: "Next Step", goal: "專案目標" };
+  const KIND_LABEL = { status: "狀態", note: "目前狀態", next: "Next Step", goal: "專案目標", tasks: "時程表" };
   let popBox = null;
   function pop(d) {
     const p = P.find((x) => x.id === d.pid); if (!p || !d.text && d.kind !== "status") return;

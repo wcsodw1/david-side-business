@@ -722,3 +722,53 @@ body.locked .music-btn { display: none; }
   .kb-upd { margin-left: auto; }
   .kb-form { right: -4px; }
 }
+
+/* 時程表（專案白板的「時程」分頁 + 辦公室的 PM 檢視） */
+.sch { margin-top: 10px; font-size: 13px; }
+.sch-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.sch-head b { font-size: 14px; letter-spacing: .04em; }
+.sch-head > span { color: #8a7a98; font-size: 12px; }
+.sch-head .ghost-btn { margin-left: auto; padding: 5px 12px; font-size: 12px; }
+.chips-sm { display: flex; gap: 6px; flex-wrap: wrap; }
+.chips-sm em { font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 99px; background: rgba(120,110,160,.16); }
+.chips-sm em.warn { background: #d92a47; color: #fff; }
+.sch-scroll { overflow-x: auto; border: 1.5px solid #e0dacb; border-radius: 10px; background: #fff; }
+.sch-t { border-collapse: collapse; width: max-content; min-width: 100%; color: #2a2038; }
+.sch-t th { position: sticky; top: 0; background: #2b3a5e; color: #fff; font-size: 11px; font-weight: 700; padding: 6px 8px; text-align: left; white-space: nowrap; }
+.sch-t th.g { background: #e9a23b; color: #3a2a08; text-align: center; padding: 4px 3px; min-width: 62px; line-height: 1.15; }
+.sch-t th.g small { display: block; font-weight: 500; font-size: 9.5px; opacity: .8; }
+.sch-t td { padding: 4px 6px; border-top: 1px solid #ece7da; vertical-align: middle; white-space: nowrap; }
+.sch-t td.nm { min-width: 150px; white-space: normal; }
+.sch-t input, .sch-t select { font: 500 12px var(--font); padding: 3px 5px; border: 1px solid #ddd6c4; border-radius: 6px; background: #fffdf8; color: #2a2038; max-width: 150px; }
+.sch-t td.nm input { width: 100%; max-width: none; min-width: 140px; }
+.sch-t input.num { width: 48px; text-align: right; }
+.sch-t .u { font-size: 11px; opacity: .6; margin-left: 2px; }
+.sch-t td.d { text-align: center; font-variant-numeric: tabular-nums; }
+.sch-t td.g { min-width: 62px; padding: 0; background: repeating-linear-gradient(90deg, transparent 0 61px, #f0ebde 61px 62px); }
+.sch-t td.g.on { background: #6b8fe6; border-top-color: #fff; box-shadow: inset 0 -5px 0 #fff, inset 0 5px 0 #fff; }
+.sch-t td.g.on.pri-P0 { background: #e0536b; }
+.sch-t td.g.on.st-Done { background: #5fbf92; }
+.sch-t td.g.on.st-Blocked { background: #9a9aae; }
+.sch-t select.pri-P0, .pri-P0 { color: #b3122f; font-weight: 800; }
+.sch-t select.pri-P1, .pri-P1 { color: #8a6200; font-weight: 800; }
+.sch-t select.pri-P2, .pri-P2 { color: #1b7a4e; font-weight: 800; }
+.sch-t .x { border: 0; background: transparent; color: #b3122f; cursor: pointer; font-size: 13px; }
+.sch-t .pri { display: inline-block; min-width: 28px; text-align: center; padding: 1px 6px; border-radius: 6px; background: #fff4d8; }
+.sch-t .pri.pri-P0 { background: #ffe1e6; } .sch-t .pri.pri-P2 { background: #def3e8; }
+.sch-t .stt { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: #e6e8f0; }
+.sch-t .stt.st-Doing { background: #d9e6ff; color: #1d4fa8; } .sch-t .stt.st-Done { background: #d6f2e4; color: #14704a; } .sch-t .stt.st-Blocked { background: #ffe1e6; color: #b3122f; }
+.sch-t .bar { display: inline-block; width: 54px; height: 6px; border-radius: 4px; background: #e6e2d4; overflow: hidden; vertical-align: middle; }
+.sch-t .bar i { display: block; height: 100%; background: #4f86e8; }
+.sch-t tr.grp td { background: color-mix(in srgb, var(--c) 30%, #fff); font-weight: 800; border-top: 0; padding: 6px 10px; }
+.sch-t tr.grp a { color: #2a2038; text-decoration: none; } .sch-t tr.grp a:hover { text-decoration: underline; }
+.sch-t tr.grp small { margin-left: 8px; font-weight: 500; opacity: .6; }
+.sch-t tr.late td:not(.g) { background: #fff2f3; }
+.sch-add { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.sch-add input, .sch-add select { font: 500 13px var(--font); padding: 7px 9px; border-radius: 8px; border: 1.5px solid #d8d2c2; background: #fff; color: #2a2038; }
+.sch-add input[name=name] { flex: 1 1 200px; min-width: 160px; }
+.sch-add .arrow { opacity: .5; }
+.sch-add button { padding: 8px 16px; border-radius: 8px; border: 0; background: #2b2540; color: #fff; font: 700 13px var(--font); cursor: pointer; }
+.sch-empty { margin: 6px 0; color: #8a7a98; }
+.office-sched { margin-top: 26px; padding: 18px 20px 20px; border-radius: 16px; background: #f6f3ea; color: #2a2038; border: 6px solid #cfd3dc; }
+.office-sched .sch { margin-top: 0; }
+.office-sched .sch-head b { font-size: 12px; letter-spacing: .24em; color: #8a7a98; }

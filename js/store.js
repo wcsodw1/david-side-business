@@ -15,7 +15,7 @@
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const load = () => { try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { data = {}; } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} };
-  const rec = (pid) => (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "" });
+  const rec = (pid) => { const r = (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "", tasks: [] }); if (!r.tasks) r.tasks = []; return r; };
   const emit = (detail) => window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null }));
   const bc = (msg) => { try { window.Presence && window.Presence.broadcast && window.Presence.broadcast({ kind: "proj", who: window.PERSONA || "david", ...msg }); } catch (_) {} };   // 兩人同時在線時，專案更新也傳給對方
 
@@ -43,6 +43,7 @@
     p.updates = [...r.updates.slice().sort((a, b) => b.at - a.at), ...p._base.updates];
     p.goal = r.goal || "";
     p.milestones = r.milestones || [];
+    p.tasks = (r.tasks || []).slice();   // 時程表任務
     const d = p.wbDefault || {};   // 預設值（寫在 data/projects.js）：你自己在白板上填過就以你填的為準
     p.wbStatus = r.status || d.status || ""; p.wbNote = r.note || d.note || ""; p.wbNoteAt = r.noteAt || d.noteAt || ""; p.next = r.next || d.next || "";   // 白板三格：目標 / 目前狀態（TODO…FINISH + 一句話）/ Next Step
     const ev = evaluate(p);
@@ -80,6 +81,7 @@
       if (m.goal !== undefined) { r.goal = m.goal; kind = "goal"; text = m.goal; }
       if (m.status !== undefined) { r.status = m.status; kind = "status"; text = m.status; }
       if (m.next !== undefined) { r.next = m.next; kind = "next"; text = m.next; }
+      if (m.tasks !== undefined) { r.tasks = m.tasks; kind = "tasks"; text = "時程表有更新"; }
       if (m.note !== undefined) { r.note = m.note; r.noteAt = m.noteAt || today(); kind = "note"; text = m.note; r.updates.unshift({ date: today(), title: m.note.length > 24 ? m.note.slice(0, 24) + "…" : m.note, text: m.note, type: "進度", at: Date.now(), local: false, remote: true }); }
       save(); apply(p); emit({ pid: m.pid, kind, text, remote: true, who: m.who });
     },
@@ -92,11 +94,22 @@
     },
     toggleMilestone(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const m = rec(pid).milestones.find((x) => x.id === id); if (m) { m.done = !m.done; save(); apply(p); emit(); } },
     removeMilestone(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.milestones = r.milestones.filter((x) => x.id !== id); save(); apply(p); emit(); },
+    // 時程表：每個專案的任務（名稱 / 優先級 P0-P2 / 負責人 / 狀態 / 進度 / 預計開始與結束 / 說明）
+    addTask(pid, t) {
+      const p = P.find((x) => x.id === pid); if (!p) return null; const name = String(t.name || "").trim(); if (!name) return null;
+      const r = rec(pid), task = { id: Math.random().toString(36).slice(2, 8), name, pri: t.pri || "P1", owner: String(t.owner || "").trim(), status: t.status || "To Do", progress: +t.progress || 0, start: t.start || today(), end: t.end || t.start || today(), note: String(t.note || "").trim() };
+      r.tasks.push(task); save(); apply(p); emit({ pid, kind: "tasks", text: "新增任務：" + name }); bc({ pid, tasks: r.tasks }); return task;
+    },
+    updateTask(pid, id, patch) {
+      const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid), t = r.tasks.find((x) => x.id === id); if (!t) return;
+      Object.assign(t, patch); if (t.progress >= 100) t.status = "Done"; save(); apply(p); emit({ pid, kind: "tasks", text: "更新任務：" + t.name }); bc({ pid, tasks: r.tasks });
+    },
+    removeTask(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.tasks = r.tasks.filter((x) => x.id !== id); save(); apply(p); emit({ pid, kind: "tasks", text: "刪除了一個任務" }); bc({ pid, tasks: r.tasks }); },
     exportText() {
       const out = {};
-      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length || r.status || r.note || r.next) out[pid] = { goal: r.goal, status: r.status || "", note: r.note || "", next: r.next || "", milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
+      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length || r.status || r.note || r.next || (r.tasks && r.tasks.length)) out[pid] = { tasks: r.tasks || [], goal: r.goal, status: r.status || "", note: r.note || "", next: r.next || "", milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
       return JSON.stringify(out, null, 2);
     },
-    hasData: () => Object.keys(data).some((k) => data[k].updates.length || data[k].goal || data[k].milestones.length || data[k].status || data[k].next),
+    hasData: () => Object.keys(data).some((k) => data[k].updates.length || data[k].goal || data[k].milestones.length || data[k].status || data[k].next || (data[k].tasks && data[k].tasks.length)),
   });
 })();
