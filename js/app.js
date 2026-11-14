@@ -215,7 +215,7 @@
           <span class="g-meta"><i class="led" style="background:${st(p).color};color:${st(p).color}"></i>${esc(st(p).label)}</span>
           <span class="g-last">${esc((latest(p) || {}).title || "—")}</span>
         </a>`;
-      const cols = ["idea", "building", "live", "paused"];
+      const cols = ["backlog", "idea", "building", "live", "paused"];
       const board = cols.map((k) => `
         <div class="wb-col">
           <h3><i class="pill-dot" style="background:${S[k].color}"></i>${esc(S[k].label)}<span>${by(k).length}</span></h3>

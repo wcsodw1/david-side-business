@@ -5,7 +5,7 @@
    ▸ 新增一個 Side Business：複製下面任一區塊，貼在陣列裡即可
    ▸ 新增一筆進度：在該專案的 updates 最上面加一行
         { date: "2026-11-12", title: "標題", text: "內容" },
-   ▸ status 可用： "idea"(發想中) | "building"(進行中) | "live"(已上線) | "paused"(暫停)
+   ▸ status 可用： "backlog"(Backlog，先放著) | "idea"(發想中) | "building"(進行中) | "live"(已上線) | "paused"(暫停)
    ▸ progress：0 ~ 100
    ============================================================ */
 
@@ -19,6 +19,7 @@ window.SITE = {
 };
 
 window.STATUS = {
+  backlog:  { label: "Backlog", color: "#7fb4ff" },
   idea:     { label: "發想中", color: "#b9a6ff" },
   building: { label: "進行中", color: "#ffb86b" },
   live:     { label: "已上線", color: "#6be3a4" },
@@ -109,7 +110,7 @@ window.PROJECTS = [
     name: "PickleBall",
     zh: "匹克球",
     category: "Sports",
-    status: "idea",
+    status: "backlog",
     progress: 15,
     summary: "匹克球相關活動與商機。",
     links: [],

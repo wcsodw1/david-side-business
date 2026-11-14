@@ -397,6 +397,7 @@ body:not(.dim) footer.foot-note { display: none; }
 
 @media (max-width: 1100px) {
   .office-room { grid-template-columns: 1fr; }
+  .wb-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0 22px; }   /* 寬螢幕單欄時，便利貼不要拉成整排、互相重疊 */
   .monitor { order: -1; }
   .kpis { grid-template-columns: repeat(3, 1fr); }
 }
