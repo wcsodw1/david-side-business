@@ -357,7 +357,14 @@
         if (ctx.buildAvatar) { const av = ctx.buildAvatar({ skin: 0xe0ac8a, hair: 0x2a1a12, blazer: 0x7a5a44, shirt: 0xf3ead8, pants: 0x1f1a17, shoe: 0x2a1a12, tie: 0x3a2416 }); av.root.position.set(2.82, 0, -3.5); av.root.rotation.y = -PI / 2; K.g.add(av.root);
           box(0.34, 0.5, 0.03, M(0x3a2416, 0.8), 0, 1.1, 0.19, { p: av.root }); box(0.06, 0.2, 0.02, M(0x3a2416, 0.8), 0, 1.42, 0.17, { p: av.root, r: [0.3, 0, 0] });
           const tg = tx(320, 96, (c, w, h) => { c.fillStyle = "rgba(26,22,48,.9)"; rr(c, 4, 4, w - 8, h - 8, 26); c.fill(); c.fillStyle = "#fff"; c.font = "800 38px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("☕ 咖啡師", w / 2, h / 2 + 2); }); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tg, transparent: true, depthTest: false })); sp.scale.set(0.8, 0.24, 1); sp.position.y = 2.05; sp.renderOrder = 11; av.root.add(sp);
-          K.anim((dt, tt) => { av.update && av.update(dt, 0, tt); }); obs(2.85, -3.5, 0.3, 0.55); }
+          K.anim((dt, tt) => { av.update && av.update(dt, 0, tt); }); obs(2.85, -3.5, 0.3, 0.55);
+          // 走到咖啡師旁邊：他會主動介紹咖啡
+          const bw = K.w(2.82, -3.5); let bub = null, cool = 0, was = false;
+          const hide = () => { if (bub) { bub.remove(); bub = null; } };
+          const say = () => { hide(); bub = document.createElement("div"); bub.className = "barista-say"; bub.innerHTML = `<b>☕ 咖啡師</b><p>歡迎光臨～今天主打衣索比亞的花果香：獅王花蜜藝伎、露娜藝伎、西達摩水洗，還有瓜地馬拉的薇薇特南果跟哥斯大黎加黑蜜。一磅 $800 到 $1,200，想先聞聞看哪一支嗎？</p><div><button type="button" data-m>看完整菜單</button><button type="button" data-x>先逛逛</button></div>`; document.body.appendChild(bub);
+            bub.querySelector("[data-m]").addEventListener("click", () => { hide(); K.openMenu && K.openMenu(); }); bub.querySelector("[data-x]").addEventListener("click", hide); setTimeout(() => { if (bub) hide(); }, 16000); };
+          K.anim((dt) => { const near = Math.hypot(ctx.pos.x - bw.x, ctx.pos.z - bw.z) < 2.3; cool -= dt; if (near && !was && cool <= 0) { say(); cool = 25; } if (!near && was) hide(); was = near; });
+          cleanup.push(hide); }
         // 咖啡豆麻布袋
         for (let k = 0; k < 3; k++) { const q = K.grp(-2.7, 0, -5.2 + (k % 2) * 0.05 + k * 0.0, k * 0.5); cyl(0.26, 0.3, 0.55 - k * 0.0, M(0xc9a36a, 0.95), k === 2 ? 0.1 : 0, k === 2 ? 0.8 : 0.28, k === 2 ? 0.1 : (k - 0.5) * 0.62, { k: 1, p: K.g }, 14).position.set(-2.7 + (k === 2 ? 0.1 : 0), k === 2 ? 0.82 : 0.28, -5.2 + (k === 2 ? 0.2 : (k - 0.5) * 0.62)); pln(0.22, 0.14, K.label("BEANS", 256, 160, { bg: "#c9a36a", fg: "#3a2214", fs: 70 }), -2.7 + 0.28, k === 2 ? 0.82 : 0.28, -5.2 + (k === 2 ? 0.2 : (k - 0.5) * 0.62), PI / 2); }
         obs(-2.7, -5.2, 0.4, 0.7);
@@ -373,7 +380,7 @@
           box(1.2, 0.05, 0.08, wd, 0, 0.45, 0, { p: q }); box(1.0, 0.86, 0.04, M(0x23261f, 0.8), 0, 0.98, 0, { p: q, k: 1 });
           K.pln(0.92, 0.74, menuT, 0, 0.98, 0.025, 0, { p: q, glow: 0.2 }); K.pln(0.92, 0.74, menuT, 0, 0.98, -0.025, PI, { p: q, glow: 0.2 }); obs(1.35, -5.5, 0.6, 0.15);
           const items = [["衣索比亞 獅王花蜜藝伎", 1200], ["衣索比亞 露娜藝伎", 1100], ["衣索比亞 西達摩水洗", 1100], ["衣索比亞 粉紅蜜桃耶加", 950], ["衣索比亞 沃卡香菲日曬", 900], ["衣索比亞 沃卡香妃水洗", 900], ["烏拉嘎 風信子水洗", 900], ["巴西 可可精靈日曬", 900], ["瓜地馬拉 薇薇特南果", 800], ["瓜地馬拉 酒香背影", 900], ["薩爾瓦多 紅蠻牛紅蜜", 900], ["哥斯大黎加 捷豹黑蜜", 900]];
-          const open = () => { if (document.querySelector(".menu-ov")) return; const ov = document.createElement("div"); ov.className = "menu-ov"; ov.innerHTML = `<div class="mo-card"><button type="button" class="mo-x" aria-label="關閉">✕</button><h3>☕ 咖啡豆菜單</h3><p>每磅價格</p><ul>${items.map(([n, p]) => `<li><span>${n}</span><b>$${p}</b></li>`).join("")}</ul></div>`; document.body.appendChild(ov); document.body.classList.add("robot-open");
+          const open = K.openMenu = () => { if (document.querySelector(".menu-ov")) return; const ov = document.createElement("div"); ov.className = "menu-ov"; ov.innerHTML = `<div class="mo-card"><button type="button" class="mo-x" aria-label="關閉">✕</button><h3>☕ 咖啡豆菜單</h3><p>每磅價格</p><ul>${items.map(([n, p]) => `<li><span>${n}</span><b>$${p}</b></li>`).join("")}</ul></div>`; document.body.appendChild(ov); document.body.classList.add("robot-open");
             const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } }, close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
             window.addEventListener("keydown", kd, true); ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".mo-x")) close(); }); };
           const wp = K.w(1.35, -4.9), sp0 = K.w(1.35, -4.9), act = { id: "menu" + K.s, x: wp.x, z: wp.z, r: 1.7, lvl: 0, html: "<kbd>Enter</kbd> 看 <b>咖啡豆菜單</b> <small>　點黑板也可以</small>", fn: open };

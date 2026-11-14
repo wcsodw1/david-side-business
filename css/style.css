@@ -814,3 +814,7 @@ body.locked .music-btn { display: none; }
 .mo-card h3 { margin: 0 0 2px; font-size: 22px; } .mo-card p { margin: 0 0 12px; font-size: 13px; color: rgba(244,240,224,.6); }
 .mo-card ul { list-style: none; margin: 0; padding: 0; } .mo-card li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed rgba(201,163,106,.35); font-size: 17px; } .mo-card li b { color: #ffd48a; font-variant-numeric: tabular-nums; }
 .mo-x { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #f4f0e0; cursor: pointer; }
+
+/* 咖啡師主動介紹 */
+.barista-say { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: 92px; z-index: 70; width: min(420px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: 16px; background: #fff; color: #1f1a33; box-shadow: 0 16px 40px rgba(0,0,0,.45); font-size: 14px; line-height: 1.6; animation: pop .25s ease; }
+.barista-say p { margin: 4px 0 10px; } .barista-say div { display: flex; gap: 8px; } .barista-say button { padding: 6px 12px; border-radius: 99px; border: 1.5px solid #c9a36a; background: #fff; color: #3a2416; font-weight: 700; cursor: pointer; } .barista-say [data-m] { background: #3a2416; color: #fff; }
