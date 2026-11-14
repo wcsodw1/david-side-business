@@ -155,6 +155,7 @@
     }
     catch (e) {
       const i = s.msgs.indexOf(live); if (i >= 0) { delete live.live; live.meta = e.name === "AbortError" ? "（已停止）" : "（中斷）"; }
+      else if (e.name === "AbortError") s.msgs.push({ role: "ai", text: "", imgs: [], meta: "（已停止）", at: Date.now() });   // 還沒收到字就停了，也要看得到
       if (e.name !== "AbortError") s.msgs.push({ role: "err", text: String(e.message || e), at: Date.now() });
     }
     cancelAnimationFrame(raf);
@@ -209,7 +210,8 @@
     s.subs.add(sub); s.ready.then(paint); title(); paint();
     const go = () => { if (s.pending) { s.ctl && s.ctl.abort(); return; } if (!ready()) { cfgBox.hidden = false; return; } const t = ta.value, im = draft; ta.value = ""; draft = []; paintPrev(); ta.style.height = ""; send(s, p, t, im); };
     q(".ai-form").addEventListener("submit", (e) => { e.preventDefault(); go(); });
-    ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); go(); } });
+    // 中文輸入法選字的 Enter 不算送出（Safari 的 isComposing 不可靠，所以也看 keyCode 229）；回覆中按 Enter 不會停止，要停只能按「停止」鈕
+    ta.addEventListener("keydown", (e) => { if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.keyCode === 229) return; e.preventDefault(); if (!s.pending) go(); });
     ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(140, ta.scrollHeight) + "px"; });
     const addFiles = async (fs) => { for (const f of [...fs].filter((x) => /^image\//.test(x.type)).slice(0, 4 - draft.length)) { try { draft.push(await fileToImg(f)); } catch (_) {} } paintPrev(); };
     q("[data-att]").addEventListener("click", () => file.click()); file.addEventListener("change", () => { addFiles(file.files); file.value = ""; });
