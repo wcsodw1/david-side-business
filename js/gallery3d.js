@@ -1300,8 +1300,8 @@
             const pv = new THREE.Group(); pv.position.set(hx, UY, hz); pv.rotation.y = th0; scene.add(pv);
             const lf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.0, 0.9), lm2); lf.position.set(0, 1.0, 0.45); lf.castShadow = true; pv.add(lf);
             const kb = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), kn); kb.position.set(0, 1.0, 0.82); kb.rotation.x = PI / 2; pv.add(kb);
-            if (frame === "z") { U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.16, 0.1, lw + 0.1), dm2, hx, 2.1, cz); }
-            else { U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(lw + 0.1, 0.1, 0.16), dm2, cx, 2.1, hz); }
+            if (frame === "z") { U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz + lw); U(new THREE.BoxGeometry(0.16, 0.1, lw + 0.1), dm2, hx, 2.1, cz); }
+            else { U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx - lw, 1.05, hz); U(new THREE.BoxGeometry(lw + 0.1, 0.1, 0.16), dm2, cx, 2.1, hz); }
             doors.push({ pv, th0, th1, cx: cx ?? hx, cz: cz ?? hz, k: 0 }); };
           door(2.0, -6.6, 0, 1.4, 1.0, "z", 2.0, -6.1);                 // 浴室門（西牆，往浴室裡開）
           door(0.5, -0.65, 0, 1.48, 1.0, "z", 0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
