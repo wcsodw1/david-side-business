@@ -1976,7 +1976,7 @@
       const rcC = inside >= 0 ? (inside === sPB ? { x: sxOf(inside), z: 0 } : L2W(inside, 0, -3.2)) : null, bx = rcC ? (rcC.x - pos.x) * 0.4 : 0, bz = rcC ? (rcC.z - pos.z) * 0.4 : 0;
       bias.x = lerp(bias.x, bx, Math.min(1, dt * 3)); bias.z = lerp(bias.z, bz, Math.min(1, dt * 3));
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5)); camT.y = lerp(camT.y, 0.9 + py, Math.min(1, dt * 4));
-      const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * (1 - 0.3 * zoomK), hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
+      const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * 1, hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
       camera.position.set(camT.x + Math.sin(yaw) * hd, camT.y + vd, camT.z + Math.cos(yaw) * hd);
       camera.lookAt(camT);
       sky.position.copy(camera.position); clouds.position.copy(camera.position);
