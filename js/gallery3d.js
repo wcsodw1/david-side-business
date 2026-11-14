@@ -1262,10 +1262,11 @@
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       { // 書桌 / 梳妝桌：木頭桌面（有厚度）、一側抽屜櫃、另一側桌腳、橢圓立鏡（有木框與支架）、檯燈、筆電、椅子
-        const dw = M(0xc89a62, 0.55), dwD = M(0xa8793f, 0.6), dx = 3.4, dz = -0.95;
+        const dw = M(0xc89a62, 0.55), dwD = M(0xa8793f, 0.6), dx = 3.6, dz = -2.2;
         U(new THREE.BoxGeometry(1.5, 0.05, 0.62), dw, dx, 0.745, dz); U(new THREE.BoxGeometry(1.46, 0.04, 0.58), dwD, dx, 0.7, dz);
         U(new THREE.BoxGeometry(0.45, 0.68, 0.56), dw, dx + 0.52, 0.35, dz); for (const yy of [0.22, 0.5]) { U(new THREE.BoxGeometry(0.4, 0.2, 0.012), dwD, dx + 0.52, yy, dz + 0.286); U(new THREE.BoxGeometry(0.1, 0.014, 0.014), M(0xe9e3d4, 0.3, 0.8), dx + 0.52, yy + 0.04, dz + 0.3); }   // 抽屜 + 把手
         for (const sz of [-0.27, 0.27]) U(new THREE.BoxGeometry(0.05, 0.72, 0.05), dwD, dx - 0.7, 0.36, dz + sz);
+        addObs(dx + 0.1, dz, 0.9, 0.35, 1, 0.8);
         const mc = document.createElement("canvas"); mc.width = 128; mc.height = 192; const mg = mc.getContext("2d"), mgr = mg.createLinearGradient(0, 0, 128, 192); mgr.addColorStop(0, "#f4f9ff"); mgr.addColorStop(0.45, "#cfe0ef"); mgr.addColorStop(1, "#9db8d0"); mg.fillStyle = mgr; mg.fillRect(0, 0, 128, 192);
         mg.fillStyle = "rgba(255,255,255,.55)"; mg.beginPath(); mg.moveTo(20, 0); mg.lineTo(50, 0); mg.lineTo(10, 192); mg.lineTo(-20, 192); mg.fill();   // 斜斜的反光
         const mt = new THREE.CanvasTexture(mc); if (THREE.sRGBEncoding) mt.encoding = THREE.sRGBEncoding;
@@ -1287,6 +1288,8 @@
       /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
       { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.48, UY); addObs(x, z, w / 2, d / 2, 1); };
         // 門在東端（x 10.2~11.2），進來就是客廳
+        // 走道（南側一條）：與臥室以 z = -0.55 的牆隔開，西端是出口門，東端（x 4.3~5.3，靠右）有門進主臥室
+        shell(3.8, 0.12, 2.4, -0.55);
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 6.8, 5.5, -4.6); shell(0.12, 0.6, 5.5, 0.1);
         // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
