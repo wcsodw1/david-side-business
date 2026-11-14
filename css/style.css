@@ -1088,3 +1088,6 @@ body.locked .santa-fab { display: none; }
 .office-ai .cv-list li .cv-at { grid-column: 1; }
 .office-ai .cv-edit { grid-column: 1; width: 100%; min-width: 0; box-sizing: border-box; padding: 3px 8px; border: 1.5px solid var(--hm-orange); border-radius: 8px; background: #fff; color: var(--hm-ink); font: 600 14px/1.4 var(--font); outline: none; }
 @media (hover: none) { .office-ai .cv-list li button { opacity: .6; } }
+
+.menu-ov .mo-h { margin: 12px 0 4px; font-size: 14px; color: #ffd48a; }
+.menu-ov li small { opacity: .6; font-size: 12px; }
