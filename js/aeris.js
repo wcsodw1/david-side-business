@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Aeris = { mount, unmount, buildPlayer: (THREE, fn) => makeLook(THREE, fn).av, hide: (on) => { if (A) A.hideNpc(on); }, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
+  const api = (window.Aeris = { mount, unmount, buildPlayer: (THREE, fn) => { const av = makeLook(THREE, fn).av; if (window.Faces) window.Faces.apply(THREE, av, "aeris"); return av; }, hide: (on) => { if (A) A.hideNpc(on); }, dismiss: () => !!(A && A.dismiss()), chat: () => A && A.seek(), visit: (s) => A && A.goVisit(s), state: () => (A ? { x: +A.npc.x.toFixed(2), z: +A.npc.z.toFixed(2), mode: A.mode, line: A.line, visit: A.visit, route: A.route() } : null) });
   let A = null;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -20,8 +20,8 @@
 
   /* ----- Aeris 外觀（NPC 與玩家模式共用）：長髮、淡紫洋裝、髮夾小花 ----- */
   function makeLook(THREE, buildAvatar) {
-    const SKIN = 0xf2cdb4, HAIR = 0x5e3420, DRESS = 0x8b5a3c, COLLAR = 0xe3cdb2, PI = Math.PI;
-    const av = buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: SKIN, skin: SKIN, hair: HAIR, shoe: 0xe9dfe6 });
+    const SKIN = 0xf0cbb0, HAIR = 0x2a1a13, DRESS = 0x3a3d43, COLLAR = 0x3a3d43, PANTS = 0x25272d, PI = Math.PI;
+    const av = buildAvatar({ blazer: DRESS, shirt: COLLAR, pants: PANTS, skin: SKIN, hair: HAIR, shoe: 0xf2f2f2 });
     const M = (color, rough = 0.6, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: rough, envMapIntensity: 0.5, ...extra });
     const add = (geo, mat, parent, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; parent.add(m); return m; };
     const hairM = M(HAIR, 0.45, { side: THREE.DoubleSide }), dressM = M(DRESS, 0.8, { side: THREE.DoubleSide });
@@ -29,8 +29,8 @@
 
     // 洋裝裙襬（A 字微張）+ 腰帶
     const skirtProf = [[0.165, 0], [0.19, -0.12], [0.235, -0.3], [0.285, -0.47], [0.29, -0.49]].map(([x, y]) => new THREE.Vector2(x, y));
-    const skirt = add(new THREE.LatheGeometry(skirtProf, 32), dressM, av.body, 0, 0.99, 0); skirt.scale.set(1, 1, 0.82);
-    add(new THREE.TorusGeometry(0.168, 0.012, 8, 32), M(0xffffff, 0.5), av.body, 0, 0.985, 0).rotation.x = PI / 2;
+    const skirt = add(new THREE.LatheGeometry(skirtProf, 32), dressM, av.body, 0, 0.99, 0); skirt.scale.set(1, 1, 0.82);  skirt.visible = false;   // 不穿洋裝：改穿 T 恤 + 寬褲
+    add(new THREE.TorusGeometry(0.168, 0.012, 8, 32), M(0xffffff, 0.5), av.body, 0, 0.985, 0).visible = false;
 
     // 長髮：換掉通用短髮 → 頭頂 + 一圈蓬鬆的髮幕（包住兩側與後面，前面留出臉）+ 瀏海
     const h = av.head;

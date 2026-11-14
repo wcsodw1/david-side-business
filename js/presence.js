@@ -27,7 +27,8 @@
     unmount();
     const { THREE, scene, hooks, camera } = ctx;
     const me = window.PERSONA === "aeris" ? "aeris" : "david", other = me === "aeris" ? "david" : "aeris";
-    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : ctx.buildAvatar();
+    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : ctx.buildAvatar(window.Faces ? window.Faces.opts("david") : undefined);
+    if (other !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david");
     const W = new THREE.Group(); W.add(av.root); scene.add(W);
 
     const tagTex = (txt, fill, stroke, ink) => {
