@@ -1172,9 +1172,9 @@
       const hf = new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Z1 - Z0), new THREE.MeshStandardMaterial({ map: ft, roughness: 0.5, color: 0xe6d3b0 })); hf.rotation.x = -PI / 2; hf.position.set((X0 + X1) / 2, 0.018, ZC); hf.receiveShadow = true; scene.add(hf);
       // 外牆（北、東為整面高牆；西、南走進去會降低）
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, TOP, 0.14), plasterH, (X0 + X1) / 2, TOP / 2, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);
-      shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, -0.65 - Z0, X0 - 0.7, (Z0 - 0.65) / 2, plasterH, "U", 0.48, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2, 0); addObs(X0 - 0.7, (Z0 - 0.65) / 2, 0.1, (-0.65 - Z0) / 2, 1);
-      shellBox(0.84, WT, 0.14, X0 - 0.35, Z0, plasterH, "U", 0.48, UY); shellBox(0.84, WT, 0.14, X0 - 0.35, Z1, plasterH, "U", 0.48, UY); addObs(X0 - 0.35, Z0, 0.42, 0.1, 1); addObs(X0 - 0.35, Z1, 0.42, 0.1, 1);   // 二樓北 / 南牆跟著往西接長
-      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(10.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 10.2) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 11.2, WT, 0.14, (11.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
+      shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, -0.65 - Z0, X0 - 0.7, (Z0 - 0.65) / 2, plasterH, "U", 0.66, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2, 0); addObs(X0 - 0.7, (Z0 - 0.65) / 2, 0.1, (-0.65 - Z0) / 2, 1);
+      shellBox(0.84, WT, 0.14, X0 - 0.35, Z0, plasterH, "U", 0.66, UY); shellBox(0.84, WT, 0.14, X0 - 0.35, Z1, plasterH, "U", 0.66, UY); addObs(X0 - 0.35, Z0, 0.42, 0.1, 1); addObs(X0 - 0.35, Z1, 0.42, 0.1, 1);   // 二樓北 / 南牆跟著往西接長
+      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(10.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 10.2) / 2, Z1, plasterH, "U", 0.66, UY); shellBox(X1 + 0.07 - 11.2, WT, 0.14, (11.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.66, UY);
       addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 10.2) / 2, Z1, (10.2 - X0) / 2, 0.1, 1); addObs((11.2 + X1) / 2, Z1, (X1 - 11.2) / 2, 0.1, 1);
       mk(new THREE.BoxGeometry(0.14, TOP, DW0 - Z0), plasterH, X1, TOP / 2, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP, Z1 - DW1), plasterH, X1, TOP / 2, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);
@@ -1304,7 +1304,7 @@
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
 
       /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
-      { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.48, UY); addObs(x, z, w / 2, d / 2, 1); };
+      { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.66, UY); addObs(x, z, w / 2, d / 2, 1); };
         // 門在東端（x 10.2~11.2），進來就是客廳
         // 走道（南側一條）：與臥室以 z = -0.55 的牆隔開，西端是出口門，東端（x 4.3~5.3，靠右）有門進主臥室
         shell(3.5, 0.12, 1.55, -0.55); shell(2.0, 0.12, 5.3, -0.55);   // 走道北牆：x 3.3~4.3 是進臥室的門洞，東端與隔間牆接在一起
