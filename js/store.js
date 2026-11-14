@@ -43,7 +43,8 @@
     p.updates = [...r.updates.slice().sort((a, b) => b.at - a.at), ...p._base.updates];
     p.goal = r.goal || "";
     p.milestones = r.milestones || [];
-    p.wbStatus = r.status || ""; p.wbNote = r.note || ""; p.wbNoteAt = r.noteAt || ""; p.next = r.next || "";   // 白板三格：目標 / 目前狀態（TODO…FINISH + 一句話）/ Next Step
+    const d = p.wbDefault || {};   // 預設值（寫在 data/projects.js）：你自己在白板上填過就以你填的為準
+    p.wbStatus = r.status || d.status || ""; p.wbNote = r.note || d.note || ""; p.wbNoteAt = r.noteAt || d.noteAt || ""; p.next = r.next || d.next || "";   // 白板三格：目標 / 目前狀態（TODO…FINISH + 一句話）/ Next Step
     const ev = evaluate(p);
     p.progress = ev.progress; p.progressMode = ev.mode; p.progressReason = ev.reason;
     if (ev.mode === "milestone" && ev.progress >= 100 && p._base.status !== "live") p.suggestStatus = "live"; else p.suggestStatus = null;

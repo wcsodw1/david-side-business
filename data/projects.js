@@ -36,6 +36,7 @@ window.PROJECTS = [
     category: "Creative",
     status: "building",
     progress: 30,
+    wbDefault: { status: "ON PROCESS", note: "三份字幕（日文、雙語、繁中）都已產出並修正，每份 503 段，時間軸一致。", noteAt: "2026-11-14", next: "校對繁中翻譯，並對著影片檢查時間軸，再重新匯入 Filmora。" },   // 白板預設值（來自 Luka Film session 的最新進度）
     summary: "以影像說故事的創作品牌。",
     links: [],
     updates: [
