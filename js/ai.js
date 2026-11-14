@@ -10,13 +10,16 @@
 (() => {
   "use strict";
   const CFG_KEY = "dsb-ai";
-  const DEFAULT_MODEL = { openai: "gpt-4.1", anthropic: "claude-sonnet-5-5" };
+  const DEFAULT_MODEL = { openai: "gpt-4.1", anthropic: "claude-sonnet-5-5", custom: "" };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const sessions = {};
-  let cfg = { provider: "openai", key: "", model: "" };
+  let cfg = { provider: "openai", key: "", model: "", baseUrl: "" };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || "{}")); } catch (_) {}
   const saveCfg = () => { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (_) {} };
   const modelOf = () => cfg.model.trim() || DEFAULT_MODEL[cfg.provider];
+  const needKey = () => cfg.provider !== "custom";   // 自訂端點（例如公司內網的模型）可以不用金鑰
+  const ready = () => (needKey() ? !!cfg.key : !!cfg.baseUrl.trim());
+  const provName = () => ({ openai: "OpenAI", anthropic: "Claude", custom: "自訂" }[cfg.provider]);
 
   /* ---------- 儲存（IndexedDB，圖片放得下）---------- */
   let dbP = null;
@@ -66,6 +69,19 @@
       const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && j.error.message) || `HTTP ${r.status}`);
       return { text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"), imgs: [] };
     }
+    if (cfg.provider === "custom") {
+      const base = cfg.baseUrl.trim().replace(/\/+$/, ""), messages = [{ role: "system", content: sysPrompt(p) }];
+      for (const m of hist) {
+        if (m.role === "user") messages.push({ role: "user", content: (m.imgs || []).length ? [...m.imgs.map((u) => ({ type: "image_url", image_url: { url: u } })), { type: "text", text: m.text || "（圖片）" }] : (m.text || "（圖片）") });
+        else messages.push({ role: "assistant", content: m.text || "（圖片）" });
+      }
+      const headers = { "content-type": "application/json" }; if (cfg.key) headers.authorization = "Bearer " + cfg.key;
+      const body = { messages, stream: false }; if (modelOf()) body.model = modelOf();
+      const r = await fetch(base + "/chat/completions", { method: "POST", signal, headers, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${r.status}`);
+      const ch = (j.choices && j.choices[0] && j.choices[0].message) || {};
+      return { text: String(ch.content || "").replace(/<think>[\s\S]*?<\/think>/g, "").trim(), imgs: [] };
+    }
     // OpenAI Responses API（可用 image_generation 工具產圖）
     const input = hist.map((m) => m.role === "user"
       ? { role: "user", content: [...(m.imgs || []).map((u) => ({ type: "input_image", image_url: u })), { type: "input_text", text: m.text || "（圖片）" }] }
@@ -96,8 +112,9 @@
     el.innerHTML = `<div class="ai">
       <div class="ai-bar"><span class="ai-title"></span><span class="ai-sp"></span><button type="button" data-new>新對話</button><button type="button" data-cfg aria-label="設定">⚙</button></div>
       <div class="ai-cfg" hidden>
-        <label>服務商<select data-prov><option value="openai">OpenAI（文字 + 圖片回應）</option><option value="anthropic">Anthropic Claude（文字回應，看得懂圖）</option></select></label>
-        <label>API Key<input type="password" data-key placeholder="貼上你自己的金鑰" autocomplete="off"></label>
+        <label>服務商<select data-prov><option value="openai">OpenAI（文字 + 圖片回應）</option><option value="anthropic">Anthropic Claude（文字回應，看得懂圖）</option><option value="custom">自訂端點（OpenAI 相容，例如公司內網模型）</option></select></label>
+        <label data-base-row hidden>端點網址（到 /v1 為止）<input data-base placeholder="http://主機:埠/v1" autocomplete="off"></label>
+        <label>API Key（自訂端點可留空）<input type="password" data-key placeholder="貼上你自己的金鑰" autocomplete="off"></label>
         <label>模型（留空用預設）<input data-model autocomplete="off"></label>
         <p>金鑰只存在這個瀏覽器，請求直接送到服務商，不會經過其他地方。用量由你的帳號計費。</p>
         <button type="button" data-save>儲存</button>
@@ -107,16 +124,16 @@
       <form class="ai-form"><button type="button" class="ai-att" data-att aria-label="附加圖片">📎</button><textarea rows="1" placeholder="輸入訊息…（Enter 送出，Shift+Enter 換行，可貼上或拖進圖片）"></textarea><button type="submit" data-send>送出</button><input type="file" accept="image/*" multiple hidden></form>
     </div>`;
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
-    const title = () => { q(".ai-title").textContent = `AI · ${cfg.provider === "openai" ? "OpenAI" : "Claude"} · ${modelOf()}`; };
+    const title = () => { q(".ai-title").textContent = `AI · ${provName()} · ${modelOf() || "預設模型"}`; };
     const paintPrev = () => { prev.innerHTML = draft.map((u, i) => `<span class="ai-th"><img src="${u}" alt=""><button type="button" data-rm="${i}" aria-label="移除">×</button></span>`).join(""); prev.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => { draft.splice(+b.dataset.rm, 1); paintPrev(); })); };
     const paint = () => {
-      const empty = !cfg.key ? `<p class="ai-empty">先按右上角 ⚙ 貼上你的 API Key，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
+      const empty = !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}"><div class="ai-b">${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}</div></div>`).join("") : empty) + (s.pending ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div></div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
     };
     const sub = () => { if (!el.isConnected) { s.subs.delete(sub); return; } paint(); };
     s.subs.add(sub); s.ready.then(paint); title(); paint();
-    const go = () => { if (s.pending) { s.ctl && s.ctl.abort(); return; } if (!cfg.key) { cfgBox.hidden = false; return; } const t = ta.value, im = draft; ta.value = ""; draft = []; paintPrev(); ta.style.height = ""; send(s, p, t, im); };
+    const go = () => { if (s.pending) { s.ctl && s.ctl.abort(); return; } if (!ready()) { cfgBox.hidden = false; return; } const t = ta.value, im = draft; ta.value = ""; draft = []; paintPrev(); ta.style.height = ""; send(s, p, t, im); };
     q(".ai-form").addEventListener("submit", (e) => { e.preventDefault(); go(); });
     ta.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); go(); } });
     ta.addEventListener("input", () => { ta.style.height = "auto"; ta.style.height = Math.min(140, ta.scrollHeight) + "px"; });
@@ -126,11 +143,11 @@
     const area = q(".ai"); area.addEventListener("dragover", (e) => { e.preventDefault(); }); area.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
     q("[data-new]").addEventListener("click", () => { if (s.pending && s.ctl) s.ctl.abort(); s.msgs = []; s.pending = false; s.save(); s.notify(); });
     q("[data-cfg]").addEventListener("click", () => { cfgBox.hidden = !cfgBox.hidden; });
-    q("[data-prov]").value = cfg.provider; q("[data-key]").value = cfg.key; q("[data-model]").value = cfg.model; q("[data-model]").placeholder = DEFAULT_MODEL[cfg.provider];
-    q("[data-prov]").addEventListener("change", (e) => { q("[data-model]").placeholder = DEFAULT_MODEL[e.target.value]; });
-    q("[data-save]").addEventListener("click", () => { cfg.provider = q("[data-prov]").value; cfg.key = q("[data-key]").value.trim(); cfg.model = q("[data-model]").value.trim(); saveCfg(); cfgBox.hidden = true; title(); paint(); });
-    if (!cfg.key) cfgBox.hidden = false;
+    q("[data-prov]").value = cfg.provider; q("[data-key]").value = cfg.key; q("[data-base]").value = cfg.baseUrl; const baseRow = q("[data-base-row]"); baseRow.hidden = cfg.provider !== "custom"; q("[data-model]").value = cfg.model; q("[data-model]").placeholder = DEFAULT_MODEL[cfg.provider];
+    q("[data-prov]").addEventListener("change", (e) => { q("[data-model]").placeholder = DEFAULT_MODEL[e.target.value] || "（留空 = 端點預設模型）"; baseRow.hidden = e.target.value !== "custom"; });
+    q("[data-save]").addEventListener("click", () => { cfg.provider = q("[data-prov]").value; cfg.key = q("[data-key]").value.trim(); cfg.baseUrl = q("[data-base]").value.trim(); cfg.model = q("[data-model]").value.trim(); saveCfg(); cfgBox.hidden = true; title(); paint(); });
+    if (!ready()) cfgBox.hidden = false;
   }
 
-  window.AIChat = { mount, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
+  window.AIChat = { mount, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
 })();
