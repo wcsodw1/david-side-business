@@ -109,6 +109,20 @@ window.PROJECTS = [
     ],
   },
   {
+    id: "cafe",
+    name: "Coffee Shop",
+    zh: "咖啡廳",
+    category: "F&B",
+    status: "idea",
+    progress: 5,
+    wbDefault: { status: "TODO", note: "咖啡豆報價單已拿到：7 款莊園豆，半磅 $220–450（一磅約為兩倍）。", noteAt: "2026-11-14", next: "挑 3–4 款主打豆（曼特寧、耶加雪菲、曼巴），算成本與售價，先用半磅開始。" },
+    summary: "咖啡廳籌備：豆子選品、成本與菜單。",
+    links: [],
+    updates: [
+      { date: "2026-11-14", title: "專案頁建立", text: "加入平台，開始整理咖啡豆報價與品項。" },
+    ],
+  },
+  {
     id: "pickleball",
     name: "PickleBall",
     zh: "匹克球",

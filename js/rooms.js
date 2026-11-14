@@ -341,6 +341,29 @@
         { box(0.62, 0.02, 0.05, M(0x1f6f78, 0.8), -2.2, 0.01, -1.95, { r: [0, 0.3, 0] }); cyl(0.07, 0.07, 0.62, M(0x2a8a95, 0.9), -1.55, 0.07, -2.1, { r: [PI / 2, 0, 0.6] }, 16); for (let k = 0; k < 2; k++) { cyl(0.012, 0.012, 0.2, M(0x333), -2.4 + k * 0.25, 0.06, -2.35, { r: [0, 0, PI / 2] }, 6); for (const dx of [-0.1, 0.1]) sph(0.045, M(0x2a2a30, 0.4, 0.5), -2.4 + k * 0.25 + dx, 0.06, -2.35); } }
       },
 
+      /* ===== Coffee Shop：咖啡廳 ===== */
+      "cafe"(K) {
+        const { M, E, GL, box, cyl, sph, pln, tx, obs, rnd } = K;
+        K.floor((c, w, h, X, Z, pxm) => { const s0 = 0.4 * pxm; for (let y = 0; y < h; y += s0) for (let x = 0; x < w; x += s0) { c.fillStyle = ((x / s0 + y / s0) | 0) % 2 ? "#e8d9bf" : "#8a5a3a"; c.fillRect(x, y, s0 + 1, s0 + 1); } c.fillStyle = "rgba(40,20,10,.35)"; c.font = "800 70px Georgia"; c.textAlign = "center"; ft("COFFEE & BEANS", X(0.1), Z(-2.1)); });
+        K.walls((c, w, h) => { c.fillStyle = "#6b4630"; c.fillRect(0, 0, w, h); c.fillStyle = "#f0e2c8"; c.fillRect(0, h * 0.68, w, h * 0.32); c.fillStyle = "#3a2416"; c.fillRect(0, h * 0.68, w, 8); c.fillStyle = "rgba(255,255,255,.06)"; for (let x = 0; x < w; x += 64) c.fillRect(x, 0, 3, h * 0.68); });
+        // 吧台 + 咖啡機 + 磨豆機
+        { const q = K.grp(2.6, 0, -3.5); box(0.7, 1.0, 2.3, M(0x3a2416, 0.6), 0, 0.5, 0, { p: q, k: 1 }); box(0.82, 0.06, 2.42, M(0xe8d9bf, 0.35), -0.04, 1.03, 0, { p: q, k: 1 });
+          box(0.45, 0.32, 0.7, M(0xc0c4cc, 0.25, 0.8), 0.1, 1.22, -0.55, { p: q, k: 1 }); box(0.47, 0.05, 0.72, M(0x2a2a30, 0.4, 0.5), 0.1, 1.4, -0.55, { p: q }); for (const dz of [-0.75, -0.35]) { box(0.06, 0.04, 0.14, M(0x1a1a1f, 0.4), -0.17, 1.14, dz, { p: q }); cyl(0.03, 0.03, 0.1, M(0x1a1a1f), -0.17, 1.2, dz, { p: q }, 8); }
+          const gr = K.grp(0.1, 1.06, 0.3, 0, q); box(0.2, 0.3, 0.2, M(0x222228, 0.4, 0.4), 0, 0.15, 0, { p: gr, k: 1 }); cyl(0.1, 0.05, 0.2, GL(0xffd9a0, 0.45), 0, 0.4, 0, { p: gr }, 14); for (let k = 0; k < 8; k++) sph(0.018, M(0x3a2214, 0.5), Math.cos(k) * 0.05, 0.35 + (k % 3) * 0.04, Math.sin(k) * 0.05, { p: gr });
+          for (let k = 0; k < 4; k++) { cyl(0.04, 0.03, 0.06, M(0xffffff, 0.3), -0.2, 1.09, 0.45 + k * 0.17, { p: q }, 12); cyl(0.035, 0.035, 0.005, M(0x3a2214, 0.3), -0.2, 1.12, 0.45 + k * 0.17, { p: q }, 12); }
+          cyl(0.07, 0.1, 0.16, M(0x7c5cff, 0.35, 0.4), 0.0, 1.14, 0.95, { p: q }, 14); box(0.015, 0.2, 0.015, M(0x333), 0.0, 1.3, 0.95, { p: q, r: [0, 0, 0.6] });
+          obs(2.6, -3.5, 0.45, 1.25); for (let k = 0; k < 3; k++) { cyl(0.004, 0.004, 0.5, M(0x111), 2.35, 2.1, -4.2 + k * 0.7, {}, 4); const d = K.put(new THREE.SphereGeometry(0.13, 16, 10, 0, PI * 2, 0, PI / 2), E(0xffc874, 1.4), 2.35, 1.82, -4.2 + k * 0.7); } }
+        // 咖啡豆麻布袋
+        for (let k = 0; k < 3; k++) { const q = K.grp(-2.7, 0, -5.2 + (k % 2) * 0.05 + k * 0.0, k * 0.5); cyl(0.26, 0.3, 0.55 - k * 0.0, M(0xc9a36a, 0.95), k === 2 ? 0.1 : 0, k === 2 ? 0.8 : 0.28, k === 2 ? 0.1 : (k - 0.5) * 0.62, { k: 1, p: K.g }, 14).position.set(-2.7 + (k === 2 ? 0.1 : 0), k === 2 ? 0.82 : 0.28, -5.2 + (k === 2 ? 0.2 : (k - 0.5) * 0.62)); pln(0.22, 0.14, K.label("BEANS", 256, 160, { bg: "#c9a36a", fg: "#3a2214", fs: 70 }), -2.7 + 0.28, k === 2 ? 0.82 : 0.28, -5.2 + (k === 2 ? 0.2 : (k - 0.5) * 0.62), PI / 2); }
+        obs(-2.7, -5.2, 0.4, 0.7);
+        // 小圓桌 + 椅子
+        for (const z of [-2.5, -3.7]) { const q = K.grp(-2.3, 0, z); cyl(0.36, 0.36, 0.04, M(0xe8d9bf, 0.4), 0, 0.72, 0, { p: q, k: 1 }, 24); cyl(0.03, 0.03, 0.7, M(0x2a1a12, 0.5), 0, 0.36, 0, { p: q }, 8); cyl(0.2, 0.2, 0.03, M(0x2a1a12, 0.5), 0, 0.015, 0, { p: q }, 14);
+          cyl(0.05, 0.04, 0.06, M(0xffffff, 0.3), 0.05, 0.77, 0.04, { p: q }, 12); cyl(0.045, 0.045, 0.005, M(0x3a2214, 0.3), 0.05, 0.8, 0.04, { p: q }, 12);
+          for (const sg of [-1, 1]) { cyl(0.16, 0.16, 0.04, M(0xc4553d, 0.6), 0.0, 0.45, sg * 0.55, { p: q, k: 1 }, 14); cyl(0.018, 0.018, 0.43, M(0x2a1a12), 0, 0.22, sg * 0.55, { p: q }, 6); } obs(-2.3, z, 0.5, 0.7, 0.8); }
+        // 菜單黑板（後牆）
+        K.pln(1.3, 1.0, tx(520, 400, (c, w, h) => { c.fillStyle = "#23261f"; c.fillRect(0, 0, w, h); c.strokeStyle = "#c9a36a"; c.lineWidth = 10; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = "#f4f0e0"; c.textAlign = "center"; c.font = "800 40px Georgia"; c.fillText("COFFEE BEANS  半磅", w / 2, 56); c.font = "600 27px 'Noto Sans TC'"; [["黃金曼特寧", 450], ["PNG 天堂鳥", 450], ["耶加雪菲", 350], ["貝拉卡摩娜花神", 350], ["達特拉甜蜜總匯", 350], ["曼特寧綜合", 330], ["經典黃金曼巴", 220]].forEach(([n, pr], k) => { c.textAlign = "left"; c.fillText(n, 36, 108 + k * 40); c.textAlign = "right"; c.fillStyle = "#ffd48a"; c.fillText("$" + pr, w - 36, 108 + k * 40); c.fillStyle = "#f4f0e0"; }); }), -2.3, K.wh - 0.85, -6.11, 0, { glow: 0.15 });
+      },
+
       /* ===== Gumroad Digital Products：數位商品工作室 ===== */
       "gumroad"(K) {
         const { M, E, GL, box, cyl, sph, pln, tx, obs, rnd } = K;
