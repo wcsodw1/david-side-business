@@ -14,7 +14,7 @@
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
   const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
-  const UY = 3.3, STAIR = { x0: 12.4, x1: 17.4, z0: 0.9, z1: 2.4 };   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
+  const UY = 3.3, STAIR = { x0: 5.9, x1: 11.4, z0: 0.47, z1: 5.4 };   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
   const DECK_HD = 8.6;                                  // 露台半寬（z）
@@ -34,6 +34,13 @@
   const mkCanvas = (w, h) => { const c = document.createElement("canvas"); c.width = w; c.height = h; return c; };
   const mulberry = (a) => () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  // 屋外逆時針旋轉樓梯（從西邊地面往東上，到轉角平台，再轉向北上到二樓門口平台）：回傳該點的樓梯高度，不在樓梯上回 null
+  const stairY = (x, z) => {
+    if (x >= 5.9 && x < 10.0 && z >= 4.0 && z <= 5.4) return (UY / 2) * (x - 5.9) / 4.1;                 // 第一段（往東）
+    if (x >= 10.0 && x <= 11.4 && z > 4.0 && z <= 5.4) return UY / 2;                                   // 轉角平台
+    if (x >= 10.0 && x <= 11.4 && z >= 1.3 && z <= 4.0) return UY / 2 + (UY / 2) * (4.0 - z) / 2.7;     // 第二段（往北）
+    return null;
+  };
   const lerp = (a, b, t) => a + (b - a) * t;
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
 
@@ -1176,24 +1183,18 @@
       const slab = (x0, x1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.22, z1 - z0), slabM); m.position.set((x0 + x1) / 2, UY - 0.11, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat: slabM, grp: "H2" }); };
       slab(X0, X1, Z0, Z1);   // 樓梯在屋外（南側），二樓地板是完整一塊
 
-      // 樓梯：從東（一樓入口）往西爬到二樓；南側有扶手
-      { const N = 16, dx = (STAIR.x1 - STAIR.x0) / N, zc = (STAIR.z0 + STAIR.z1) / 2, sw = STAIR.z1 - STAIR.z0 - 0.05;
-        for (let i = 0; i < N; i++) { const h = (i + 1) * UY / N, x = STAIR.x1 - (i + 0.5) * dx; mk(new THREE.BoxGeometry(dx, h, sw), wood, x, h / 2, zc); }
-        for (let i = 0; i <= N; i += 2) { const x = STAIR.x1 - i * dx, y = i * UY / N; mk(new THREE.BoxGeometry(0.06, 1.0, 0.06), bronze, x, y + 0.5, STAIR.z1 - 0.05, false); }
-        const rl = mk(new THREE.BoxGeometry(Math.hypot(STAIR.x1 - STAIR.x0, UY), 0.06, 0.07), bronze, (STAIR.x0 + STAIR.x1) / 2, UY / 2 + 1.0, STAIR.z1 - 0.05, false); rl.rotation.z = Math.atan2(UY, STAIR.x1 - STAIR.x0) * -1 * -1; rl.rotation.z = -Math.atan2(UY, STAIR.x1 - STAIR.x0) * -1; rl.rotation.z = Math.atan2(UY, -(STAIR.x1 - STAIR.x0)) + Math.PI;
-        addObs((STAIR.x0 + STAIR.x1) / 2, STAIR.z1 + 0.1, (STAIR.x1 - STAIR.x0) / 2, 0.05);                                       // 南側扶手（兩層都擋）
-        addObs(STAIR.x0 - 0.1, zc, 0.1, (STAIR.z1 - STAIR.z0) / 2 + 0.1, 0);                                                    // 一樓：不能從樓梯上端走進去
-        addObs(STAIR.x1 + 0.1, zc, 0.1, (STAIR.z1 - STAIR.z0) / 2 + 0.1, 1); }                                                  // 二樓：樓梯口東端是空的
-
-      { // 屋外樓梯平台：樓梯頂端接平台，再從南牆的門進二樓（右手邊 = 主臥室那側）
-        const LX0 = 10.1, LX1 = STAIR.x0, LZ0 = Z1 + 0.07, LZ1 = STAIR.z1, brownD = M(0x4a2c1c, 0.6);
-        const pf = mk(new THREE.BoxGeometry(LX1 - LX0, 0.14, LZ1 - LZ0), wood, (LX0 + LX1) / 2, UY - 0.07, (LZ0 + LZ1) / 2);
-        for (const [x, z] of [[LX0 + 0.05, LZ1 - 0.05], [LX1 - 0.05, LZ1 - 0.05], [LX0 + 0.05, LZ0 + 0.05]]) mk(new THREE.BoxGeometry(0.08, UY - 0.14, 0.08), bronze, x, (UY - 0.14) / 2, z, false);
-        mk(new THREE.BoxGeometry(LX1 - LX0, 0.06, 0.07), bronze, (LX0 + LX1) / 2, UY + 1.0, LZ1 - 0.05, false);                 // 南側扶手
-        mk(new THREE.BoxGeometry(0.07, 0.06, LZ1 - LZ0), bronze, LX0 + 0.05, UY + 1.0, (LZ0 + LZ1) / 2, false);                  // 西側扶手
-        addObs((LX0 + LX1) / 2, LZ1 + 0.05, (LX1 - LX0) / 2, 0.06, 1); addObs(LX0 - 0.05, (LZ0 + LZ1) / 2, 0.06, (LZ1 - LZ0) / 2, 1);
-        for (const x of [10.2, 11.2]) mk(new THREE.BoxGeometry(0.1, 2.15, 0.18), brownD, x, UY + 1.075, Z1);                      // 門框
-        mk(new THREE.BoxGeometry(1.1, 0.12, 0.18), brownD, 10.7, UY + 2.15, Z1);
+      // 屋外逆時針旋轉樓梯：地面（西）→ 往東爬到轉角平台 → 轉向北爬到門口平台 → 二樓南牆的門（x 10.2~11.2）
+      { const rail = (x0, z0, x1, z1, y0) => { const len = Math.hypot(x1 - x0, z1 - z0), m = mk(new THREE.BoxGeometry(len, 0.06, 0.06), bronze, (x0 + x1) / 2, y0 + 1.0, (z0 + z1) / 2, false); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); };
+        const NA = 10, dxA = 4.1 / NA; for (let k = 0; k < NA; k++) { const h = (UY / 2) * (k + 1) / NA; mk(new THREE.BoxGeometry(dxA, h, 1.4), wood, 5.9 + (k + 0.5) * dxA, h / 2, 4.7); }                     // 第一段：10 階
+        mk(new THREE.BoxGeometry(1.4, UY / 2, 1.4), wood, 10.7, UY / 4, 4.7);                                                                                                                 // 轉角平台（實心）
+        const NB = 10, dzB = 2.7 / NB; for (let k = 0; k < NB; k++) { const h = UY / 2 + (UY / 2) * (k + 1) / NB; mk(new THREE.BoxGeometry(1.4, h, dzB), wood, 10.7, h / 2, 4.0 - (k + 0.5) * dzB); }   // 第二段：10 階
+        mk(new THREE.BoxGeometry(1.4, UY, 0.83), wood, 10.7, UY / 2, 0.885);                                                                                                                  // 門口平台（實心）
+        // 扶手（兩側）+ 欄杆柱
+        rail(5.9, 3.95, 10.0, 3.95, UY * 0.25 - 0.45); rail(5.9, 5.45, 10.0, 5.45, UY * 0.25 - 0.45); rail(10.0, 5.45, 11.45, 5.45, UY / 2 - 1.0 + 1.0); rail(11.45, 5.45, 11.45, 0.5, UY - 1.0 + 0.05 - 0.4); rail(9.95, 4.0, 9.95, 0.5, UY - 1.0 + 0.05 - 0.4);
+        // 碰撞：樓梯兩側都擋（只有西端地面入口與頂端的門是通的）
+        addObs(7.95, 3.9, 2.1, 0.06); addObs(7.95, 5.5, 2.1, 0.06); addObs(10.7, 5.5, 0.8, 0.06); addObs(11.5, 3.0, 0.06, 2.6); addObs(9.95, 2.0, 0.06, 1.55);
+        // 門框（二樓南牆）
+        const brownD = M(0x4a2c1c, 0.6); for (const x of [10.2, 11.2]) mk(new THREE.BoxGeometry(0.1, 2.15, 0.18), brownD, x, UY + 1.075, Z1); mk(new THREE.BoxGeometry(1.1, 0.12, 0.18), brownD, 10.7, UY + 2.15, Z1);
       }
 
       /* ---- 一樓家具（lv 0）---- */
@@ -2035,8 +2036,8 @@
       if (sp) facing += angDiff(facing, Math.atan2(lmx, lmz)) * Math.min(1, dt * 10);
       speedNow = lerp(speedNow, sp, Math.min(1, dt * 12));
       { // 樓梯：在樓梯範圍內高度跟著斜坡走；其他地方高度 = 樓層高度
-        const inSt = pos.x > STAIR.x0 && pos.x < STAIR.x1 && pos.z > STAIR.z0 && pos.z < STAIR.z1;
-        if (inSt) { py = clamp(UY * (STAIR.x1 - pos.x) / (STAIR.x1 - STAIR.x0), 0, UY); lvl = py > UY * 0.5 ? 1 : 0; } else py = lvl * UY;
+        const sy = stairY(pos.x, pos.z);
+        if (sy !== null) { py = clamp(sy, 0, UY); lvl = py > UY * 0.5 ? 1 : 0; } else py = lvl * UY;
         lvlS = lerp(lvlS, py / UY, Math.min(1, dt * 6)); groundPlane.constant = -py;
       }
       if (jumpReq) { jumpReq = false; if (jy < 0.01 && jv <= 0 && swimT < 0.3 && sitting < 0) { jv = 5.2; if (window.Music) window.Music.sfx("bounce", pos.x, pos.z, 0.4); } }
