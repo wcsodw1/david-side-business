@@ -1258,8 +1258,8 @@
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
       }
-      bed(1.75, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
-      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
+      bed(3.7, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
+      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 2.9, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 2.9, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       const SHOW_BEDROOM_EXTRAS = false;   // 臥室的衣櫃 / 書桌 / 鏡子 / 椅子先移除（要放回來改成 true）
       if (SHOW_BEDROOM_EXTRAS) {U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       }
@@ -1292,19 +1292,27 @@
         // 門在東端（x 10.2~11.2），進來就是客廳
         // 走道（南側一條）：與臥室以 z = -0.55 的牆隔開，西端是出口門，東端（x 4.3~5.3，靠右）有門進主臥室
         shell(2.8, 0.12, 1.9, -0.55); shell(1.2, 0.12, 4.9, -0.55);   // 走道北牆：x 3.3~4.3 是進臥室的門洞，東端與隔間牆接在一起
-        { const dm = M(0x6b4a33, 0.6);   // 臥室門（走道北牆 x 3.3~4.3）：門框 + 門楣 + 打開靠邊的門片
-          for (const x of [3.3, 4.3]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm, x, 1.05, -0.55); U(new THREE.BoxGeometry(1.1, 0.1, 0.16), dm, 3.8, 2.1, -0.55);
-          const lf = U(new THREE.BoxGeometry(0.04, 2.0, 0.92), M(0x8a6444, 0.6), 4.22, 1.0, -1.05); U(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), M(0xd9c9a0, 0.3, 0.8), 4.2, 1.0, -1.45).rotation.x = PI / 2; }
-        { const dm2 = M(0x6b4a33, 0.6), lm2 = M(0x8a6444, 0.6), kn = M(0xd9c9a0, 0.3, 0.8);   // 其他門口也都有門：門框（鉸鏈側）+ 門楣 + 半開的門片
-          const door = (hx, hz, th, lx, lz, lw, alongZ) => {
-            const c = Math.cos(th), s = Math.sin(th), cx = hx + 0.45 * s, cz = hz + 0.45 * c;
-            const lf = U(new THREE.BoxGeometry(0.04, 2.0, 0.9), lm2, cx, 1.0, cz); lf.rotation.y = th;
-            U(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), kn, hx + 0.82 * s, 1.0, hz + 0.82 * c).rotation.x = PI / 2;
-            U(new THREE.BoxGeometry(alongZ ? 0.16 : 0.1, 2.1, alongZ ? 0.1 : 0.16), dm2, hx, 1.05, hz);
-            U(alongZ ? new THREE.BoxGeometry(0.16, 0.1, lw) : new THREE.BoxGeometry(lw, 0.1, 0.16), dm2, lx, 2.1, lz); };
-          door(2.0, -6.6, 1.22, 2.0, -6.1, 1.0, true);        // 浴室門（西牆，朝臥室打開）
-          door(0.5, -0.65, 1.48, 0.5, -0.15, 1.0, true);      // 西邊出口門（走道盡頭）
-          door(5.5, -0.55, 1.48, 5.5, -0.07, 0.95, true);     // 走道通客廳的門
+        { // 所有的門都會自動開關：走近（2 公尺內、同一層）門就打開，離開門就關上
+          const dm2 = M(0x6b4a33, 0.6), lm2 = M(0x8a6444, 0.6), kn = M(0xd9c9a0, 0.3, 0.8), doors = [];
+          // hx,hz = 鉸鏈位置；th0 = 關上時門片的朝向、th1 = 打開時；lw = 門寬；frame = 'z'（門洞沿 z）或 'x'（門洞沿 x）
+          const door = (hx, hz, th0, th1, lw, frame, cx, cz) => {
+            const pv = new THREE.Group(); pv.position.set(hx, UY, hz); pv.rotation.y = th0; scene.add(pv);
+            const lf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.0, 0.9), lm2); lf.position.set(0, 1.0, 0.45); lf.castShadow = true; pv.add(lf);
+            const kb = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.08, 8), kn); kb.position.set(0, 1.0, 0.82); kb.rotation.x = PI / 2; pv.add(kb);
+            if (frame === "z") { U(new THREE.BoxGeometry(0.16, 2.1, 0.1), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(0.16, 0.1, lw + 0.1), dm2, hx, 2.1, cz); }
+            else { U(new THREE.BoxGeometry(0.1, 2.1, 0.16), dm2, hx, 1.05, hz); U(new THREE.BoxGeometry(lw + 0.1, 0.1, 0.16), dm2, cx, 2.1, hz); }
+            doors.push({ pv, th0, th1, cx: cx ?? hx, cz: cz ?? hz, k: 0 }); };
+          door(2.0, -6.6, 0, 1.4, 1.0, "z", 2.0, -6.1);                 // 浴室門（西牆，往浴室裡開）
+          door(0.5, -0.65, 0, 1.48, 1.0, "z", 0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
+          door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);         // 臥室門（走道北牆，往臥室裡開）
+          tickHooks.push((dt) => {
+            const onUp = py > UY * 0.5;
+            for (const d of doors) {
+              const near = onUp && Math.hypot(pos.x - d.cx, pos.z - d.cz) < 2.0;
+              d.k += ((near ? 1 : 0) - d.k) * Math.min(1, dt * 5);
+              d.pv.rotation.y = d.th0 + (d.th1 - d.th0) * d.k;
+            }
+          });
         }
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 7.45, 5.5, -4.275);   // 走道東端（右下角）不砌牆
@@ -1700,8 +1708,8 @@
 
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
-    const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 2.0;           // 起床後站在自己那一側的床邊
-    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 2.55, z: bedZ };
+    const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 3.7;           // 起床後站在自己那一側的床邊
+    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 4.5, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -2069,7 +2077,7 @@
       if (swimT < 0.01 && !wake) { av.root.rotation.order = "XYZ"; av.root.rotation.x = 0; av.root.rotation.z = 0; }   // 修正：開場動畫之後角色身體殘留的歪斜（倒著走）
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
-        wake.t += dt; const T = wake.t, bx = 2.55, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        wake.t += dt; const T = wake.t, bx = 4.5, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
         if (T < 2.2) { av.root.position.set(bx, by, bedZ); av.root.quaternion.copy(lieQ); av.torso.rotation.x = Math.sin(T * 1.6) * 0.02; }              // 躺著（輕輕呼吸）
         else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), lerp(bedZ, standZ, e)); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
         else {
