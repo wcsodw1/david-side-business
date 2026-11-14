@@ -1293,9 +1293,8 @@
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 6.8, 5.5, -4.6); shell(0.12, 0.6, 5.5, 0.1);
         // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
-        shell(0.12, 2.4, 2.8, -6.8); shell(1.0, 0.12, 1.0, -5.6); shell(0.4, 0.12, 2.6, -5.6);
-        for (const x of [1.5, 2.4]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
-        { const lf = U(new THREE.BoxGeometry(0.04, 2.05, 0.85), brown, 2.45, 1.03, -5.2); }
+        shell(0.12, 2.4, 2.8, -6.8); shell(1.3, 0.12, 2.15, -5.6);   // 浴室南牆：門在左（西）側 x 0.6~1.5
+        for (const x of [0.6, 1.5]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
         // 浴室：大理石牆面（腰線以下）+ 灰地磚
         const mc = document.createElement("canvas"); mc.width = mc.height = 256; const mg = mc.getContext("2d"); mg.fillStyle = "#f4f4f2"; mg.fillRect(0, 0, 256, 256);
         for (let k = 0; k < 14; k++) { mg.strokeStyle = `rgba(110,112,118,${0.12 + Math.random() * 0.2})`; mg.lineWidth = 0.8 + Math.random() * 1.8; mg.beginPath(); let x = Math.random() * 256, y = 0; mg.moveTo(x, y); while (y < 256) { x += (Math.random() - 0.35) * 22; y += 12 + Math.random() * 14; mg.lineTo(x, y); } mg.stroke(); }
