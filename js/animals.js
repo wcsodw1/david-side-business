@@ -203,8 +203,8 @@
     };
     const inHouse = (x, z, pad = 0) => x > HOUSE.x0 - pad && x < HOUSE.x1 + pad && z > HOUSE.z0 - pad && z < HOUSE.z1 + pad;
     const GX0 = 1.6, GX1 = ENTRY - 1.5, GZ0 = -(DECK_HD - 1.2), GZ1 = DECK_HD - 1.2;
-    const wildOK = (x, z) => x > GX0 && x < GX1 && z > GZ0 && z < GZ1 && !inHouse(x, z, 1.0) && !blockedBy(x, z, 0.45);
-    const inStairs = (x, z) => x > STAIR.x0 - 1.4 && x < STAIR.x1 + 1.4 && z > STAIR.z0 - 1.2 && z < STAIR.z1 + 1.4;   // 寵物只在一樓，離樓梯遠一點
+    const wildOK = (x, z) => x > GX0 && x < GX1 && z > GZ0 && z < GZ1 && !inHouse(x, z, 1.0) && !blockedBy(x, z, 0.45) && !inStairs(x, z);
+    const inStairs = (x, z) => x > STAIR.x0 - 2.8 && x < STAIR.x1 + 1.4 && z > STAIR.z0 - 1.2 && z < STAIR.z1 + 1.4;   // 寵物只在一樓，離樓梯遠一點
     const petOK = (x, z) => x > HOUSE.x0 + 0.5 && x < HOUSE.x1 - 0.5 && z > HOUSE.z0 + 0.5 && z < HOUSE.z1 - 0.45 && !inStairs(x, z) && !blockedBy(x, z, 0.3);
 
     const spawn = (kind, ok, list, sx, sz) => {

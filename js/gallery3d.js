@@ -14,7 +14,7 @@
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
   const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
-  const UY = 3.3, STAIR = { x0: 6.0, x1: 11.0, z0: -7.8, z1: -6.3 };   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
+  const UY = 3.3, STAIR = { x0: 5.5, x1: 10.5, z0: 0.9, z1: 2.4 };   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
   const DECK_HD = 8.6;                                  // 露台半寬（z）
@@ -1162,7 +1162,8 @@
       // 外牆（北、東為整面高牆；西、南走進去會降低）
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, TOP, 0.14), plasterH, (X0 + X1) / 2, TOP / 2, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);
       shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, Z1 - Z0, X0, ZC, plasterH, "U", 0.48, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2);
-      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(X1 - X0 + 0.14, WT, 0.14, (X0 + X1) / 2, Z1, plasterH, "U", 0.48, UY); addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1);
+      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(4.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 4.2) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 5.2, WT, 0.14, (5.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
+      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 4.2) / 2, Z1, (4.2 - X0) / 2, 0.1, 1); addObs((5.2 + X1) / 2, Z1, (X1 - 5.2) / 2, 0.1, 1);
       mk(new THREE.BoxGeometry(0.14, TOP, DW0 - Z0), plasterH, X1, TOP / 2, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP, Z1 - DW1), plasterH, X1, TOP / 2, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP - 2.1, DW1 - DW0), plasterH, X1, 2.1 + (TOP - 2.1) / 2, (DW0 + DW1) / 2);                                    // 門楣 + 門上方牆
@@ -1173,7 +1174,7 @@
       // 二樓地板（中間留樓梯口）：四塊，頂面 = UY
       const slabM = new THREE.MeshStandardMaterial({ color: 0xeadfc8, roughness: 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
       const slab = (x0, x1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.22, z1 - z0), slabM); m.position.set((x0 + x1) / 2, UY - 0.11, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat: slabM, grp: "H2" }); };
-      slab(X0, STAIR.x0, Z0, Z1); slab(STAIR.x1, X1, Z0, Z1); slab(STAIR.x0, STAIR.x1, STAIR.z1, Z1); slab(STAIR.x0, STAIR.x1, Z0, STAIR.z0);
+      slab(X0, X1, Z0, Z1);   // 樓梯在屋外（南側），二樓地板是完整一塊
 
       // 樓梯：從東（一樓入口）往西爬到二樓；南側有扶手
       { const N = 16, dx = (STAIR.x1 - STAIR.x0) / N, zc = (STAIR.z0 + STAIR.z1) / 2, sw = STAIR.z1 - STAIR.z0 - 0.05;
@@ -1183,6 +1184,17 @@
         addObs((STAIR.x0 + STAIR.x1) / 2, STAIR.z1 + 0.1, (STAIR.x1 - STAIR.x0) / 2, 0.05);                                       // 南側扶手（兩層都擋）
         addObs(STAIR.x0 - 0.1, zc, 0.1, (STAIR.z1 - STAIR.z0) / 2 + 0.1, 0);                                                    // 一樓：不能從樓梯上端走進去
         addObs(STAIR.x1 + 0.1, zc, 0.1, (STAIR.z1 - STAIR.z0) / 2 + 0.1, 1); }                                                  // 二樓：樓梯口東端是空的
+
+      { // 屋外樓梯平台：樓梯頂端接平台，再從南牆的門進二樓（右手邊 = 主臥室那側）
+        const LX0 = 3.4, LX1 = STAIR.x0, LZ0 = Z1 + 0.07, LZ1 = STAIR.z1, brownD = M(0x4a2c1c, 0.6);
+        const pf = mk(new THREE.BoxGeometry(LX1 - LX0, 0.14, LZ1 - LZ0), wood, (LX0 + LX1) / 2, UY - 0.07, (LZ0 + LZ1) / 2);
+        for (const [x, z] of [[LX0 + 0.05, LZ1 - 0.05], [LX1 - 0.05, LZ1 - 0.05], [LX0 + 0.05, LZ0 + 0.05]]) mk(new THREE.BoxGeometry(0.08, UY - 0.14, 0.08), bronze, x, (UY - 0.14) / 2, z, false);
+        mk(new THREE.BoxGeometry(LX1 - LX0, 0.06, 0.07), bronze, (LX0 + LX1) / 2, UY + 1.0, LZ1 - 0.05, false);                 // 南側扶手
+        mk(new THREE.BoxGeometry(0.07, 0.06, LZ1 - LZ0), bronze, LX0 + 0.05, UY + 1.0, (LZ0 + LZ1) / 2, false);                  // 西側扶手
+        addObs((LX0 + LX1) / 2, LZ1 + 0.05, (LX1 - LX0) / 2, 0.06, 1); addObs(LX0 - 0.05, (LZ0 + LZ1) / 2, 0.06, (LZ1 - LZ0) / 2, 1);
+        for (const x of [4.2, 5.2]) mk(new THREE.BoxGeometry(0.1, 2.15, 0.18), brownD, x, UY + 1.075, Z1);                      // 門框
+        mk(new THREE.BoxGeometry(1.1, 0.12, 0.18), brownD, 4.7, UY + 2.15, Z1);
+      }
 
       /* ---- 一樓家具（lv 0）---- */
       const bedF = M(0x7a5a3c, 0.6), white = M(0xf4f1ea, 0.9), teal = M(0x2f8f8a, 0.9), terra = M(0xb4643a, 0.9), navy = M(0x2b3a5a, 0.9), pinkB = M(0x1b2f5e, 0.9), dk = M(0x1a1630, 0.4, 0.4);
@@ -1257,8 +1269,6 @@
 
       /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
       { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.48, UY); addObs(x, z, w / 2, d / 2, 1); };
-        // 北側廊道（樓梯所在）：與客廳以 z = -5.6 的牆隔開，西端 x 5.0~6.6 是開口通往客廳
-        shell(5.4, 0.12, 9.3, -5.6);
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 4.6, 5.0, -5.7); shell(0.12, 2.8, 5.0, -1.0);
         for (const z of [-3.4, -2.4]) U(new THREE.BoxGeometry(0.16, 2.1, 0.1), brown, 5.0, 1.05, z);
