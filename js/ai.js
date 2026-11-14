@@ -26,10 +26,14 @@
   const baseOf = () => (cfg.provider === "aiso1" ? (cfg.aisoBase || "").trim() || AISO_BASE : cfg.baseUrl.trim()).replace(/\/+$/, "");
   const ready = () => (needKey() ? !!cfg.key : !!baseOf());
   const provName = () => ({ openai: "OpenAI", anthropic: "Claude", custom: "自訂", aiso1: "AISO1 本地" }[cfg.provider]);
-  const aiso = { ok: null, name: "" };   // 連線狀態與偵測到的模型名稱
+  const aiso = { ok: null, name: "", wait: false };   // 連線狀態、偵測到的模型名稱、是否卡在等瀏覽器允許
+  // Chrome「區域網路存取」：公開網站（github.io）連本機 localhost 要宣告目標是 loopback，Chrome 才會跳出允許詢問
+  const LNA = () => (cfg.provider === "aiso1" && /^http:\/\/(localhost|127\.0\.0\.1)/.test(baseOf()) && location.protocol === "https:" ? { targetAddressSpace: "loopback" } : {});
+  const LNA_HELP = "Chrome 網址列左側（或右側）若跳出「要存取區域網路上的裝置」→ 按「允許」。沒看到的話：點網址列左邊的圖示 →「網站設定」→「區域網路存取」設為允許，再重新整理。";
   const pingAiso = async () => {
-    try { const r = await fetch(baseOf() + "/models", { signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
-    catch (_) { aiso.ok = false; }
+    aiso.wait = false;
+    try { const r = await fetch(baseOf() + "/models", { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
+    catch (e) { aiso.ok = false; aiso.wait = e && e.name === "TimeoutError"; }
     return aiso;
   };
 
@@ -93,8 +97,8 @@
       if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
       if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
       let r;
-      try { r = await fetch(base + "/chat/completions", { method: "POST", signal, headers, body: JSON.stringify(body) }); }
-      catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。請確認：① 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL} ② AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }
+      try { r = await fetch(base + "/chat/completions", { ...LNA(), method: "POST", signal, headers, body: JSON.stringify(body) }); }
+      catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。請確認：① 瀏覽器允許這個網站存取本機：${LNA_HELP} ② 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL}（出現 Address already in use 代表已經開著，沒問題）③ AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }
       if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${r.status}`); }
       const tidy = (t) => String(t || "").replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^\s+/, "");
       const stats = (tm, us, model) => { const name = String(model || "").split("/").pop().replace(/\.gguf$/i, ""), n = tm ? tm.predicted_n : us && us.completion_tokens;
@@ -182,7 +186,7 @@
     </div>`;
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
     const title = () => {
-      const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…" : aiso.ok ? " · ● 已連線" : " · ○ 未連線";
+      const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
       const mdl = modelOf() || (cfg.provider === "aiso1" && aiso.name) || "預設模型";
       q(".ai-title").textContent = `AI · ${provName()} · ${mdl}${st}`; q(".ai-title").classList.toggle("ai-off", cfg.provider === "aiso1" && aiso.ok === false);
       const hs = q("[data-aiso-st]"); if (hs) hs.textContent = cfg.provider !== "aiso1" ? "" : aiso.ok ? `　目前：已連線（${aiso.name}）` : aiso.ok === false ? "　目前：連不到" : "";
@@ -190,10 +194,11 @@
     const checkAiso = () => { if (cfg.provider !== "aiso1") return; aiso.ok = null; title(); pingAiso().then(() => { if (el.isConnected) { title(); paint(); } }); };
     const paintPrev = () => { prev.innerHTML = draft.map((u, i) => `<span class="ai-th"><img src="${u}" alt=""><button type="button" data-rm="${i}" aria-label="移除">×</button></span>`).join(""); prev.querySelectorAll("[data-rm]").forEach((b) => b.addEventListener("click", () => { draft.splice(+b.dataset.rm, 1); paintPrev(); })); };
     const paint = () => {
-      const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">連不到 AISO1 本地模型（localhost:18082）。<br>請在這台 Mac 的終端機執行：<code>${esc(AISO_TUNNEL)}</code><br>並確認 AISO1 上的模型服務有在跑，再重新整理。</p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
+      const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型（localhost:18082）。<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
-      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div></div>` : "");
+      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
+      const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);
     };
     const sub = () => { if (!el.isConnected) { s.subs.delete(sub); return; } paint(); };
     s.subs.add(sub); s.ready.then(paint); title(); paint();
