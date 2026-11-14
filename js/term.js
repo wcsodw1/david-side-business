@@ -77,5 +77,29 @@
     const ro = new ResizeObserver(() => { const t = tabs[cur]; if (t) try { t.fit.fit(); } catch (_) {} }); ro.observe(body);
   }
 
-  window.AisoTerm = { mount };
+  /* 給 AI 總管的「工作階段」清單用：在指定的格子裡開一個 AISO1 終端機（像 VS Code 終端機面板的一個分頁） */
+  async function create(box, onChange) {
+    await loadLib();
+    const term = new window.Terminal({ fontFamily: '"SF Mono", Menlo, Monaco, "Cascadia Code", monospace', fontSize: 14, lineHeight: 1.25, cursorBlink: true, theme: THEME, scrollback: 5000 });
+    const fit = new window.FitAddon.FitAddon(); term.loadAddon(fit); term.open(box); try { fit.fit(); } catch (_) {}
+    const { sid } = await api("/term/open", { cols: term.cols, rows: term.rows });
+    const h = { sid, term, alive: true, stop: false,
+      fit: () => { try { if (box.offsetWidth) fit.fit(); } catch (_) {} },
+      focus: () => term.focus(),
+      close: async () => { h.stop = true; try { await api("/term/close", { sid }); } catch (_) {} term.dispose(); } };
+    term.onData((d) => { if (h.alive) api("/term/write", { sid, data: d }).catch(() => {}); });
+    term.onResize(({ cols, rows }) => { if (h.alive) api("/term/resize", { sid, cols, rows }).catch(() => {}); });
+    new ResizeObserver(() => h.fit()).observe(box);
+    (async () => {
+      let since = 0;
+      while (!h.stop) {
+        try { const j = await api(`/term/read?sid=${sid}&since=${since}`); if (j.data) term.write(b64(j.data)); since = j.next;
+          if (!j.alive) { h.alive = false; term.write("\r\n\x1b[33m[連線已結束]\x1b[0m\r\n"); onChange && onChange(); break; } }
+        catch (e) { if (h.stop) break; h.alive = false; term.write(`\r\n\x1b[31m[${e.message}]\x1b[0m\r\n`); onChange && onChange(); break; }
+      }
+    })();
+    return h;
+  }
+
+  window.AisoTerm = { mount, create, available: local };
 })();

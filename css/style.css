@@ -932,3 +932,32 @@ body.locked .music-btn { display: none; }
 .office-ai .tm-term { height: 100%; } .office-ai .tm-term[hidden] { display: none; }
 .office-ai .tm-note, .office-ai .tm-off { font-size: 14px; line-height: 1.7; color: var(--hm-ink-2); margin: 0; }
 .office-ai .tm-off b, .office-ai .tm-note b { color: var(--hm-ink); }
+
+/* 工作階段面板（像 VS Code 終端機：左邊內容、右邊清單） */
+.office-ai .vs { display: grid; grid-template-columns: minmax(0, 1fr) 230px; gap: 0; border: 1px solid var(--hm-line); background: #fffdf8; }
+.office-ai .vs-main { min-width: 0; padding: 18px 20px 20px; }
+.office-ai .vs-view[hidden] { display: none; }
+.office-ai .vs-main .ai { margin-top: 0; }
+.office-ai .vs-main .ai-msgs { border: 0; padding: 18px 6px; background: transparent; }
+.office-ai .vs-termview .tm-box { height: min(62vh, 600px); padding: 12px 6px 12px 14px; background: #1b1410; border: 1px solid #3a2c22; border-radius: 2px; }
+.office-ai .vs-side { border-left: 1px solid var(--hm-line); background: var(--hm-paper); display: flex; flex-direction: column; min-width: 0; }
+.office-ai .vs-side-h { position: relative; display: flex; align-items: center; gap: 4px; padding: 12px 10px 10px 16px; border-bottom: 1px solid var(--hm-line); font: 600 11.5px var(--font); letter-spacing: .28em; color: var(--hm-orange); }
+.office-ai .vs-plus, .office-ai .vs-more { width: 30px; height: 30px; border-radius: 2px; border: 0; background: transparent; color: var(--hm-ink); font-size: 18px; line-height: 1; cursor: pointer; letter-spacing: 0; }
+.office-ai .vs-more { width: 22px; font-size: 14px; }
+.office-ai .vs-plus:hover, .office-ai .vs-more:hover { background: var(--hm-paper-2); }
+.office-ai .vs-menu { position: absolute; right: 8px; top: 42px; z-index: 20; min-width: 200px; padding: 6px; background: #fffdf8; border: 1px solid var(--hm-line); box-shadow: 0 14px 34px rgba(42,31,23,.18); display: grid; }
+.office-ai .vs-menu[hidden] { display: none; }
+.office-ai .vs-menu button { text-align: left; padding: 9px 12px; border: 0; background: transparent; font: 500 14px var(--font); color: var(--hm-ink); letter-spacing: .02em; cursor: pointer; }
+.office-ai .vs-menu button:hover:not(:disabled) { background: var(--hm-paper-2); } .office-ai .vs-menu button:disabled { color: #a3927e; cursor: default; font-size: 13px; }
+.office-ai .vs-list { list-style: none; margin: 0; padding: 6px 0; overflow-y: auto; max-height: min(66vh, 640px); }
+.office-ai .vs-list li { position: relative; display: flex; align-items: center; gap: 10px; padding: 9px 10px 9px 16px; font: 500 14px var(--font); color: var(--hm-ink-2); cursor: pointer; border-left: 2px solid transparent; }
+.office-ai .vs-list li:hover { background: var(--hm-paper-2); color: var(--hm-ink); }
+.office-ai .vs-list li.on { background: #fffdf8; color: var(--hm-ink); border-left-color: var(--hm-orange); font-weight: 600; }
+.office-ai .vs-list li.dead { opacity: .55; }
+.office-ai .vs-ic { width: 16px; text-align: center; color: var(--hm-orange); flex: none; }
+.office-ai .vs-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.office-ai .vs-run { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--hm-orange); animation: vsPulse 1s ease-in-out infinite; }
+@keyframes vsPulse { 50% { opacity: .3; transform: scale(.7); } }
+.office-ai .vs-list li button { flex: none; width: 22px; height: 22px; border: 0; border-radius: 2px; background: transparent; color: var(--hm-ink-2); font-size: 15px; line-height: 1; cursor: pointer; opacity: 0; }
+.office-ai .vs-list li:hover button, .office-ai .vs-list li.on button { opacity: .75; } .office-ai .vs-list li button:hover { opacity: 1; background: var(--hm-paper-2); color: var(--hm-orange); }
+@media (max-width: 820px) { .office-ai .vs { grid-template-columns: 1fr; } .office-ai .vs-side { order: -1; border-left: 0; border-bottom: 1px solid var(--hm-line); } .office-ai .vs-list { display: flex; overflow-x: auto; max-height: none; padding: 0; } .office-ai .vs-list li { flex: none; border-left: 0; border-bottom: 2px solid transparent; } .office-ai .vs-list li.on { border-bottom-color: var(--hm-orange); } }

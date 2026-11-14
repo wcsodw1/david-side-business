@@ -358,13 +358,18 @@
     if (!ready()) cfgBox.hidden = false;
   }
 
-  /* ---------- 多視窗並行：同時開好幾個對話，各自獨立、可以同時送出 ----------
+  /* ---------- 工作階段（像 VS Code 的終端機面板）----------
+     右側清單：好幾個 AI 對話 + AISO1 終端機，點一下切換，＋ 新增；背景裡的對話照樣在跑（清單上有橘點）。
      AISO1 的 llama.cpp 有 NP 個 slot（目前 2）：同時最多 NP 個一起算，其餘自動排隊。上方顯示即時 slot 使用量。 */
-  const PANES_KEY = "dsb-ai-panes";
+  const PANES_KEY = "dsb-ai-panes", SEL_KEY = "dsb-ai-sel";
+  const TERM_ITEMS = [];   // { n, box, h }：終端機在重畫時保留（AI 改了白板會重畫辦公室）
   function mountMulti(el, p) {
-    let ids = [1]; try { const v = JSON.parse(localStorage.getItem(PANES_KEY) || "[1]"); if (Array.isArray(v) && v.length) ids = v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 4); } catch (_) {}
+    let ids = [1]; try { const v = JSON.parse(localStorage.getItem(PANES_KEY) || "[1]"); if (Array.isArray(v) && v.length) ids = v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 8); } catch (_) {}
     if (!ids.length) ids = [1];
-    const keep = () => { try { localStorage.setItem(PANES_KEY, JSON.stringify(ids)); } catch (_) {} };
+    let sel = "ai:" + ids[0]; try { const v = localStorage.getItem(SEL_KEY) || ""; if (/^ai:\d+$/.test(v) && ids.includes(+v.slice(3))) sel = v; } catch (_) {}
+    if (window.__aiSel && (/^term:/.test(window.__aiSel) ? TERM_ITEMS.some((t) => "term:" + t.n === window.__aiSel) : ids.includes(+window.__aiSel.slice(3)))) sel = window.__aiSel;
+    const keep = () => { try { localStorage.setItem(PANES_KEY, JSON.stringify(ids)); if (/^ai:/.test(sel)) localStorage.setItem(SEL_KEY, sel); } catch (_) {} window.__aiSel = sel; };
+    const sid = (k) => (k === 1 ? p.id : p.id + "#" + k);
     let timer = 0, slotsCool = 0;
     const slots = async () => {   // AISO1 正在算幾個 / 總共幾個
       const box = el.querySelector("[data-slots]"); if (!box || !el.isConnected) { clearInterval(timer); return; }
@@ -374,15 +379,60 @@
           box.innerHTML = `AISO1 並行 <b>${busy}</b> / ${j.length} 個 slot 運算中${waiting > 0 ? `　·　${waiting} 個排隊` : ""}`; box.classList.toggle("busy", busy > 0); } }
       catch (_) { box.textContent = ""; slotsCool = Date.now() + 20000; }   // 連不到就先停 20 秒，不要一直刷錯誤
     };
-    const draw = () => {
-      el.innerHTML = `<div class="ai-multi-bar"><span class="ai-slots" data-slots></span><span class="ai-sp"></span>${ids.length < 4 ? `<button type="button" class="ai-add" data-add>＋ 再開一個視窗</button>` : ""}</div>
-        <div class="ai-panes n${ids.length}">${ids.map((k) => `<div class="ai-pane"><div class="ai-pane-h"><span>視窗 ${String(k).padStart(2, "0")}</span>${ids.length > 1 ? `<button type="button" data-close="${k}" aria-label="關閉視窗 ${k}">×</button>` : ""}</div><div data-pane="${k}"></div></div>`).join("")}</div>`;
-      ids.forEach((k) => mount(el.querySelector(`[data-pane="${k}"]`), { ...p, id: k === 1 ? p.id : p.id + "#" + k }));
-      const add = el.querySelector("[data-add]"); if (add) add.addEventListener("click", () => { let k = 1; while (ids.includes(k)) k++; ids.push(k); keep(); draw(); const ta = el.querySelector(`[data-pane="${k}"] textarea`); ta && ta.focus(); });
-      el.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => { const k = +b.dataset.close, s2 = sessions[k === 1 ? p.id : p.id + "#" + k]; if (s2 && s2.pending && s2.ctl) s2.ctl.abort(); ids = ids.filter((x) => x !== k); keep(); draw(); }));
-      slots();
+    const label = (k) => { const s2 = sessions[sid(k)], first = s2 && s2.msgs.find((m) => m.role === "user"); return first && first.text ? first.text.slice(0, 18) + (first.text.length > 18 ? "…" : "") : "新對話"; };
+    const termOK = !!(window.AisoTerm && window.AisoTerm.available());
+    el.innerHTML = `<div class="ai-multi-bar"><span class="ai-slots" data-slots></span></div>
+      <div class="vs"><div class="vs-main" data-main></div>
+        <aside class="vs-side" aria-label="工作階段">
+          <div class="vs-side-h"><span>工作階段</span><span class="ai-sp"></span>
+            <button type="button" class="vs-plus" data-plus title="新增 AI 對話" aria-label="新增 AI 對話">＋</button>
+            <button type="button" class="vs-more" data-more aria-haspopup="menu" aria-label="新增其他">⌄</button>
+            <div class="vs-menu" data-menu hidden role="menu"><button type="button" role="menuitem" data-mk="ai">✦　AI 對話</button><button type="button" role="menuitem" data-mk="term" ${termOK ? "" : "disabled title=\"要從 AISO1 辦公室 AI.command 打開的本機版才能開\""}>⌨　AISO1 終端機${termOK ? "" : "（本機版才有）"}</button></div>
+          </div>
+          <ul class="vs-list" data-list></ul>
+        </aside></div>`;
+    const main = el.querySelector("[data-main]"), list = el.querySelector("[data-list]"), menu = el.querySelector("[data-menu]");
+    const views = {};   // key → view div
+    const aiView = (k) => { const d = document.createElement("div"); d.className = "vs-view"; d.dataset.key = "ai:" + k; main.appendChild(d); mount(d, { ...p, id: sid(k) }); views["ai:" + k] = d; return d; };
+    ids.forEach(aiView);
+    TERM_ITEMS.forEach((t) => { const d = document.createElement("div"); d.className = "vs-view vs-termview"; d.dataset.key = "term:" + t.n; d.appendChild(t.box); main.appendChild(d); views["term:" + t.n] = d; });
+    const paintList = () => {
+      if (!el.isConnected) return;
+      const rows = ids.map((k) => { const s2 = sessions[sid(k)], run = s2 && s2.pending; return `<li class="${sel === "ai:" + k ? "on" : ""}" data-key="ai:${k}" title="AI 對話 ${k}"><span class="vs-ic">✦</span><span class="vs-name">${esc(label(k))}</span>${run ? `<i class="vs-run" title="正在回答"></i>` : ""}${ids.length > 1 ? `<button type="button" data-x="ai:${k}" aria-label="關閉">×</button>` : ""}</li>`; })
+        .concat(TERM_ITEMS.map((t) => `<li class="${sel === "term:" + t.n ? "on" : ""}${t.h && !t.h.alive ? " dead" : ""}" data-key="term:${t.n}"><span class="vs-ic">⌨</span><span class="vs-name">AISO1 · bash ${t.n}${t.h ? (t.h.alive ? "" : "（已斷線）") : "（連線中…）"}</span><button type="button" data-x="term:${t.n}" aria-label="關閉">×</button></li>`));
+      list.innerHTML = rows.join("");
+      list.querySelectorAll("li").forEach((li) => li.addEventListener("click", (e) => { const x = e.target.closest("[data-x]"); if (x) { e.stopPropagation(); closeItem(x.dataset.x); return; } show(li.dataset.key); }));
     };
-    draw(); clearInterval(timer); timer = setInterval(slots, 1500);
+    const show = (key) => {
+      if (!views[key]) key = "ai:" + ids[0]; sel = key; keep();
+      Object.entries(views).forEach(([k2, d]) => (d.hidden = k2 !== key));
+      paintList();
+      const t = TERM_ITEMS.find((x) => "term:" + x.n === key);
+      if (t && t.h) requestAnimationFrame(() => { t.h.fit(); t.h.focus(); }); else { const ta = views[key] && views[key].querySelector("textarea"); ta && !matchMedia("(hover: none)").matches && ta.focus({ preventScroll: true }); }
+    };
+    const newAI = () => { let k = 1; while (ids.includes(k)) k++; ids.push(k); aiView(k); show("ai:" + k); };
+    const newTerm = async () => {
+      let n = 1; while (TERM_ITEMS.some((t) => t.n === n)) n++;
+      const box = document.createElement("div"); box.className = "tm-box"; const it = { n, box, h: null }; TERM_ITEMS.push(it);
+      const d = document.createElement("div"); d.className = "vs-view vs-termview"; d.dataset.key = "term:" + n; d.appendChild(box); main.appendChild(d); views["term:" + n] = d; show("term:" + n);
+      try { it.h = await window.AisoTerm.create(box, paintList); } catch (e) { box.innerHTML = `<p class="tm-note"><b>開不起來：</b>${esc(e.message)}。請確認是用「AISO1 辦公室 AI.command」打開的本機版，而且啟動器是最新版（關掉那個視窗再雙擊一次）。</p>`; it.h = { alive: false, fit() {}, focus() {}, close: async () => {} }; }
+      paintList(); if (sel === "term:" + n) show(sel);
+    };
+    const closeItem = async (key) => {
+      if (key.startsWith("ai:")) { const k = +key.slice(3), s2 = sessions[sid(k)]; if (s2 && s2.pending && s2.ctl) s2.ctl.abort(); ids = ids.filter((x) => x !== k); }
+      else { const i = TERM_ITEMS.findIndex((t) => "term:" + t.n === key); if (i >= 0) { const t = TERM_ITEMS.splice(i, 1)[0]; t.h && t.h.close(); } }
+      if (views[key]) { views[key].remove(); delete views[key]; }
+      if (sel === key) sel = "ai:" + ids[0]; keep(); show(sel);
+    };
+    el.querySelector("[data-plus]").addEventListener("click", newAI);
+    el.querySelector("[data-more]").addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+    menu.querySelectorAll("[data-mk]").forEach((b) => b.addEventListener("click", () => { menu.hidden = true; if (b.dataset.mk === "ai") newAI(); else newTerm(); }));
+    document.addEventListener("click", (e) => { if (!menu.hidden && !menu.contains(e.target)) menu.hidden = true; });
+    // 對話開始 / 結束時更新清單（橘點、標題）
+    const watch = (k) => { const s2 = session(sid(k)); if (s2.__vsWatch) return; s2.__vsWatch = true; s2.subs.add(() => { const l = document.querySelector(".vs-list"); if (l && l.__repaint) l.__repaint(); }); };
+    ids.forEach(watch); list.__repaint = paintList;
+    show(sel); slots(); clearInterval(timer); timer = setInterval(slots, 1500);
+    new MutationObserver(() => ids.forEach(watch)).observe(main, { childList: true });
   }
 
   window.AIChat = { mount, mountMulti, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
