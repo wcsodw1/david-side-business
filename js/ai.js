@@ -242,7 +242,25 @@
   // 本地模型常回 LaTeX 小符號（例如 $\rightarrow$），轉成一般字元
   const TEX = { rightarrow: "→", Rightarrow: "⇒", leftarrow: "←", to: "→", times: "×", le: "≤", leq: "≤", ge: "≥", geq: "≥", approx: "≈", neq: "≠", pm: "±", cdot: "·" };
   const unTex = (t) => String(t).replace(/\$\s*\\([A-Za-z]+)\s*\$|\\(rightarrow|Rightarrow|leftarrow|times|approx|neq|leq|geq)\b/g, (m, a, b) => TEX[a || b] || m);
-  const fmt = (t) => esc(unTex(t)).replace(/```([\s\S]*?)```/g, (_, c) => `<pre>${c.replace(/^\w*\n/, "")}</pre>`).replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+  // 簡易 Markdown：標題、清單、分隔線、粗體、程式碼（本地模型很愛用 ### 和 *）
+  const inl = (x) => x.replace(/`([^`\n]+)`/g, "<code>$1</code>").replace(/\*\*([^*\n]+)\*\*/g, "<b>$1</b>").replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<i>$2</i>");
+  const fmt = (t) => {
+    const blocks = []; let h = esc(unTex(t)).replace(/```([\s\S]*?)```/g, (_, c) => { blocks.push(`<pre>${c.replace(/^\w*\n/, "")}</pre>`); return `\u0000${blocks.length - 1}\u0000`; });
+    const out = []; let list = null;
+    const close = () => { if (list) { out.push(`<${list.tag}${list.start > 1 ? ` start="${list.start}"` : ""}>${list.items.map((x) => `<li>${inl(x)}</li>`).join("")}</${list.tag}>`); list = null; } };
+    for (const ln of h.split("\n")) {
+      let m;
+      if (/^\u0000\d+\u0000$/.test(ln.trim())) { close(); out.push(ln.trim()); }
+      else if ((m = /^\s*#{1,6}\s+(.*)$/.exec(ln))) { close(); out.push(`<h4 class="ai-h">${inl(m[1].replace(/\*\*/g, ""))}</h4>`); }
+      else if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(ln)) { close(); out.push("<hr>"); }
+      else if ((m = /^\s*[*\-•]\s+(.*)$/.exec(ln))) { if (!list || list.tag !== "ul") { close(); list = { tag: "ul", items: [] }; } list.items.push(m[1]); }
+      else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(ln))) { if (!list || list.tag !== "ol") { close(); list = { tag: "ol", items: [], start: parseInt(ln, 10) || 1 }; } list.items.push(m[1]); }
+      else if (!ln.trim()) { close(); out.push("<br>"); }
+      else { close(); out.push(`<span class="ai-p">${inl(ln)}</span>`); }
+    }
+    close();
+    return out.join("").replace(/(<br>){2,}/g, "<br>").replace(/^<br>|<br>$/g, "").replace(/\u0000(\d+)\u0000/g, (_, i) => blocks[+i]);
+  };
 
   function mount(el, p) {
     const s = session(p.id); let draft = [];
@@ -320,5 +338,32 @@
     if (!ready()) cfgBox.hidden = false;
   }
 
-  window.AIChat = { mount, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
+  /* ---------- 多視窗並行：同時開好幾個對話，各自獨立、可以同時送出 ----------
+     AISO1 的 llama.cpp 有 NP 個 slot（目前 2）：同時最多 NP 個一起算，其餘自動排隊。上方顯示即時 slot 使用量。 */
+  const PANES_KEY = "dsb-ai-panes";
+  function mountMulti(el, p) {
+    let ids = [1]; try { const v = JSON.parse(localStorage.getItem(PANES_KEY) || "[1]"); if (Array.isArray(v) && v.length) ids = v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 4); } catch (_) {}
+    if (!ids.length) ids = [1];
+    const keep = () => { try { localStorage.setItem(PANES_KEY, JSON.stringify(ids)); } catch (_) {} };
+    let timer = 0;
+    const slots = async () => {   // AISO1 正在算幾個 / 總共幾個
+      const box = el.querySelector("[data-slots]"); if (!box || !el.isConnected) { clearInterval(timer); return; }
+      if (cfg.provider !== "aiso1") { box.textContent = ""; return; }
+      try { const r = await fetch(baseOf().replace(/\/v1$/, "") + "/slots", { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined }); const j = await r.json();
+        if (Array.isArray(j)) { const busy = j.filter((x) => x.is_processing).length, waiting = Object.values(sessions).filter((x) => x.pending).length - busy;
+          box.innerHTML = `AISO1 並行 <b>${busy}</b> / ${j.length} 個 slot 運算中${waiting > 0 ? `　·　${waiting} 個排隊` : ""}`; box.classList.toggle("busy", busy > 0); } }
+      catch (_) { box.textContent = ""; }
+    };
+    const draw = () => {
+      el.innerHTML = `<div class="ai-multi-bar"><span class="ai-slots" data-slots></span><span class="ai-sp"></span>${ids.length < 4 ? `<button type="button" class="ai-add" data-add>＋ 再開一個視窗</button>` : ""}</div>
+        <div class="ai-panes n${ids.length}">${ids.map((k) => `<div class="ai-pane"><div class="ai-pane-h"><span>視窗 ${String(k).padStart(2, "0")}</span>${ids.length > 1 ? `<button type="button" data-close="${k}" aria-label="關閉視窗 ${k}">×</button>` : ""}</div><div data-pane="${k}"></div></div>`).join("")}</div>`;
+      ids.forEach((k) => mount(el.querySelector(`[data-pane="${k}"]`), { ...p, id: k === 1 ? p.id : p.id + "#" + k }));
+      const add = el.querySelector("[data-add]"); if (add) add.addEventListener("click", () => { let k = 1; while (ids.includes(k)) k++; ids.push(k); keep(); draw(); const ta = el.querySelector(`[data-pane="${k}"] textarea`); ta && ta.focus(); });
+      el.querySelectorAll("[data-close]").forEach((b) => b.addEventListener("click", () => { const k = +b.dataset.close, s2 = sessions[k === 1 ? p.id : p.id + "#" + k]; if (s2 && s2.pending && s2.ctl) s2.ctl.abort(); ids = ids.filter((x) => x !== k); keep(); draw(); }));
+      slots();
+    };
+    draw(); clearInterval(timer); timer = setInterval(slots, 1500);
+  }
+
+  window.AIChat = { mount, mountMulti, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
 })();

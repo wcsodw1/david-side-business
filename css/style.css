@@ -823,3 +823,94 @@ body.locked .music-btn { display: none; }
 /* 咖啡師主動介紹 */
 .barista-say { position: fixed; left: 0; right: 0; margin: 0 auto; bottom: 92px; z-index: 70; width: min(420px, calc(100vw - 24px)); padding: 14px 16px 12px; border-radius: 16px; background: #fff; color: #1f1a33; box-shadow: 0 16px 40px rgba(0,0,0,.45); font-size: 14px; line-height: 1.6; animation: pop .25s ease; }
 .barista-say p { margin: 4px 0 10px; } .barista-say div { display: flex; gap: 8px; } .barista-say button { padding: 6px 12px; border-radius: 99px; border: 1.5px solid #c9a36a; background: #fff; color: #3a2416; font-weight: 700; cursor: pointer; } .barista-say [data-m] { background: #3a2416; color: #fff; }
+
+/* ============================================================
+   AI 總管：Hermès 風格（暖羊皮紙底、深咖啡墨色、愛馬仕橘點綴、襯線標題、大字留白）
+   只作用在 .office-ai（辦公室與館長機器人的聊天框）
+   ============================================================ */
+.office-ai {
+  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #e3651d; --hm-orange-2: #c4520f;
+  --hm-serif: "Cormorant Garamond", "Noto Serif TC", "Songti TC", serif; --hm-serif-tc: "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif;
+  padding: 30px 34px 30px; border-radius: 4px; background: var(--hm-paper); border: 1px solid var(--hm-line); color: var(--hm-ink);
+  box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 70px -30px rgba(0,0,0,.55); position: relative;
+}
+.office-ai::before { content: ""; position: absolute; left: 34px; right: 34px; top: 0; height: 3px; background: var(--hm-orange); }
+.office-ai h2 { font: 600 13px var(--font); letter-spacing: .32em; text-transform: uppercase; color: var(--hm-orange); margin: 6px 0 10px; }
+.office-ai .oa-sub { font: 500 22px/1.5 var(--hm-serif-tc); color: var(--hm-ink); margin: 0 0 18px; letter-spacing: .01em; }
+.office-ai .ai { gap: 14px; margin-top: 8px; }
+.office-ai .ai-bar { padding-bottom: 12px; border-bottom: 1px solid var(--hm-line); }
+.office-ai .ai-title { font: 600 12.5px var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--hm-ink-2); }
+.office-ai .ai-title.ai-off { color: #b3261e !important; }
+.office-ai .ai-bar button { height: 34px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--hm-ink); background: transparent; color: var(--hm-ink); font: 600 13px var(--font); letter-spacing: .06em; transition: background .2s, color .2s; }
+.office-ai .ai-bar button:hover { background: var(--hm-ink); color: var(--hm-paper); }
+.office-ai .ai-msgs { min-height: 300px; max-height: min(62vh, 640px); gap: 22px; padding: 26px 30px; border-radius: 2px; background: #fffdf8; border: 1px solid var(--hm-line); scroll-behavior: smooth; }
+.office-ai .ai-empty { font: italic 500 21px/1.6 var(--hm-serif-tc); color: var(--hm-ink-2); max-width: 34em; }
+.office-ai .ai-empty b { color: var(--hm-ink); } .office-ai .ai-empty code { font-size: 14px; }
+/* 對話：AI 像排版過的文章，不用泡泡；David 的話是靠右的細框卡片 */
+.office-ai .ai-b { max-width: 100%; padding: 0; border-radius: 0; font-size: 17.5px; line-height: 1.9; letter-spacing: .01em; }
+.office-ai .ai-ai .ai-b { background: none; color: var(--hm-ink); padding-left: 22px; border-left: 2px solid var(--hm-orange); }
+.office-ai .ai-user .ai-b { max-width: 72%; padding: 12px 20px; background: var(--hm-ink); color: var(--hm-paper); border-radius: 2px; font-size: 17px; line-height: 1.7; }
+.office-ai .ai-err .ai-b { padding: 12px 18px; background: #fbe9e4; color: #8a2414; border-left: 2px solid #b3261e; font-size: 15px; }
+.office-ai .ai-b b { font-weight: 700; color: #1a120c; }
+.office-ai .ai-b .ai-p { display: block; margin: 0 0 6px; }
+.office-ai .ai-b .ai-h { font: 600 23px/1.35 var(--hm-serif-tc); color: var(--hm-ink); margin: 18px 0 8px; letter-spacing: .02em; }
+.office-ai .ai-b .ai-h:first-child { margin-top: 0; }
+.office-ai .ai-b ul, .office-ai .ai-b ol { margin: 4px 0 12px; padding-left: 1.3em; }
+.office-ai .ai-b li { margin: 4px 0; padding-left: .2em; }
+.office-ai .ai-b ul li::marker { color: var(--hm-orange); }
+.office-ai .ai-b ol li::marker { color: var(--hm-orange); font: 600 16px var(--hm-serif); }
+.office-ai .ai-b hr { border: 0; border-top: 1px solid var(--hm-line); margin: 16px 0; }
+.office-ai .ai-b code { background: var(--hm-paper-2); color: var(--hm-ink); font-size: 15px; border-radius: 2px; }
+.office-ai .ai-b pre { background: var(--hm-ink); color: var(--hm-paper); border-radius: 2px; font-size: 14px; padding: 12px 14px; }
+.office-ai .ai-meta { margin-top: 12px; font: 500 11.5px var(--font); letter-spacing: .12em; text-transform: uppercase; color: #a3927e; }
+.office-ai .ai-think { background: var(--hm-paper-2); border-radius: 2px; font-size: 14px; color: var(--hm-ink-2); padding: 8px 12px; }
+.office-ai .ai-think summary { font: 600 12px var(--font); letter-spacing: .14em; text-transform: uppercase; color: var(--hm-ink-2); }
+.office-ai .ai-acts { margin-top: 14px; padding: 12px 16px; border-radius: 2px; background: #fbf3e9; border-left: 2px solid var(--hm-orange); color: var(--hm-ink); font-size: 15px; gap: 6px; }
+.office-ai .ai-acts .fail { color: #8a2414; }
+.office-ai .ai-undo { border: 1px solid var(--hm-ink); color: var(--hm-ink); background: transparent; border-radius: 999px; padding: 5px 14px; font-size: 12.5px; letter-spacing: .06em; }
+.office-ai .ai-undo:hover { background: var(--hm-ink); color: var(--hm-paper); }
+.office-ai .ai-live .ai-b::after { color: var(--hm-orange); }
+.office-ai .ai-dots { padding: 10px 0 10px 22px; border-left: 2px solid var(--hm-orange); background: none; } .office-ai .ai-dots i { background: var(--hm-orange); }
+.office-ai .ai-hint { font-size: 14px; color: var(--hm-ink-2); }
+/* 輸入列 */
+.office-ai .ai-form { gap: 10px; align-items: stretch; }
+.office-ai .ai-form textarea { padding: 14px 18px; border-radius: 2px; border: 1px solid var(--hm-line); background: #fffdf8; font-size: 17px; line-height: 1.5; min-height: 54px; }
+.office-ai .ai-form textarea:focus { border-color: var(--hm-orange); box-shadow: 0 0 0 3px rgba(227,101,29,.15); }
+.office-ai .ai-form button { height: auto; min-height: 54px; padding: 0 30px; border-radius: 2px; background: var(--hm-orange); color: #fff; font: 600 15px var(--font); letter-spacing: .2em; transition: background .2s; }
+.office-ai .ai-form button:hover { background: var(--hm-orange-2); }
+.office-ai .ai-form .ai-att { width: 54px; padding: 0; background: transparent; border: 1px solid var(--hm-line); color: var(--hm-ink); letter-spacing: 0; }
+.office-ai .ai-form .ai-att:hover { background: var(--hm-paper-2); }
+.office-ai .ai textarea, .office-ai .ai input, .office-ai .ai select { -webkit-text-fill-color: var(--hm-ink); } .office-ai .ai textarea::placeholder { -webkit-text-fill-color: #a3927e; }
+/* 設定面板 */
+.office-ai .ai-cfg { background: var(--hm-paper-2); border-radius: 2px; padding: 18px 20px; gap: 12px; border: 1px solid var(--hm-line); }
+.office-ai .ai-cfg label { font: 600 12px var(--font); letter-spacing: .1em; color: var(--hm-ink-2); }
+.office-ai .ai-cfg input, .office-ai .ai-cfg select { height: 42px; border-radius: 2px; border: 1px solid var(--hm-line); font-size: 15px; background: #fffdf8; }
+.office-ai .ai-cfg p { font-size: 13px; color: var(--hm-ink-2); line-height: 1.6; }
+.office-ai .ai-cfg > button { border-radius: 2px; background: var(--hm-ink); padding: 10px 26px; letter-spacing: .14em; }
+.robot-chat .office-ai { background: var(--hm-paper); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.robot-chat .office-ai .ai-msgs { min-height: 200px; max-height: min(48vh, 440px); }
+@media (max-width: 640px) {
+  .office-ai { padding: 22px 16px; } .office-ai::before { left: 16px; right: 16px; }
+  .office-ai .oa-sub { font-size: 18px; } .office-ai .ai-msgs { padding: 18px 16px; }
+  .office-ai .ai-b { font-size: 16px; } .office-ai .ai-user .ai-b { max-width: 88%; }
+  .office-ai .ai-form button { padding: 0 18px; letter-spacing: .1em; }
+}
+
+/* 多視窗並行（AI 總管） */
+.office-ai .ai-multi-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.office-ai .ai-slots { font: 500 13px var(--font); letter-spacing: .08em; color: var(--hm-ink-2); }
+.office-ai .ai-slots b { font: 600 18px var(--hm-serif); color: var(--hm-ink); }
+.office-ai .ai-slots.busy b { color: var(--hm-orange); }
+.office-ai .ai-add { height: 36px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--hm-orange); background: transparent; color: var(--hm-orange-2); font: 600 13px var(--font); letter-spacing: .08em; cursor: pointer; transition: background .2s, color .2s; }
+.office-ai .ai-add:hover { background: var(--hm-orange); color: #fff; }
+.office-ai .ai-panes { display: grid; gap: 22px; grid-template-columns: 1fr; }
+.office-ai .ai-panes.n2, .office-ai .ai-panes.n3, .office-ai .ai-panes.n4 { grid-template-columns: 1fr 1fr; }
+.office-ai .ai-pane { min-width: 0; display: flex; flex-direction: column; }
+.office-ai .ai-pane-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; font: 600 12px var(--font); letter-spacing: .3em; color: var(--hm-orange); }
+.office-ai .ai-pane-h button { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--hm-line); background: transparent; color: var(--hm-ink-2); font-size: 16px; line-height: 1; cursor: pointer; }
+.office-ai .ai-pane-h button:hover { background: var(--hm-ink); color: var(--hm-paper); border-color: var(--hm-ink); }
+.office-ai .ai-panes:not(.n1) .ai-msgs { min-height: 260px; max-height: min(52vh, 520px); padding: 20px 22px; }
+.office-ai .ai-panes:not(.n1) .ai-b { font-size: 16px; line-height: 1.8; }
+.office-ai .ai-panes:not(.n1) .ai-bar { flex-wrap: wrap; }
+.office-ai .ai-panes:not(.n1) .ai-form button { padding: 0 18px; letter-spacing: .1em; }
+@media (max-width: 900px) { .office-ai .ai-panes.n2, .office-ai .ai-panes.n3, .office-ai .ai-panes.n4 { grid-template-columns: 1fr; } }

@@ -432,7 +432,7 @@
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
       const om = $("[data-office-ai]", app);
-      if (om && window.AIChat) window.AIChat.mount(om, { id: "__office", name: "辦公室", office: true, projects: P });
+      if (om && window.AIChat) (window.AIChat.mountMulti || window.AIChat.mount)(om, { id: "__office", name: "辦公室", office: true, projects: P });
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
       tick(); clockTimer = setInterval(tick, 1000);
     }
