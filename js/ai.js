@@ -498,11 +498,19 @@
     el.innerHTML = `<div class="cv"><aside class="cv-side"><button type="button" class="cv-new" data-cnew>＋ 新對話</button><div class="cv-label">對話紀錄</div><ul class="cv-list" data-clist></ul></aside>
       <div class="cv-main"><button type="button" class="cv-toggle" data-ctog aria-label="顯示對話紀錄">☰ 對話紀錄</button><div data-cchat></div></div></div>`;
     const root = el.querySelector(".cv"), list = el.querySelector("[data-clist]"), chat = el.querySelector("[data-cchat]");
-    const title = (c) => { const s2 = sessions[convSid(p.id, c.cid)], m = s2 && s2.msgs.find((x) => x.role === "user"); const t = (m && m.text) || c.t || ""; return t ? t.replace(/\s+/g, " ").slice(0, 40) : "新對話"; };
+    const title = (c) => { if (c.name) return c.name; const s2 = sessions[convSid(p.id, c.cid)], m = s2 && s2.msgs.find((x) => x.role === "user"); const t = (m && m.text) || c.t || ""; return t ? t.replace(/\s+/g, " ").slice(0, 40) : "新對話"; };
     const paint = () => {
-      if (!el.isConnected) return;
-      list.innerHTML = L.map((c) => { const s2 = sessions[convSid(p.id, c.cid)], run = s2 && s2.pending; return `<li class="${c.cid === cur ? "on" : ""}" data-cid="${esc(c.cid)}"><span class="cv-t">${esc(title(c))}</span><span class="cv-at">${run ? `<i class="vs-run"></i>回答中` : esc(ago(c.at))}</span><button type="button" data-cdel="${esc(c.cid)}" aria-label="刪除這段對話">×</button></li>`; }).join("");
-      list.querySelectorAll("li").forEach((li) => li.addEventListener("click", (e) => { const d = e.target.closest("[data-cdel]"); if (d) { e.stopPropagation(); del(d.dataset.cdel); return; } open(li.dataset.cid); root.classList.remove("side-on"); }));
+      if (!el.isConnected || list.querySelector(".cv-edit")) return;   // 正在改名時不要重畫
+      list.innerHTML = L.map((c) => { const s2 = sessions[convSid(p.id, c.cid)], run = s2 && s2.pending; return `<li class="${c.cid === cur ? "on" : ""}" data-cid="${esc(c.cid)}"><span class="cv-t">${esc(title(c))}</span><span class="cv-at">${run ? `<i class="vs-run"></i>回答中` : esc(ago(c.at))}</span><button type="button" data-cren="${esc(c.cid)}" aria-label="重新命名" title="重新命名（也可以連點兩下標題）">✎</button><button type="button" data-cdel="${esc(c.cid)}" aria-label="刪除這段對話">×</button></li>`; }).join("");
+      list.querySelectorAll("li").forEach((li) => li.addEventListener("click", (e) => { const rn = e.target.closest("[data-cren]"); if (rn) { e.stopPropagation(); rename(rn.dataset.cren); return; } const d = e.target.closest("[data-cdel]"); if (d) { e.stopPropagation(); del(d.dataset.cdel); return; } if (e.target.closest(".cv-edit")) return; open(li.dataset.cid); root.classList.remove("side-on"); }));
+    };
+    list.addEventListener("dblclick", (e) => { const li = e.target.closest("li[data-cid]"); if (li && e.target.closest(".cv-t")) { e.preventDefault(); rename(li.dataset.cid); } });
+    const rename = (cid) => {   // 對話改名：Enter 儲存、Esc 取消；清空 = 回到自動標題（第一句話）
+      const c = L.find((x) => x.cid === cid), li = list.querySelector(`li[data-cid="${cid}"]`); if (!c || !li) return;
+      const tEl = li.querySelector(".cv-t"), inp = document.createElement("input"); inp.className = "cv-edit"; inp.maxLength = 40; inp.value = c.name || title(c); inp.setAttribute("aria-label", "對話名稱"); tEl.replaceWith(inp); inp.focus(); inp.select();
+      let done = false; const fin = (save) => { if (done) return; done = true; if (save) { const v = inp.value.trim(); if (v) c.name = v; else delete c.name; saveConvs(p.id, L); } inp.remove(); paint(); };
+      inp.addEventListener("keydown", (e) => { e.stopPropagation(); if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); fin(true); } else if (e.key === "Escape") { e.preventDefault(); fin(false); } });
+      inp.addEventListener("blur", () => fin(true)); inp.addEventListener("click", (e) => e.stopPropagation());
     };
     const touch = (cid) => { const c = L.find((x) => x.cid === cid); if (!c) return; const s2 = sessions[convSid(p.id, cid)], m = s2 && s2.msgs.find((x) => x.role === "user"); if (m && m.text) c.t = m.text.slice(0, 60); c.at = s2 && s2.msgs.length ? s2.msgs[s2.msgs.length - 1].at || c.at : c.at; L.sort((a, b) => b.at - a.at); saveConvs(p.id, L); paint(); };
     const open = (cid) => {

@@ -1081,3 +1081,10 @@ body.locked .santa-fab { display: none; }
 .office-ai .tm-tab { border-radius: 999px; }
 .office-ai .vs-plus, .office-ai .vs-more, .office-ai .cv-list li button, .office-ai .vs-list li button { border-radius: 50%; }
 .office-ai .ai-th img { border-radius: 12px; }
+
+/* 對話紀錄：改名 */
+.office-ai .cv-list li { grid-template-columns: minmax(0, 1fr) auto auto; }
+.office-ai .cv-list li button[data-cren] { grid-column: 2; } .office-ai .cv-list li button[data-cdel] { grid-column: 3; }
+.office-ai .cv-list li .cv-at { grid-column: 1; }
+.office-ai .cv-edit { grid-column: 1; width: 100%; min-width: 0; box-sizing: border-box; padding: 3px 8px; border: 1.5px solid var(--hm-orange); border-radius: 8px; background: #fff; color: var(--hm-ink); font: 600 14px/1.4 var(--font); outline: none; }
+@media (hover: none) { .office-ai .cv-list li button { opacity: .6; } }
