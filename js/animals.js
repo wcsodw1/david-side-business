@@ -119,12 +119,14 @@
     limb(new THREE.Vector3(0, by + H * 0.1, L * 0.3), new THREE.Vector3(0, hy - hr * 0.2, hz - hr * 0.3), hr * (o.neck > 0.6 ? 0.85 : 1.05), hr * (o.neck > 0.6 ? 0.55 : 0.8), fur, body);
     add(sph(hr, 32, 22), fur, head, 0, 0, hr * 0.1).scale.set(0.92, 0.9, 1.08);                                   // 頭骨
     const sn = o.snout || 1;
-    const mz = add(sph(hr * 0.6, 24, 16), light, head, 0, -hr * 0.22, hr * 0.85); mz.scale.set(0.74 * (o.snW || 1), 0.62, 1.2 * sn);   // 口鼻（依物種拉長）
+    const mzM = o.muzzle ? plain(o.muzzle, 0.85) : light; const mz = add(sph(hr * 0.6, 24, 16), mzM, head, 0, -hr * 0.22, hr * 0.85); mz.scale.set(0.74 * (o.snW || 1), 0.62, 1.2 * sn);   // 口鼻（依物種拉長）
     add(sph(hr * 0.18, 14, 10), plain(0x1a1210, 0.4), head, 0, -hr * 0.05, hr * (1.35 + 0.35 * sn)).scale.set(1.1, 0.85, 0.9);   // 鼻頭（濕潤、有光澤）
+    if (o.muzzle) { for (const sx of [-1, 1]) { add(sph(hr * 0.3, 14, 10), mzM, head, sx * hr * 0.34, -hr * 0.45, hr * 0.95).scale.set(1, 0.8, 1.1); const bw = add(sph(hr * 0.5, 14, 10), light, head, sx * hr * 0.2, hr * 0.62, hr * 0.7); bw.scale.set(0.7, 0.2, 0.9); bw.rotation.z = sx * 0.25; }   // 下垂的嘴皮 + 眉間皺褶
+      add(sph(hr * 0.5, 14, 10), light, head, 0, hr * 0.78, hr * 0.5).scale.set(0.8, 0.16, 0.8); add(sph(hr * 0.3, 12, 8), plain(0xa0a3ab, 0.8), head, 0, -hr * 0.52, hr * 1.0).scale.set(1.2, 0.5, 0.8); }
     if (o.cheek) for (const sx of [-1, 1]) add(sph(hr * 0.45, 16, 12), light, head, sx * hr * 0.48, -hr * 0.3, hr * 0.7);
     const iris = plain(o.eye || 0x2a1a10, 0.15), pupil = plain(0x050403, 0.2);
     for (const sx of [-1, 1]) {   // 眼睛：虹膜 + 瞳孔 + 反光（深色、有濕潤感）
-      const ey = add(sph(hr * 0.2, 16, 12), iris, head, sx * hr * 0.46, hr * 0.2, hr * 0.78); ey.scale.set(0.8, o.slit ? 1.1 : 1, 0.6);
+      const ey = add(sph(hr * (o.eyeR || 0.2), 16, 12), iris, head, sx * hr * 0.46, hr * 0.2, hr * 0.78); ey.scale.set(0.8, o.slit ? 1.1 : 1, 0.6);
       const pu = add(sph(hr * (o.slit ? 0.07 : 0.11), 10, 8), pupil, head, sx * hr * 0.5, hr * 0.2, hr * 0.84); pu.scale.set(o.slit ? 0.45 : 0.8, o.slit ? 1.9 : 1, 0.5);
       add(sph(hr * 0.045, 8, 6), white, head, sx * hr * 0.53, hr * 0.27, hr * 0.88);
       if (o.ear === "long") { const e = add(sph(hr * 0.3, 14, 10), fur, head, sx * hr * 0.38, hr * 1.5, -hr * 0.1); e.scale.set(0.42, 3.3, 0.7); e.rotation.z = -sx * 0.18; const ei = add(sph(hr * 0.2, 10, 8), pink, head, sx * hr * 0.38, hr * 1.5, hr * 0.02); ei.scale.set(0.3, 2.7, 0.4); ei.rotation.z = -sx * 0.18; }
@@ -164,7 +166,7 @@
     deer: { body: [1.0, 0.4, 0.28], legH: 0.7, legR: 0.04, headR: 0.14, ear: "deer", antlers: true, tail: "short", col: 0x9a6a3e, belly: 0xefe2cb, dorsal: 0x8c5a30, light: 0xcdb391, sock: 0x6e4a2c, dark: 0x1a1410, hoof: true, eye: 0x1a110a, neck: 0.85, snout: 1.25, snW: 0.85, speed: 0.8, stride: 3.5, flee: 3.6, scale: 1.05, chestDeep: 0.18, waist: 0.14 },
     fox: { body: [0.66, 0.26, 0.2], legH: 0.26, legR: 0.036, headR: 0.115, ear: "point", earBack: 0x1c120c, tail: "brush", tailTip: 0xfff6ee, col: 0xc4571c, belly: 0xf3e6d6, light: 0xf5ebe0, sock: 0x20140e, dark: 0x1a100a, earIn: 0xe8d6c4, chest: 0xf6eee4, eye: 0xb88a2a, slit: false, neck: 0.4, snout: 1.4, snW: 0.8, whisk: true, speed: 1.1, stride: 5.5, flee: 4.4, chestDeep: 0.12, waist: 0.14 },
     dog: { body: [0.66, 0.3, 0.25], legH: 0.32, legR: 0.05, headR: 0.14, ear: "round", earCol: 0xa8762f, tail: "long", tailL: 0.42, col: 0xd2a05a, belly: 0xf1ddb8, light: 0xe8c890, sock: 0xe8c890, dark: 0x2a1e14, collar: 0xc7352b, tongue: true, eye: 0x3a2412, neck: 0.45, snout: 1.15, speed: 1.0, stride: 5, wag: 7, wagAmp: 0.5, tailUp: -0.2, chestDeep: 0.16, waist: 0.16 },
-    frenchie: { body: [0.46, 0.3, 0.34], legH: 0.18, legR: 0.062, headR: 0.2, ear: "bat", earIn: 0xe9a4ac, tail: "short", col: 0xc9a27a, belly: 0xefe3cf, dorsal: 0xa98260, light: 0xefe3cf, sock: 0xe6d6bb, dark: 0x1a1410, collar: 0x2f9bd0, tongue: true, eye: 0x1a1008, neck: 0.1, snout: 0.18, snW: 1.5, speed: 0.75, stride: 6.5, wag: 4, wagAmp: 0.25, chestDeep: 0.3, waist: 0.0, scale: 1.0 },
+    frenchie: { body: [0.46, 0.3, 0.34], legH: 0.18, legR: 0.062, headR: 0.2, ear: "bat", earIn: 0xd9a3a6, tail: "short", col: 0xf1ece2, belly: 0xf7f3eb, dorsal: 0xe6dfd2, light: 0xf5f1e8, sock: 0xf1ece2, dark: 0x3a3a40, muzzle: 0x7f838c, eyeR: 0.26, collar: 0x1f2a30, tongue: false, eye: 0x1a1008, neck: 0.1, snout: 0.16, snW: 1.5, speed: 0.75, stride: 6.5, wag: 4, wagAmp: 0.25, chestDeep: 0.3, waist: 0.0, scale: 1.0 },
     cat: { body: [0.48, 0.19, 0.16], legH: 0.18, legR: 0.03, headR: 0.095, ear: "point", earIn: 0xe9a4ac, tail: "long", tailL: 0.5, col: 0x8b7d6a, belly: 0xe6dccb, dorsal: 0x6c5f4f, light: 0xe6dccb, sock: 0xddd2bf, dark: 0x2a2622, eye: 0x9fb040, slit: true, whisk: true, collar: 0x2f9bd0, neck: 0.4, snout: 0.7, speed: 0.8, stride: 6, wag: 1.2, wagAmp: 0.35, tailUp: -0.4, chestDeep: 0.1, waist: 0.12 },
   };
   Object.keys(KINDS).forEach((k) => (KINDS[k].kind = k));
