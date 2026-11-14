@@ -22,14 +22,19 @@
     const M = (c, r = 0.7, m = 0, extra = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m, envMapIntensity: 0.5, ...extra });
     const add = (geo, mat, x, y, z, parent = root, cast = true) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = cast; m.receiveShadow = true; parent.add(m); return m; };
     const wH = HD + 0.5;                                                                // 船體半寬
+    // 擴建：匹克球館旁邊（到船首）船身加寬，兩側各多出 WE 公尺的甲板（目前留白，之後再規劃用途）
+    const WE = 7, WT = 7, WX0 = (ctx.hallX0 !== undefined ? ctx.hallX0 : W - 30) - 2;   // WX0：加寬段起點；WT：漸寬的過渡長度
+    const halfAt = (x) => (x >= WX0 ? wH + WE : x <= WX0 - WT ? wH : wH + WE * (0.5 - 0.5 * Math.cos(Math.PI * (x - (WX0 - WT)) / WT)));   // 某個 x 的船身半寬
     const D = -SEA;                                                                     // 甲板到海面的高度
 
     /* ----- 船體輪廓（x = 船首方向，y = 世界 z）----- */
     const outline = (k = 1, grow = 0) => {
-      const w = wH * k + grow, sh = new THREE.Shape();
-      sh.moveTo(-1, -w); sh.lineTo(W, -w);
-      sh.bezierCurveTo(W + 16, -w, W + 24, -w * 0.45, W + 28 + grow, 0);
-      sh.bezierCurveTo(W + 24, w * 0.45, W + 16, w, W, w);
+      const w = wH * k + grow, we = (wH + WE) * k + grow, sh = new THREE.Shape();
+      sh.moveTo(-1, -w); sh.lineTo(WX0 - WT, -w);
+      sh.bezierCurveTo(WX0 - WT * 0.45, -w, WX0 - WT * 0.55, -we, WX0, -we); sh.lineTo(W, -we);   // 加寬段（-z 側）
+      sh.bezierCurveTo(W + 18, -we, W + 27, -we * 0.45, W + 31 + grow, 0);
+      sh.bezierCurveTo(W + 27, we * 0.45, W + 18, we, W, we);
+      sh.lineTo(WX0, we); sh.bezierCurveTo(WX0 - WT * 0.55, we, WX0 - WT * 0.45, w, WX0 - WT, w);   // 加寬段（+z 側）
       sh.lineTo(-1, w);
       sh.bezierCurveTo(-8, w, -12 - grow, w * 0.55, -12 - grow, 0);
       sh.bezierCurveTo(-12 - grow, -w * 0.55, -8, -w, -1, -w);
@@ -50,14 +55,14 @@
     const nameC = document.createElement("canvas"); nameC.width = 2048; nameC.height = 256; const ng = nameC.getContext("2d");
     ng.fillStyle = "rgba(0,0,0,0)"; ng.clearRect(0, 0, 2048, 256); ng.fillStyle = "#f4efe2"; ng.font = "800 150px Georgia, serif"; ng.textAlign = "center"; if ("letterSpacing" in ng) ng.letterSpacing = "26px"; ng.fillText("DAVID'S GALLERY", 1024, 175);
     const nameT = new THREE.CanvasTexture(nameC); if ("colorSpace" in nameT) nameT.colorSpace = THREE.SRGBColorSpace; else nameT.encoding = THREE.sRGBEncoding;
-    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(28, 3.5), new THREE.MeshBasicMaterial({ map: nameT, transparent: true })); p.position.set(W * 0.7, -8.4, s * (wH * 0.97 + 0.05)); p.rotation.y = s > 0 ? 0 : PI; root.add(p); }
+    for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(28, 3.5), new THREE.MeshBasicMaterial({ map: nameT, transparent: true })); p.position.set(W * 0.7, -8.4, s * (halfAt(W * 0.7) * 0.97 + 0.05)); p.rotation.y = s > 0 ? 0 : PI; root.add(p); }
 
     // 舷窗：兩排，夜晚亮燈
     const portMat = M(0x16202e, 0.3, 0.2, { emissive: 0xffd58a, emissiveIntensity: 0.05 });
     const nPort = Math.floor((W - 4) / 2.4);
     for (const s of [-1, 1]) for (const y of [-1.9, -3.4]) {
       const im = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 14), portMat, nPort), m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromEuler(new THREE.Euler(PI / 2, 0, 0));
-      for (let i = 0; i < nPort; i++) { m4.compose(new THREE.Vector3(2 + i * 2.4, y, s * (wH + 0.02)), q, new THREE.Vector3(1, 1, 1)); im.setMatrixAt(i, m4); }
+      for (let i = 0; i < nPort; i++) { const px = 2 + i * 2.4, inT = px > WX0 - WT - 0.6 && px < WX0 + 0.6; m4.compose(new THREE.Vector3(px, inT ? -50 : y, s * (halfAt(px) + 0.02)), q, new THREE.Vector3(inT ? 0.001 : 1, 1, 1)); im.setMatrixAt(i, m4); }
       root.add(im);
     }
 
@@ -72,6 +77,8 @@
         add(new THREE.BoxGeometry(0.07, 1.1, 0.07), brass, a.x, 0.55, a.y, root, false);
       }
     };
+    { const pw2 = outline(1).getSpacedPoints(600);   // 加寬段兩側的欄杆（從漸寬處到船首）
+      for (const sg of [-1, 1]) railAlong(pw2.filter((p) => Math.sign(p.y) === sg && p.x > WX0 - WT + 0.3 && p.x <= W + 0.2 && Math.abs(p.y) > wH + 0.15).sort((a, b) => a.x - b.x).filter((p, i, arr) => i === 0 || i === arr.length - 1 || i % 4 === 0)); }
     { const bow = [], stern = [];
       const pb = outline(1).getSpacedPoints(160);
       for (const p of pb) { if (p.x > W + 0.2) bow.push(p); else if (p.x < -1.2) stern.push(p); }
@@ -125,14 +132,15 @@
     add(new THREE.CylinderGeometry(0.04, 0.05, 2.2, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 1.1, 3.9); add(new THREE.SphereGeometry(0.16, 10, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 2.25, 3.9, root, false);
 
     // 船首：繫纜柱與旗桿
-    for (const z of [-3, 3]) add(new THREE.CylinderGeometry(0.2, 0.26, 0.7, 12), M(0x2a2d36, 0.5, 0.6), W + 12, 0.35, z);
-    add(new THREE.CylinderGeometry(0.06, 0.08, 8, 8), M(0xe8e8ee, 0.4, 0.4), W + 17, 4, 0);
-    const flag = add(new THREE.PlaneGeometry(2.2, 1.3), new THREE.MeshBasicMaterial({ color: 0xc23a2a, side: THREE.DoubleSide }), W + 18.2, 7.2, 0, root, false);
+    for (const z of [-3, 3]) add(new THREE.CylinderGeometry(0.2, 0.26, 0.7, 12), M(0x2a2d36, 0.5, 0.6), W + 14, 0.35, z);
+    add(new THREE.CylinderGeometry(0.06, 0.08, 8, 8), M(0xe8e8ee, 0.4, 0.4), W + 19, 4, 0);
+    const flag = add(new THREE.PlaneGeometry(2.2, 1.3), new THREE.MeshBasicMaterial({ color: 0xc23a2a, side: THREE.DoubleSide }), W + 20.2, 7.2, 0, root, false);
 
     // 救生艇（掛在兩側船舷外）與救生圈
     const boatM = M(0xf28a1f, 0.6), boatW = M(0xf4f4f4, 0.6);
     for (const s of [-1, 1]) for (let x = 9; x < W - 6; x += 15) {
-      const g = new THREE.Group(); g.position.set(x, 0.4, s * (wH + 0.9)); root.add(g);
+      if (x > WX0 - WT - 3 && x < WX0 + 3) continue;
+      const g = new THREE.Group(); g.position.set(x, 0.4, s * (halfAt(x) + 0.9)); root.add(g);
       const hull = add(new THREE.CapsuleGeometry(0.55, 4.2, 6, 12), boatM, 0, 0, 0, g); hull.rotation.z = PI / 2; hull.scale.set(1, 1, 0.9);
       add(new THREE.BoxGeometry(4.6, 0.12, 0.7), boatW, 0, 0.5, 0, g, false);
       for (const dx of [-1.6, 1.6]) add(new THREE.BoxGeometry(0.08, 1.4, 0.08), brass, dx, 0.7, -s * 0.5, g, false);
