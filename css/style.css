@@ -696,13 +696,14 @@ body.locked .music-btn { display: none; }
 .kb-sec h3 { display: flex; align-items: center; gap: 8px; font-size: 12px; letter-spacing: .14em; font-weight: 800; color: #f4f0ff; padding-bottom: 5px; border-bottom: 1px dashed rgba(255,255,255,.2); margin-bottom: 4px; }
 .kb-sec h3 span { margin-left: auto; font-weight: 600; opacity: .6; }
 .kb-list { list-style: none; margin: 0; padding: 0; }
-.kb-row { position: relative; display: flex; align-items: center; gap: 10px; padding: 7px 4px 7px 14px; border-radius: 8px; }
-.kb-row::before { content: ""; position: absolute; left: 3px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--c); }
+.kb-row { position: relative; display: flex; align-items: center; gap: 14px; padding: 7px 4px 7px 4px; border-radius: 8px; }
+.kb-row::before { content: none; }
 .kb-row:hover, .kb-row:focus-within, .kb-row.open { background: rgba(255,255,255,.05); z-index: 40; }
-.kb-name { flex: 0 0 auto; max-width: 38%; font-size: 13.5px; font-weight: 700; color: #fff; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.kb-name:hover { text-decoration: underline; }
+/* 專案名：彩色名牌（左側色條 + 淡色底），字放大加粗，讓名稱一眼就看到、各列對齊成一欄 */
+.kb-name { flex: 0 0 auto; width: 250px; max-width: 38%; box-sizing: border-box; padding: 5px 12px; font-size: 16px; font-weight: 800; letter-spacing: .01em; color: #fff; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: color-mix(in srgb, var(--c) 24%, rgba(255,255,255,.04)); border-left: 4px solid var(--c); border-radius: 6px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 35%, transparent); }
+.kb-name:hover { text-decoration: underline; background: color-mix(in srgb, var(--c) 36%, rgba(255,255,255,.04)); }
 .kb-row .ps-chip { font-size: 9.5px; padding: 1px 7px; flex: 0 0 auto; }
-.kb-now { flex: 1 1 auto; min-width: 0; font-size: 13px; color: rgba(244,240,255,.82); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kb-now { flex: 1 1 auto; min-width: 0; font-size: 13px; color: rgba(244,240,255,.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kb-now.none { opacity: .45; font-style: italic; }
 .kb-empty { padding: 6px 14px; opacity: .4; }
 .kb-upd { position: relative; flex: 0 0 auto; }
@@ -718,7 +719,7 @@ body.locked .music-btn { display: none; }
 @media (max-width: 640px) {
   .kb-row { flex-wrap: wrap; }
   .kb-now { flex-basis: 100%; order: 3; white-space: normal; }
-  .kb-name { max-width: 60%; }
+  .kb-name { width: auto; max-width: 70%; font-size: 15px; }
   .kb-upd { margin-left: auto; }
   .kb-form { right: -4px; }
 }
