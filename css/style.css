@@ -648,3 +648,9 @@ body.gl3d .nav::before { background: linear-gradient(180deg, rgba(15,13,36,.65),
 .music-btn:hover { background: rgba(40,34,80,.8); }
 body.locked .music-btn { display: none; }
 @media (max-width: 960px) { .music-btn { right: 72px; top: 84px; width: 40px; height: 40px; font-size: 18px; } }
+
+/* 右上角排列：音樂鍵在上、NEWS 報紙在下（不重疊） */
+.music-btn { right: 20px; top: 76px; }
+.news-fab { top: 134px; }
+.news-pops { top: 220px; }
+@media (max-width: 960px) { .music-btn { right: 14px; top: 70px; } .news-fab { top: 118px; } .news-pops { top: 196px; } }
