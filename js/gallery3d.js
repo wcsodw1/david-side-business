@@ -482,6 +482,7 @@
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd, lv, h) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv, h });   // h：障礙物高度（≤0.85 的可以用 Space 跳過去）
     addObs(0.05, (-DECK_HD + 1.4) / 2, 0.05, (1.4 + DECK_HD) / 2); addObs(0.05, (6.6 + DECK_HD) / 2, 0.05, (DECK_HD - 6.6) / 2);   // 西側欄杆（缺口 z 1.4–6.6 通往船尾）
+    const roomLights = [];   // 房間 / 辦公室的室內燈：白天幾乎不亮、天黑才亮
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
 
     /* ----- 匹克球場（4 人雙打，球會真的飛來飛去） ----- */
@@ -1445,7 +1446,7 @@
         addObs(OFFICE_X + px, pz + OZ, 0.45, 0.45);
       }
       // 吊燈
-      const pl = new THREE.PointLight(0xffd9a0, 1.1, 9); pl.position.set(0, 2.3, -2.6); g.add(pl);
+      const pl = new THREE.PointLight(0xffd9a0, 1.1, 9); pl.position.set(0, 2.3, -2.6); pl.userData.base = 1.1; roomLights.push(pl); g.add(pl);
       for (const m of [desk, screen]) { m.userData = { station: 0, kind: "office" }; pickables.push(m); }
       addObs(OFFICE_X, -3.0 + OZ, 1.75, 0.8); addObs(OFFICE_X - 2.2, -4.9 + OZ, 1.3, 0.35);
       // 地面標示
@@ -1493,7 +1494,7 @@
       }), aniso);
       const nm = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 0.94), decalMat(nameTex, 0.95)); nm.rotation.x = -Math.PI / 2; { const w = toW(DOOR_DX, 0.7); nm.position.set(w.x, 0.013, w.z); } scene.add(nm);
       // 室內：燈、盆栽
-      const pl = new THREE.PointLight(0xffd9a0, 0.9, 9); pl.position.set(0, 2.3, zc + 0.4); g.add(pl);
+      const pl = new THREE.PointLight(0xffd9a0, 0.9, 9); pl.position.set(0, 2.3, zc + 0.4); pl.userData.base = 0.9; roomLights.push(pl); g.add(pl);
       add(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 16), M(0xff9b78, 0.7), 2.5, 0.2, ROOM_Z0 + 0.6);
       for (let k = 0; k < 8; k++) { const a = k * 2.4; add(new THREE.SphereGeometry(0.19, 12, 10), M(0x3f9a6a, 0.8), 2.5 + Math.cos(a) * 0.13, 0.66 + k * 0.07, ROOM_Z0 + 0.6 + Math.sin(a) * 0.13); }
       obsL(2.5, ROOM_Z0 + 0.6, 0.42, 0.42);
@@ -1539,7 +1540,7 @@
       }
       obsL(PL_DX, PL_Z - PL_D / 2, PL_W / 2 + 0.1, PL_D / 2 + 0.1);
       const pool = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 5.2), new THREE.MeshBasicMaterial({ map: poolTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.14 }));
-      pool.rotation.x = -Math.PI / 2; { const w = toW(0, 0.4); pool.position.set(w.x, 0.02, w.z); } scene.add(pool); pools[s] = pool;
+      pool.rotation.x = -Math.PI / 2; { const w = toW(0, 0.4); pool.position.set(w.x, 0.02, w.z); } pool.visible = false; scene.add(pool); pools[s] = pool;   // 地上不再有憑空發亮的光暈
       const bang = new THREE.Sprite(new THREE.SpriteMaterial({ map: bangTex, depthTest: false, transparent: true })); { const w = toW(DOOR_DX, ROOM_Z1); bang.position.set(w.x, 2.9, w.z); } bang.scale.set(0.6, 0.6, 1); bang.renderOrder = 10; scene.add(bang); bangs[s] = bang;
     });
     // 大廳點綴：靠門面兩側的長椅與盆栽
@@ -2020,6 +2021,7 @@
         boardMats[s].emissiveIntensity = lerp(boardMats[s].emissiveIntensity, on && inside >= 0 ? 0.25 : 0.1, k);
         pools[s].material.opacity = lerp(pools[s].material.opacity, on ? 0.34 : 0.14, k);
       }
+      { const nk = skyU.night.value; for (const l of roomLights) l.intensity = l.userData.base * (0.1 + 0.9 * nk); }
       bangs.forEach((b, s) => { if (b && b.visible) { const k = 1 + Math.sin(time * 5 + s) * 0.12, sc = camera.position.distanceTo(b.position) * 0.05 * k; b.scale.set(sc, sc, 1); b.position.y = (s === 0 ? 3.3 : 2.9) + Math.sin(time * 2.4 + s) * 0.08; } });
       for (const h of tickHooks) h(dt, time);
       if (courtUpdate) courtUpdate(dt, time);
