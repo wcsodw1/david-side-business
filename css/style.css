@@ -914,3 +914,5 @@ body.locked .music-btn { display: none; }
 .office-ai .ai-panes:not(.n1) .ai-bar { flex-wrap: wrap; }
 .office-ai .ai-panes:not(.n1) .ai-form button { padding: 0 18px; letter-spacing: .1em; }
 @media (max-width: 900px) { .office-ai .ai-panes.n2, .office-ai .ai-panes.n3, .office-ai .ai-panes.n4 { grid-template-columns: 1fr; } }
+
+.ai-acts .read { color: #6b5a4a; font-size: .92em; } .office-ai .ai-acts .read { color: var(--hm-ink-2); }

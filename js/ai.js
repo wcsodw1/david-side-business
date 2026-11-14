@@ -94,8 +94,24 @@
     fn("add_task", "在專案時程表（PM 甘特圖）新增任務", { project: PJ, name: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] }, owner: { type: "string" }, status: { type: "string", enum: T_ST }, progress: { type: "number", description: "0–100" }, start: { type: "string", description: "YYYY-MM-DD" }, end: { type: "string", description: "YYYY-MM-DD" } }, ["project", "name"]),
     fn("update_task", "更新時程表上既有的任務（用任務名稱找）", { project: PJ, task: { type: "string", description: "任務名稱" }, status: { type: "string", enum: T_ST }, progress: { type: "number" }, end: { type: "string" }, owner: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] } }, ["project", "task"]),
   ];
+  // 唯讀看 repo：只有從 Mac 上的啟動器（AISO1 辦公室 AI.command）打開時才有，由啟動器讀 david-side-business/ 的檔案與 git 紀錄
+  const REPO_TOOLS = [
+    fn("repo_tree", "列出網站 repo（david-side-business）的檔案與大小", { dir: { type: "string", description: "子資料夾，例如 js；留空 = 全部" } }, []),
+    fn("repo_search", "在 repo 程式碼裡搜尋文字（不分大小寫），回傳 檔案:行號:內容", { query: { type: "string" }, glob: { type: "string", description: "限定檔案，例如 js/*.js" } }, ["query"]),
+    fn("repo_read", "讀 repo 裡的文字檔（附行號，一次最多約 9000 字；太長就用 start_line 分段讀）", { path: { type: "string", description: "例如 js/store.js" }, start_line: { type: "number" }, end_line: { type: "number" } }, ["path"]),
+    fn("repo_git", "看 git 紀錄：log = 最近的 commit，status = 目前未提交的改動", { kind: { type: "string", enum: ["log", "status"] }, n: { type: "number" } }, ["kind"]),
+  ];
+  const repoOn = () => aiso.proxy && cfg.provider === "aiso1";
+  const repoTool = async (name, a) => {
+    const q = (o) => Object.entries(o).filter(([, v]) => v !== undefined && v !== "" && v !== null).map(([k, v]) => k + "=" + encodeURIComponent(v)).join("&");
+    const url = name === "repo_tree" ? "/repo/tree?" + q({ dir: a.dir }) : name === "repo_search" ? "/repo/search?" + q({ q: a.query, glob: a.glob }) : name === "repo_read" ? "/repo/read?" + q({ path: a.path, start: a.start_line, end: a.end_line }) : "/repo/" + (a.kind === "status" ? "status" : "log") + "?" + q({ n: a.n });
+    let j; try { j = await (await fetch(url)).json(); } catch (e) { return { res: { ok: false, error: "讀不到 repo：" + e.message }, label: "✗ 讀不到 repo" }; }
+    const label = !j.ok ? j.error : name === "repo_tree" ? `看了檔案列表${a.dir ? "（" + a.dir + "）" : ""}：${(j.files || []).length} 個檔案` : name === "repo_search" ? `搜尋「${a.query}」：${j.total} 筆` : name === "repo_read" ? `讀了 ${a.path} 第 ${j.from}–${j.to} 行（共 ${j.total_lines} 行）` : `看了 git ${a.kind === "status" ? "status" : "log"}`;
+    return { res: j, label };
+  };
   const toolPrompt = (p) => `\n\n你可以用工具直接更新 David 的藝廊（白板狀態、進度、Next Step、目標、里程碑、時程表任務）。今天是 ${window.Store ? window.Store.today() : ""}。` +
     `David 要你記錄、更新、改狀態、排任務時，一定要真的呼叫工具去做（每次都要，即使之前做過類似的事），不要只在文字裡說「已更新」、不要寫「[已執行]」之類的字，也不要叫他自己改；只是問問題時就不要動資料。工具執行完再用一兩句話回報。` +
+    (repoOn() ? `\n你也能「唯讀」查看這個網站的程式碼 repo（david-side-business：3D 藝廊、辦公室、AI 總管本身的程式都在裡面）：repo_tree / repo_search / repo_read / repo_git。被問到網站怎麼運作、程式在哪、最近改了什麼時，先用工具查證再回答，引用檔名與行號，不要猜；你不能改程式碼，要改的話提出具體建議（哪個檔、哪幾行、改成什麼）。檔案大就先 repo_search 找位置再分段 repo_read。` : "") +
     `\n各專案的時程表任務：\n` + projList(p).map((q) => `- ${q.id}（${q.name}）：${(q.tasks || []).length ? q.tasks.map((t) => `${t.name}［${t.status} ${t.progress || 0}% ${t.start}~${t.end}］`).join("、") : "沒有任務"}`).join("\n");
   const runTool = (p, name, a) => {
     const S = window.Store; if (!S) return { ok: false, error: "藝廊資料還沒載入" };
@@ -146,7 +162,7 @@
         else {
           const calls = (m.actions || []).filter((a) => a.name);   // 之前真的呼叫過的工具：照原樣放回去（工具呼叫 + 結果），模型才會學到要真的呼叫
           if (calls.length) { messages.push({ role: "assistant", content: "", tool_calls: calls.map((a, k) => ({ id: "h" + hist.indexOf(m) + "_" + k, type: "function", function: { name: a.name, arguments: JSON.stringify(a.args || {}) } })) });
-            calls.forEach((a, k) => messages.push({ role: "tool", tool_call_id: "h" + hist.indexOf(m) + "_" + k, content: JSON.stringify(a.fail ? { ok: false, error: a.text } : { ok: true, text: a.text + (m.undone ? "（之後被 David 復原了）" : "") }) })); }
+            calls.forEach((a, k) => messages.push({ role: "tool", tool_call_id: "h" + hist.indexOf(m) + "_" + k, content: JSON.stringify(a.fail ? { ok: false, error: a.text } : { ok: true, text: a.text + (a.read ? "（內容已省略，需要的話再讀一次）" : "") + (m.undone ? "（之後被 David 復原了）" : "") }) })); }
           messages.push({ role: "assistant", content: m.text || (calls.length ? "完成。" : "（圖片）") });
         }
       }
@@ -157,12 +173,12 @@
       let text = "", think = "", tm = null, us = null, model = "", undo = null; const actions = [];
       const push = () => onDelta && onDelta({ text: tidy(text), think, actions });
       // 最多 4 輪：模型呼叫工具 → 這裡執行（直接改藝廊資料）→ 把結果交回模型 → 模型回報做了什麼
-      for (let round = 0; round < 4; round++) {
+      for (let round = 0; round < 8; round++) {
         const body = { messages, stream: true }; if (modelOf()) body.model = modelOf();
         body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
         if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
         if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
-        if (useTools && round < 3) body.tools = TOOLS;
+        if (useTools && round < 7) body.tools = repoOn() ? TOOLS.concat(REPO_TOOLS) : TOOLS;
         let r;
         try { r = await fetch(base + "/chat/completions", { ...LNA(), method: "POST", signal, headers, body: JSON.stringify(body) }); }
         catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。${LAUNCH_HELP} 或確認：① 瀏覽器允許這個網站存取本機：${LNA_HELP} ② 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL}（出現 Address already in use 代表已經開著，沒問題）③ AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }
@@ -193,15 +209,19 @@
           if (rtext) text += lead + rtext;
         }
         const todo = calls.filter((c) => c && c.name); if (!todo.length) break;
-        if (undo === null) { try { undo = localStorage.getItem(STORE_KEY) || "{}"; } catch (_) { undo = "{}"; } }   // 第一次改動前先存一份，讓 David 可以一鍵復原
+        if (undo === null && todo.some((c) => !/^repo_/.test(c.name))) { try { undo = localStorage.getItem(STORE_KEY) || "{}"; } catch (_) { undo = "{}"; } }   // 第一次改動前先存一份，讓 David 可以一鍵復原
         messages.push({ role: "assistant", content: rtext || "", tool_calls: todo.map((c, k) => ({ id: c.id || "call_" + round + "_" + k, type: "function", function: { name: c.name, arguments: c.args || "{}" } })) });
-        todo.forEach((c, k) => { let a = {}; try { a = JSON.parse(c.args || "{}"); } catch (_) {}
+        for (const [k, c] of todo.entries()) { let a = {}; try { a = JSON.parse(c.args || "{}"); } catch (_) {}
+          if (/^repo_/.test(c.name)) {   // 唯讀查 repo：結果完整交給模型，畫面上只顯示「看了什麼」
+            const { res, label } = await repoTool(c.name, a); actions.push({ text: label, read: true, fail: !res.ok, name: c.name, args: a });
+            messages.push({ role: "tool", tool_call_id: c.id || "call_" + round + "_" + k, content: JSON.stringify(res) }); push(); continue;
+          }
           const res = runTool(p, c.name, a); actions.push(res.ok ? { text: res.text, name: c.name, args: a } : { text: res.error, fail: true, name: c.name, args: a });
-          messages.push({ role: "tool", tool_call_id: c.id || "call_" + round + "_" + k, content: JSON.stringify(res) }); });
+          messages.push({ role: "tool", tool_call_id: c.id || "call_" + round + "_" + k, content: JSON.stringify(res) }); }
         push();
       }
       const out = { text: tidy(text).trim(), think: think.trim(), imgs: [], meta: stats(tm, us, model) };
-      if (actions.length) { out.actions = actions; if (actions.some((a) => !a.fail)) out.undo = undo; }
+      if (actions.length) { out.actions = actions; if (undo !== null && actions.some((a) => !a.fail && !a.read)) out.undo = undo; }
       return out;
     }
     // OpenAI Responses API（可用 image_generation 工具產圖）
@@ -296,7 +316,7 @@
     const paint = () => {
       const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型。<br><b>${esc(LAUNCH_HELP)}</b><br><br>在線上網站直接連的話：<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
-      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${m.undone ? " undone" : ""}">${x.fail ? "✗" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
+      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${x.read ? " read" : ""}${m.undone && !x.read ? " undone" : ""}">${x.fail ? "✗" : x.read ? "⌕" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
       const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);
       msgs.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", () => {   // 還原成這次改動前的白板資料，重新整理讓藝廊全部重畫
