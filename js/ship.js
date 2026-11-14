@@ -173,74 +173,294 @@
     const ringTex = (() => { const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"); g.strokeStyle = "rgba(255,255,255,.9)"; g.lineWidth = 8; g.beginPath(); g.arc(64, 64, 52, 0, 7); g.stroke(); return new THREE.CanvasTexture(c); })();
     const splash = (x, z, big = 1) => {
       const m = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0.9 })); m.rotation.x = -PI / 2; m.position.set(x, SEA + 0.1, z); root.add(m);
-      Sh.ev.push({ kind: "ring", m, age: 0, big, upd(dt, e) { e.age += dt; const k = e.age / 1.6; m.scale.setScalar((0.6 + k * 3.2) * big); m.material.opacity = 0.9 * (1 - k); if (k >= 1) e.done = true; } });
+      Sh.ev.push({ kind: "ring", m, age: 0, big, upd(dt, e) { e.age += dt; const k = e.age / 1.6; m.scale.setScalar((0.6 + k * 3.2) * big); m.material.opacity = 0.9 * (1 - k); if (k >= 1) { e.done = true; m.parent && m.parent.remove(m); m.material.dispose(); m.geometry.dispose(); } } });
     };
-    const dolphinModel = () => {
-      const g = new THREE.Group(), body = M(0x6f8aa0, 0.45), belly = M(0xdfe8ee, 0.5);
-      const b = add(new THREE.CapsuleGeometry(0.22, 1.2, 6, 12), body, 0, 0, 0, g); b.rotation.x = PI / 2;
-      add(new THREE.CapsuleGeometry(0.15, 0.8, 4, 10), belly, 0, -0.07, 0.05, g, false).rotation.x = PI / 2;
-      add(new THREE.ConeGeometry(0.06, 0.34, 8), body, 0, -0.02, 1.0, g, false).rotation.x = PI / 2;
-      add(new THREE.ConeGeometry(0.1, 0.3, 6), body, 0, 0.24, -0.1, g, false).rotation.x = -0.4;
-      for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.4, 0.03, 0.16), body, s * 0.22, 0, -1.0, g, false).rotation.z = s * 0.15;
-      for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.22, 0.03, 0.12), body, s * 0.28, -0.1, 0.3, g, false).rotation.z = s * -0.5;
-      return g;
+    /* ----- 寫實海洋生物：共用工具 -----
+       · loft()：依「剖面曲線」放樣出流線形身體（u=0 尾端 → u=1 吻端，頭朝 +z），每一截是上下不對稱的橢圓
+       · 顏色用頂點色畫：背深腹淺（反蔭蔽）、斑紋、喉部溝紋；鰭用薄板擠出 + 圓角
+       · fleshMat()：在頂點著色器裡讓身體往尾巴逐漸彎曲（鯨豚上下擺、魚左右擺），一個 draw call 就有自然的游動 */
+    const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+    const cA = new THREE.Color();
+    const curve = (k) => (u) => {                       // 非均勻 Hermite 曲線（剖面用）
+      let i = 0; while (i < k.length - 2 && u > k[i + 1][0]) i++;
+      const p0 = k[Math.max(i - 1, 0)], p1 = k[i], p2 = k[i + 1], p3 = k[Math.min(i + 2, k.length - 1)], d = p2[0] - p1[0];
+      const t = clamp((u - p1[0]) / d, 0, 1), t2 = t * t, t3 = t2 * t;
+      const m1 = (p2[1] - p0[1]) / (p2[0] - p0[0] || 1) * d, m2 = (p3[1] - p1[1]) / (p3[0] - p1[0] || 1) * d;
+      return (2 * t3 - 3 * t2 + 1) * p1[1] + (t3 - 2 * t2 + t) * m1 + (3 * t2 - 2 * t3) * p2[1] + (t3 - t2) * m2;
     };
+    const loft = (o) => {
+      const { len, nu, nv } = o, P = [], C = [], I = [], c = new THREE.Color();
+      for (let i = 0; i <= nu; i++) {
+        const u = i / nu, w = Math.max(o.w(u), 0.0004), ht = Math.max(o.top(u), 0.0004), hb = Math.max(o.bot(u), 0.0004), yc = o.y ? o.y(u) : 0, z = (u - 0.5) * len;
+        for (let j = 0; j < nv; j++) {
+          const a = j / nv * PI * 2, s = Math.sin(a), cs = Math.cos(a), gr = o.groove ? o.groove(u, a, s) : 1;
+          P.push(w * cs * gr, yc + (s > 0 ? ht : hb) * s * gr, z); o.color(u, s, cs, a, c); C.push(c.r, c.g, c.b);
+        }
+      }
+      for (let i = 0; i < nu; i++) for (let j = 0; j < nv; j++) { const a = i * nv + j, b = i * nv + (j + 1) % nv, d = a + nv, e = b + nv; I.push(a, b, d, b, e, d); }
+      const n0 = P.length / 3;                          // 兩端封口
+      for (const [ring, u] of [[0, 0], [nu, 1]]) { P.push(0, o.y ? o.y(u) : 0, (u - 0.5) * len); C.push(C[ring * nv * 3], C[ring * nv * 3 + 1], C[ring * nv * 3 + 2]); }
+      for (let j = 0; j < nv; j++) { const j1 = (j + 1) % nv; I.push(n0, j1, j); I.push(n0 + 1, nu * nv + j, nu * nv + j1); }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(P, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(C, 3)); g.setIndex(I); g.computeVertexNormals(); return g;
+    };
+    const fin = (pts, th, mirror = false) => {          // pts：外形（x, y）；mirror：只給右半邊，自動補左半邊（尾鰭）
+      const all = mirror ? pts.concat(pts.slice(1, -1).reverse().map(([x, y]) => [-x, y])) : pts, sh = new THREE.Shape();
+      sh.moveTo(all[0][0], all[0][1]); sh.splineThru(all.slice(1).map(([x, y]) => new THREE.Vector2(x, y))); sh.closePath();
+      const g = new THREE.ExtrudeGeometry(sh, { depth: th * 0.4, bevelEnabled: true, bevelThickness: th * 0.3, bevelSize: th * 0.3, bevelSegments: 2, curveSegments: 5, steps: 1 });
+      g.translate(0, 0, -th * 0.2); g.deleteAttribute("uv"); return g;
+    };
+    const merge = (parts) => {                          // [[geometry, 上色函式(p, n, out) 或 null（用自身頂點色）]] → 一個非索引幾何
+      const gs = parts.map(([g, f]) => [g.index ? g.toNonIndexed() : g, f]); let n = 0; gs.forEach(([g]) => (n += g.attributes.position.count));
+      const P = new Float32Array(n * 3), N = new Float32Array(n * 3), C = new Float32Array(n * 3), p = new THREE.Vector3(), q = new THREE.Vector3(), c = new THREE.Color(); let o = 0;
+      for (const [g, f] of gs) {
+        const ps = g.attributes.position, ns = g.attributes.normal, cs = g.attributes.color;
+        for (let i = 0; i < ps.count; i++, o += 3) {
+          p.fromBufferAttribute(ps, i); q.fromBufferAttribute(ns, i); P[o] = p.x; P[o + 1] = p.y; P[o + 2] = p.z; N[o] = q.x; N[o + 1] = q.y; N[o + 2] = q.z;
+          if (f) f(p, q, c); else c.fromBufferAttribute(cs, i); C[o] = c.r; C[o + 1] = c.g; C[o + 2] = c.b;
+        }
+      }
+      const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(P, 3)); g.setAttribute("normal", new THREE.BufferAttribute(N, 3)); g.setAttribute("color", new THREE.BufferAttribute(C, 3)); g.computeBoundingSphere(); return g;
+    };
+    const BEND = `#include <begin_vertex>
+      float zn = transformed.z / uLen;                       // 吻端 +0.5、尾端 -0.5
+      float wb = smoothstep(0.12, -0.55, zn);                // 越靠尾巴彎得越多
+      #ifdef USE_INSTANCING
+        float ph = uPh + instanceMatrix[3].x * 2.3 + instanceMatrix[3].z * 1.7;
+      #else
+        float ph = uPh;
+      #endif
+      float bend = (uAmp * sin(ph + zn * 6.0) + uArch) * wb * wb * uLen;
+      transformed.y += bend * (1.0 - uYaw); transformed.x += bend * uYaw;`;
+    const fleshMat = (len, yaw, rough, metal = 0, env = 0.7, extra = {}) => {
+      const u = { uPh: { value: 0 }, uAmp: { value: 0 }, uArch: { value: 0 }, uYaw: { value: yaw }, uLen: { value: len } };
+      const m = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: rough, metalness: metal, envMapIntensity: env, ...extra });
+      m.onBeforeCompile = (s) => { Object.assign(s.uniforms, u); s.vertexShader = "uniform float uPh, uAmp, uArch, uYaw, uLen;\n" + s.vertexShader.replace("#include <begin_vertex>", BEND); };
+      m.userData.u = u; return m;
+    };
+    const meshOf = (geo, mat, parent) => { const m = new THREE.Mesh(geo, mat); m.castShadow = false; m.receiveShadow = false; parent.add(m); return m; };
+    const dispose = (o) => o.traverse((x) => { if (x.material && !x.material.userData.shared) x.material.dispose(); });
+
+    /* ----- 水花：噴濺水滴 / 鯨魚噴氣（共用粒子池，避免一直建立新物件） ----- */
+    const FX = { pool: [], live: [], on: false };
+    const drop = (x, y, z, vx, vy, vz, s0, s1, life, grav, drag = 0, op = 0.9, col = 0xffffff) => {
+      let sp = FX.pool.pop();
+      if (!sp) { sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeT, transparent: true, depthWrite: false })); sp.renderOrder = 7; }
+      sp.material.color.setHex(col); sp.position.set(x, y, z); sp.visible = true; root.add(sp);
+      FX.live.push({ sp, vx, vy, vz, s0, s1, life, grav, drag, op, age: 0 });
+      if (!FX.on) { FX.on = true; Sh.ev.push({ kind: "fx", upd(dt, e) {
+        FX.live = FX.live.filter((d) => {
+          d.age += dt; const k = d.age / d.life;
+          if (k >= 1) { d.sp.parent && d.sp.parent.remove(d.sp); FX.pool.push(d.sp); return false; }
+          const dm = Math.exp(-d.drag * dt); d.vx *= dm; d.vz *= dm; d.vy = d.vy * dm - d.grav * dt;
+          d.sp.position.x += d.vx * dt; d.sp.position.y += d.vy * dt; d.sp.position.z += d.vz * dt;
+          if (d.grav > 3 && d.sp.position.y < SEA) d.age = d.life;      // 水滴落回海面就消失
+          const s = lerp(d.s0, d.s1, k); d.sp.scale.set(s, s, 1); d.sp.material.opacity = d.op * Math.pow(1 - k, 1.3); return true;
+        });
+        if (!FX.live.length) { FX.on = false; e.done = true; }
+      } }); }
+    };
+    const spray = (x, z, n, pow = 1, vx0 = 0) => {     // 出水 / 入水的水花
+      for (let i = 0; i < n; i++) { const a = rand(0, PI * 2), r = rand(0.3, 1.4) * pow;
+        drop(x + rand(-0.2, 0.2) * pow, SEA + 0.05, z + rand(-0.2, 0.2) * pow, vx0 + Math.cos(a) * r, rand(2.2, 4.6) * pow, Math.sin(a) * r, 0.18 * pow, 0.42 * pow, rand(0.55, 0.95), 9.8, 0.4, 0.95); }
+      for (let i = 0; i < Math.ceil(n / 3); i++) drop(x + rand(-0.4, 0.4) * pow, SEA + 0.15, z + rand(-0.4, 0.4) * pow, vx0, rand(0.3, 0.8), 0, 0.5 * pow, 1.6 * pow, rand(0.8, 1.3), 0.2, 1.5, 0.55, 0xf2f8ff);
+    };
+
+    /* ----- 海豚（瓶鼻海豚）：長吻、隆起的額隆、鐮刀狀背鰭、水平尾鰭；背深灰、側淺灰、腹近白 ----- */
+    const G = {};                                       // 共用幾何：每種生物只建一次
+    const dolphinGeo = () => G.dolphin || (G.dolphin = (() => {
+      const L = 2.3, DK = 0x434f59, MID = 0x6f7c87;
+      const body = loft({ len: L, nu: 72, nv: 28,
+        w: curve([[0, 0.004], [0.04, 0.032], [0.12, 0.042], [0.3, 0.11], [0.5, 0.19], [0.62, 0.205], [0.75, 0.19], [0.85, 0.15], [0.9, 0.1], [0.93, 0.058], [0.97, 0.042], [1, 0.006]]),
+        top: curve([[0, 0.004], [0.04, 0.05], [0.12, 0.085], [0.3, 0.15], [0.5, 0.21], [0.62, 0.22], [0.75, 0.2], [0.84, 0.172], [0.88, 0.125], [0.91, 0.052], [0.97, 0.034], [1, 0.006]]),
+        bot: curve([[0, 0.004], [0.04, 0.048], [0.12, 0.078], [0.3, 0.14], [0.5, 0.19], [0.62, 0.19], [0.75, 0.17], [0.85, 0.13], [0.9, 0.08], [0.93, 0.044], [0.97, 0.03], [1, 0.006]]),
+        y: curve([[0, 0], [0.5, 0], [0.88, -0.01], [0.95, -0.055], [1, -0.065]]),
+        color(u, s, cs, a, out) {
+          out.setHex(0xe4e1df).convertSRGBToLinear().lerp(cA.setHex(0x7b8893).convertSRGBToLinear(), sstep(-0.55, 0.05, s + 0.12 * Math.sin(u * 11 + 1.2) + (u > 0.88 ? 0.2 : 0)));
+          out.lerp(cA.setHex(DK).convertSRGBToLinear(), 0.9 * sstep(0.3, 0.78, s + 0.25 * Math.sin(u * PI * 1.6 - 0.6)));      // 背上深色披風
+          if (u > 0.9 && Math.abs(s + 0.12) < 0.07) out.lerp(cA.setHex(0x3a4148).convertSRGBToLinear(), 0.5);                  // 嘴線
+          const du = (u - 0.862) / 0.013, ds = (s + 0.03) / 0.12; if (Math.abs(cs) > 0.6 && du * du + ds * ds < 1) out.setHex(0x14171a).convertSRGBToLinear();   // 小小的眼睛
+        } });
+      const dorsal = fin([[0.19, 0], [0.12, 0.1], [0.03, 0.2], [-0.08, 0.27], [-0.19, 0.3], [-0.15, 0.23], [-0.12, 0.13], [-0.13, 0.05], [-0.18, 0]], 0.035);
+      dorsal.rotateY(-PI / 2); dorsal.translate(0, 0.175, -0.06);
+      const fluke = fin([[0, 0.05], [0.09, 0.035], [0.17, -0.02], [0.24, -0.1], [0.27, -0.155], [0.21, -0.14], [0.13, -0.11], [0.05, -0.1], [0, -0.065]], 0.028, true);
+      fluke.rotateX(PI / 2); fluke.translate(0, 0, -L / 2 + 0.09);
+      const parts = [[body, null], [dorsal, (p, n, o) => o.setHex(DK).convertSRGBToLinear()], [fluke, (p, n, o) => o.setHex(n.y > 0 ? DK : MID).convertSRGBToLinear()]];
+      for (const s of [-1, 1]) {
+        const f = fin([[0, 0.06], [0.08, 0.05], [0.17, 0.005], [0.24, -0.055], [0.2, -0.065], [0.11, -0.045], [0, -0.05]].map(([x, y]) => [x * s, y]), 0.026);
+        f.rotateX(PI / 2); f.rotateY(s * 0.55); f.rotateZ(-s * 0.5); f.translate(s * 0.13, -0.11, 0.52); parts.push([f, (p, n, o) => o.setHex(n.y > 0 ? DK : MID).convertSRGBToLinear()]);
+      }
+      return merge(parts);
+    })());
+    const dolphinModel = () => { const g = new THREE.Group(), mat = fleshMat(2.3, 0, 0.34, 0, 0.55); meshOf(dolphinGeo(), mat, g); g.userData.u = mat.userData.u; return g; };
     const dolphinJump = (x, z, n, dirx) => {
       for (let i = 0; i < n; i++) {
-        const g = dolphinModel(); g.visible = false; root.add(g);
-        const T = rand(1.5, 2.1), L = rand(7, 11), H = rand(2.2, 3.6), t0 = -i * rand(0.45, 0.8), zz = z + rand(-1.2, 1.2), xx = x + i * rand(-2, 2);
+        const g = dolphinModel(), u = g.userData.u; g.visible = false; root.add(g);
+        const T = rand(1.5, 2.1), L = rand(7, 11), H = rand(2.2, 3.6), t0 = -i * rand(0.45, 0.8), zz = z + rand(-1.2, 1.2), xx = x + i * rand(-2, 2), ph0 = rand(0, 6);
         let splashed = false, splashedOut = false;
         Sh.ev.push({ kind: "dolphin", g, upd(dt, e) {
-          t0 === undefined || (e.t = (e.t ?? t0) + dt); const k = e.t / T;
-          if (k < 0) return; if (k >= 1) { g.parent && g.parent.remove(g); e.done = true; return; }
-          g.visible = true; const px = xx + k * L * dirx, py = SEA + H * 4 * k * (1 - k) - 0.3, vy = H * 4 * (1 - 2 * k), vx = (L / T) * dirx;
-          g.position.set(px, py, zz); g.rotation.set(0, dirx > 0 ? PI / 2 : -PI / 2, 0); g.rotateX(-Math.atan2(vy, Math.abs(vx)) * (dirx > 0 ? -1 : -1) * -1);
-          g.rotateZ(Math.sin(k * PI * 3) * 0.12);
-          if (!splashedOut && k > 0.04) { splashedOut = true; splash(px, zz, 0.8); }
-          if (!splashed && k > 0.94) { splashed = true; splash(px, zz, 0.8); }
+          e.t = (e.t ?? t0) + dt; const k = e.t / T;
+          if (k < 0) return; if (k >= 1) { g.parent && g.parent.remove(g); dispose(g); e.done = true; return; }
+          g.visible = true; const px = xx + k * L * dirx, py = SEA + H * 4 * k * (1 - k) - 0.3;
+          const slope = H * 4 * (1 - 2 * k) / L;           // 拋物線的切線：頭先出水、頭先入水
+          g.position.set(px, py, zz); g.rotation.set(0, dirx > 0 ? PI / 2 : -PI / 2, 0); g.rotateX(-Math.atan(slope)); g.rotateZ(Math.sin(k * PI * 2 + ph0) * 0.05);
+          const near = 1 - sstep(0.12, 0.25, k) * sstep(0.88, 0.75, k);   // 靠近水面時尾鰭用力上下擺，空中則微微弓背
+          u.uPh.value += dt * 13; u.uAmp.value = 0.06 * near; u.uArch.value = -0.035 * Math.sin(k * PI);
+          if (!splashedOut && k > 0.05) { splashedOut = true; splash(px, zz, 0.8); spray(px, zz, 14, 0.85, (L / T) * dirx * 0.3); }
+          if (!splashed && k > 0.94) { splashed = true; splash(px, zz, 0.9); spray(px, zz, 20, 1.05, (L / T) * dirx * 0.3); }
         } });
       }
     };
+
+    /* ----- 鯨魚（座頭鯨）：長條身軀、扁平頭上的疣突、喉腹溝紋、超長胸鰭、小背鰭、鋸齒邊尾鰭；換氣時噴出霧狀水柱 ----- */
+    const WL = 13;
+    const whaleGeo = () => G.whale || (G.whale = (() => {
+      const DK = 0x1f252b, WH = 0xd5d8d4;
+      const W = curve([[0, 0.02], [0.05, 0.17], [0.15, 0.32], [0.3, 0.75], [0.45, 1.2], [0.6, 1.38], [0.72, 1.36], [0.84, 1.18], [0.92, 0.92], [0.97, 0.58], [0.995, 0.2], [1, 0.02]]);
+      const TOP = curve([[0, 0.02], [0.05, 0.38], [0.15, 0.55], [0.3, 0.95], [0.45, 1.2], [0.6, 1.25], [0.72, 1.12], [0.84, 0.9], [0.92, 0.7], [0.97, 0.45], [0.995, 0.16], [1, 0.02]]);
+      const BOT = curve([[0, 0.02], [0.05, 0.3], [0.15, 0.45], [0.3, 0.85], [0.45, 1.2], [0.6, 1.4], [0.72, 1.46], [0.84, 1.36], [0.92, 1.05], [0.97, 0.6], [0.995, 0.2], [1, 0.02]]);
+      const YC = curve([[0, 0.1], [0.2, 0.05], [0.5, 0], [0.85, -0.1], [1, -0.2]]);
+      const pleat = (u, s) => sstep(0.5, 0.58, u) * sstep(0.985, 0.93, u) * sstep(-0.18, -0.45, s);
+      const body = loft({ len: WL, nu: 96, nv: 78, w: W, top: TOP, bot: BOT, y: YC,
+        groove: (u, a, s) => 1 - 0.022 * pleat(u, s) * (0.5 + 0.5 * Math.cos(a * 26)),             // 喉腹溝紋（真的凹進去）
+        color(u, s, cs, a, out) {
+          const nz = Math.sin(u * 41 + a * 3) * Math.sin(u * 17 - a * 5) * 0.5 + Math.sin(u * 93 + a * 11) * 0.2;
+          out.setHex(DK).convertSRGBToLinear().lerp(cA.setHex(0x2f373e).convertSRGBToLinear(), sstep(0.25, -0.35, s));
+          out.lerp(cA.setHex(WH).convertSRGBToLinear(), sstep(-0.25, -0.62, s + nz * 0.28) * (0.5 + 0.5 * sstep(0.35, 0.6, u)));   // 斑駁的白色腹部
+          const pg = pleat(u, s) * Math.pow(0.5 + 0.5 * Math.cos(a * 26), 4); if (pg > 0) out.lerp(cA.setHex(0x3a4249).convertSRGBToLinear(), pg * 0.8);
+          if (Math.abs(u - 0.79) < 0.008 && Math.abs(cs) < 0.09 && s > 0) out.setHex(0x0c0f12).convertSRGBToLinear();           // 噴氣孔
+        } });
+      const parts = [[body, null]];
+      // 頭頂的疣突（座頭鯨特徵）
+      for (let r = 0; r < 6; r++) for (const side of [-1, 1]) for (let q = 0; q < 2; q++) {
+        const u = 0.86 + r * 0.023, xx = side * (0.18 + q * 0.28) * W(u) / 0.9, ss = Math.sqrt(Math.max(0, 1 - (xx / W(u)) ** 2));
+        const b = new THREE.SphereGeometry(0.075, 7, 5); b.translate(xx, YC(u) + TOP(u) * ss - 0.01, (u - 0.5) * WL); parts.push([b, (p, n, o) => o.setHex(0x272e34).convertSRGBToLinear()]);
+      }
+      const dorsal = fin([[0.6, 0], [0.3, 0.14], [0, 0.32], [-0.22, 0.42], [-0.3, 0.33], [-0.36, 0.12], [-0.6, 0]], 0.12);
+      dorsal.rotateY(-PI / 2); dorsal.translate(0, 0.86, (0.3 - 0.5) * WL); parts.push([dorsal, (p, n, o) => o.setHex(DK).convertSRGBToLinear()]);
+      // 尾鰭：後緣鋸齒、腹面白底黑斑（每隻座頭鯨都不一樣）
+      const fl = [[0, 0.35], [0.5, 0.3], [1.1, 0.06], [1.7, -0.33], [2.15, -0.7]];
+      for (let i = 1; i <= 10; i++) { const t = i / 11, xx = 2.15 * (1 - t); fl.push([xx * 0.98, -0.7 + 0.32 * t - 0.12 * Math.sin(t * PI) + (i % 2 ? 0.05 : -0.03)]); }
+      fl.push([0, -0.26]);
+      const fluke = fin(fl, 0.13, true); fluke.rotateX(PI / 2); fluke.translate(0, 0.02, -WL / 2 + 0.3);
+      parts.push([fluke, (p, n, o) => { if (n.y > 0.3) o.setHex(DK).convertSRGBToLinear(); else { o.setHex(0xe2e3df).convertSRGBToLinear().lerp(cA.setHex(DK).convertSRGBToLinear(), clamp(sstep(0.35, 0.95, Math.abs(p.x) / 2.15) + 0.6 * Math.max(0, Math.sin(p.x * 5.3) * Math.sin(p.z * 7.1)), 0, 0.92)); } }]);
+      // 超長胸鰭（約身長 1/3）：前緣有一顆顆結節、略往後彎；上面深色、前緣與下面白色
+      for (const s of [-1, 1]) {
+        const lead = [], trail = [], S = 4.0;
+        for (let i = 0; i <= 22; i++) { const t = i / 22, c = -0.4 * t * t, h = 0.45 * (1 - 0.55 * Math.pow(t, 1.5)); lead.push([t * S, c + h + (t > 0.12 ? 0.045 * Math.abs(Math.sin(t * PI * 8)) : 0)]); trail.push([t * S, c - h]); }
+        const pts = lead.concat([[S + 0.12, -0.4]], trail.reverse()).map(([x, y]) => [x * s, y]);
+        const f = fin(pts, 0.14); f.rotateX(PI / 2); f.rotateY(s * 0.6); f.rotateZ(-s * 0.42); f.translate(s * 1.05, -0.75, (0.7 - 0.5) * WL);
+        parts.push([f, (p, n, o) => o.setHex(n.y > 0.35 ? 0x353d44 : WH).convertSRGBToLinear()]);
+      }
+      return merge(parts);
+    })());
     const whale = (x, z, dirx) => {
-      const g = new THREE.Group(), body = M(0x32475c, 0.55), under = M(0xc9d3dc, 0.6);
-      const b = add(new THREE.CapsuleGeometry(1.35, 8, 8, 16), body, 0, 0, 0, g); b.rotation.x = PI / 2; b.scale.set(1, 0.9, 1);
-      add(new THREE.CapsuleGeometry(1.1, 6, 6, 12), under, 0, -0.55, 0.4, g, false).rotation.x = PI / 2;
-      const fl = new THREE.Group(); fl.position.set(0, 0, -6.2); g.add(fl);
-      for (const s of [-1, 1]) { const w = add(new THREE.SphereGeometry(1, 12, 8), body, s * 1.6, 0.1, -0.2, fl); w.scale.set(1.8, 0.14, 0.9); }
-      const fin = add(new THREE.SphereGeometry(1, 10, 8), body, 0, 0.7, -4.3, g, false); fin.scale.set(0.18, 0.55, 0.5);
-      for (const s of [-1, 1]) { const p = add(new THREE.SphereGeometry(1, 10, 8), body, s * 1.3, -0.7, 2.2, g, false); p.scale.set(2.2, 0.12, 0.6); p.rotation.y = s * -0.5; p.rotation.z = s * 0.4; }
+      const g = new THREE.Group(), pitch = new THREE.Group(), mat = fleshMat(WL, 0, 0.45, 0, 0.45), u = mat.userData.u;
+      g.add(pitch); meshOf(whaleGeo(), mat, pitch);
       g.rotation.y = dirx > 0 ? PI / 2 : -PI / 2; root.add(g);
-      const spoutSp = []; for (let i = 0; i < 8; i++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: smokeT, transparent: true, depthWrite: false, color: 0xe8f4ff })); sp.renderOrder = 7; sp.visible = false; root.add(sp); spoutSp.push(sp); }
-      const T = 16, spX = () => g.position.x + dirx * 2.2;
-      let rung = false;
+      const T = 16, V = 3.2, blowLocal = new THREE.Vector3(0, 0.75, (0.79 - 0.5) * WL), v = new THREE.Vector3();
+      let rung = false, blows = 0, dripT = 0, tailIn = false;
       Sh.ev.push({ kind: "whale", g, t: 0, upd(dt, e) {
-        e.t += dt; const k = e.t / T; if (k >= 1) { g.parent.remove(g); spoutSp.forEach((s) => s.parent && s.parent.remove(s)); e.done = true; return; }
-        // 浮上（0–0.2）→ 換氣噴水（0.2–0.75）→ 抬尾下潛（0.75–1）
-        const up = k < 0.2 ? Math.sin(k / 0.2 * PI / 2) : k < 0.75 ? 1 : Math.cos((k - 0.75) / 0.25 * PI / 2);
-        const px = x + dirx * e.t * 3.2; g.position.set(px, SEA - 1.9 + up * 1.7 + Math.sin(e.t * 0.9) * 0.08, z);
-        g.rotation.x = k > 0.75 ? -(k - 0.75) * 3.0 : 0.05 * up; fl.rotation.x = Math.sin(e.t * 1.4) * 0.15;
-        if (k > 0.2 && !rung) { rung = true; splash(px, z, 3); }
-        spoutSp.forEach((sp, i) => { const ph = ((e.t - 3.5) * 0.45 + i / spoutSp.length) % 1, on = k > 0.22 && k < 0.7 && ((e.t - 3.5) % 6.5) < 2.4; sp.visible = on; if (on) { const hgt = ph * 5; sp.position.set(px + dirx * 2.4, SEA + 0.8 + hgt, z); const s = 0.8 + ph * 1.6; sp.scale.set(s, s, 1); sp.material.opacity = 0.9 * (1 - ph); } });
+        e.t += dt; const k = e.t / T; if (k >= 1) { g.parent && g.parent.remove(g); dispose(g); e.done = true; return; }
+        // 浮上（0–0.2）→ 換氣噴水（0.2–0.72）→ 弓背、抬尾下潛（0.72–1）
+        const up = k < 0.2 ? Math.sin(k / 0.2 * PI / 2) : 1, dk = clamp((k - 0.72) / 0.28, 0, 1);
+        const px = x + dirx * e.t * V;
+        g.position.set(px, SEA - 2.6 + up * 2.05 - 7.5 * Math.pow(dk, 1.6) + Math.sin(e.t * 0.9) * 0.06, z);
+        pitch.rotation.x = k < 0.2 ? -0.07 * Math.sin(k / 0.2 * PI) : 1.05 * sstep(0, 0.7, dk);          // 正值＝低頭（下潛）
+        pitch.rotation.z = Math.sin(e.t * 0.5) * 0.03;
+        u.uPh.value += dt * 1.3; u.uAmp.value = 0.012 * (1 - dk); u.uArch.value = -0.025 * Math.sin(dk * PI);
+        if (k > 0.18 && !rung) { rung = true; splash(px, z, 3); spray(px + dirx * 3.5, z, 16, 1.6, V * dirx); }
+        // 噴氣：每 3.6 秒一次，霧狀水柱往上衝、散開、往後飄
+        if (k > 0.22 && k < 0.68 && e.t > 3.6 + blows * 3.6) {
+          blows++; g.updateMatrixWorld(true); v.copy(blowLocal); pitch.localToWorld(v);
+          for (let i = 0; i < 26; i++) { const sp = rand(0.2, 1);
+            drop(v.x + rand(-0.15, 0.15), v.y, v.z + rand(-0.15, 0.15), V * dirx * 0.55 + rand(-0.6, 0.6), rand(5.5, 9) * sp + 2, rand(-0.6, 0.6), 0.5, rand(2.2, 3.6), rand(1.8, 2.8), 3.2, 1.1, 0.8, 0xeef6ff); }
+        }
+        // 下潛時尾鰭抬出水面，水從尾鰭後緣滴下；尾鰭入水時一圈水花
+        if (dk > 0.2 && dk < 0.85) {
+          g.updateMatrixWorld(true); v.set(rand(-1.9, 1.9), 0, -WL / 2 - 0.35); pitch.localToWorld(v);
+          if (v.y > SEA + 0.2 && (dripT -= dt) <= 0) { dripT = 0.05; drop(v.x, v.y, v.z, V * dirx * 0.8, rand(-0.5, 0.3), rand(-0.2, 0.2), 0.12, 0.2, 1.2, 9.8, 0, 0.9); }
+          if (v.y > SEA + 0.5) tailIn = true; else if (tailIn && v.y < SEA + 0.1) { tailIn = false; splash(v.x, v.z, 1.8); spray(v.x, v.z, 14, 1.1, V * dirx); }
+        }
       } });
     };
+
+    /* ----- 飛魚：魚雷形身體、展開的大胸鰭滑翔、下尾葉較長（拍水起飛） ----- */
+    const flyGeo = () => G.fly || (G.fly = (() => {
+      const L = 0.4;
+      const body = loft({ len: L, nu: 28, nv: 12,
+        w: curve([[0, 0.003], [0.12, 0.011], [0.3, 0.028], [0.6, 0.036], [0.85, 0.029], [0.95, 0.017], [1, 0.003]]),
+        top: curve([[0, 0.003], [0.12, 0.013], [0.3, 0.032], [0.6, 0.04], [0.85, 0.032], [0.95, 0.018], [1, 0.003]]),
+        bot: curve([[0, 0.003], [0.12, 0.012], [0.3, 0.03], [0.6, 0.037], [0.85, 0.03], [0.95, 0.016], [1, 0.003]]),
+        color(u, s, cs, a, out) { out.setHex(0xeef1f4).convertSRGBToLinear().lerp(cA.setHex(0xc4d0db).convertSRGBToLinear(), sstep(-0.6, -0.1, s)).lerp(cA.setHex(0x1b3a6b).convertSRGBToLinear(), sstep(0.15, 0.55, s)); } });
+      const tail = fin([[0.02, 0], [-0.05, 0.05], [-0.085, 0.065], [-0.055, 0.012], [-0.055, -0.01], [-0.1, -0.095], [-0.045, -0.045]], 0.008);
+      tail.rotateY(-PI / 2); tail.translate(0, 0, -L / 2 + 0.01);
+      const body2 = merge([[body, null], [tail, (p, n, o) => o.setHex(0x274a73).convertSRGBToLinear()]]);
+      const wingPts = [[0, 0.028], [0.08, 0.032], [0.17, 0.012], [0.245, -0.025], [0.27, -0.048], [0.215, -0.056], [0.13, -0.05], [0.05, -0.034], [0, -0.02]], wp = [];
+      for (const s of [-1, 1]) for (const [sc, zz] of [[1, 0.075], [0.42, -0.07]]) {     // 大胸鰭 + 小腹鰭
+        const f = fin(wingPts.map(([x, y]) => [x * s * sc, y * sc]), 0.004); f.rotateX(PI / 2); f.rotateZ(s * 0.09); f.translate(s * 0.022, 0.006, zz);
+        wp.push([f, (p, n, o) => o.setHex(0x34495c).convertSRGBToLinear().lerp(cA.setHex(0x7d90a2).convertSRGBToLinear(), clamp(Math.abs(p.x) / 0.27, 0, 1))]);
+      }
+      return { body: body2, wings: merge(wp) };
+    })());
     const flyingFish = (x, z, dirx) => {
-      const n = Math.floor(rand(5, 9));
+      const n = Math.floor(rand(5, 9)), geo = flyGeo(), mat = fleshMat(0.4, 1, 0.3, 0.55, 1.0), u = mat.userData.u;
+      const wingMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.4, metalness: 0.1, transparent: true, opacity: 0.72, side: THREE.DoubleSide, depthWrite: false });
+      let alive = n;
       for (let i = 0; i < n; i++) {
-        const g = new THREE.Group(), fm = M(0xb9d2e6, 0.3, 0.4);
-        add(new THREE.CapsuleGeometry(0.035, 0.22, 4, 6), fm, 0, 0, 0, g, false).rotation.x = PI / 2;
-        for (const s of [-1, 1]) add(new THREE.BoxGeometry(0.2, 0.01, 0.1), M(0xd8ecff, 0.3), s * 0.1, 0.01, 0, g, false);
-        g.visible = false; root.add(g);
-        const T = rand(1.2, 1.9), L = rand(6, 12), H = rand(0.5, 1.1), t0 = -rand(0, 0.7), px0 = x + rand(-3, 3), pz = z + rand(-2.5, 2.5);
-        Sh.ev.push({ kind: "fish", g, upd(dt, e) { e.t = (e.t ?? t0) + dt; const k = e.t / T; if (k < 0) return; if (k >= 1) { g.parent.remove(g); e.done = true; return; }
-          g.visible = true; g.position.set(px0 + k * L * dirx, SEA + H * 4 * k * (1 - k) + 0.1, pz); g.rotation.set(0, dirx > 0 ? PI / 2 : -PI / 2, 0); g.rotation.z = Math.sin(e.t * 40) * 0.12; } });
+        const g = new THREE.Group(); meshOf(geo.body, mat, g); meshOf(geo.wings, wingMat, g).renderOrder = 6; g.visible = false; root.add(g);
+        const T = rand(1.2, 1.9), L = rand(6, 12), H = rand(0.5, 1.1), t0 = -rand(0, 0.7), px0 = x + rand(-3, 3), pz = z + rand(-2.5, 2.5), bank = rand(-0.25, 0.25);
+        let inN = 0, outN = false, trailT = 0;
+        Sh.ev.push({ kind: "fish", g, upd(dt, e) { e.t = (e.t ?? t0) + dt; const k = e.t / T; if (k < 0) return;
+          if (k >= 1) { g.parent && g.parent.remove(g); if (--alive === 0) { mat.dispose(); wingMat.dispose(); } e.done = true; return; }
+          if (i === 0) u.uPh.value += dt * 45;
+          // 出水滑行（尾巴拍水）→ 張開胸鰭貼著海面滑翔、慢慢下降 → 落水
+          const env = k < 0.12 ? Math.sin(k / 0.12 * PI / 2) : k < 0.88 ? 1 - 0.35 * (k - 0.12) / 0.76 : 0.65 * Math.cos((k - 0.88) / 0.12 * PI / 2);
+          const px = px0 + k * L * dirx; g.visible = true; g.position.set(px, SEA + 0.06 + H * env, pz);
+          g.rotation.set(0, dirx > 0 ? PI / 2 : -PI / 2, 0); g.rotateX(k < 0.12 ? -0.35 : k > 0.88 ? 0.4 : 0.05); g.rotateZ(bank * Math.sin(k * PI));
+          if (i === 0) u.uAmp.value = k < 0.1 || k > 0.9 ? 0.06 : 0.008;
+          if (!outN && k > 0.02) { outN = true; splash(px, pz, 0.22); spray(px, pz, 3, 0.35); }
+          if (k < 0.1 && (trailT -= dt) <= 0) { trailT = 0.05; splash(px, pz, 0.12); }
+          if (inN === 0 && k > 0.96) { inN = 1; splash(px, pz, 0.3); spray(px, pz, 5, 0.4); }
+        } });
       }
     };
-    const school = (x, z, dirx) => {   // 浮在水面附近的魚群（深色小魚影，一起游）
-      const fish = [], mat = new THREE.MeshBasicMaterial({ color: 0x0f2438, transparent: true, opacity: 0.7, depthWrite: false });
-      for (let i = 0; i < 22; i++) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.16), mat); m.rotation.x = -PI / 2; m.position.set(x, SEA + 0.12, z); root.add(m); fish.push({ m, ox: rand(-2.5, 2.5), oz: rand(-2.5, 2.5), ph: rand(0, 6.28) }); }
-      Sh.ev.push({ kind: "school", t: 0, upd(dt, e) { e.t += dt; const k = e.t / 22; if (k >= 1) { fish.forEach((f) => f.m.parent.remove(f.m)); e.done = true; return; }
-        const cx = x + dirx * e.t * 3.0, cz = z + Math.sin(e.t * 0.4) * 2;
-        fish.forEach((f) => { f.m.position.set(cx + f.ox + Math.sin(e.t * 2 + f.ph) * 0.4, SEA + 0.12, cz + f.oz + Math.cos(e.t * 1.7 + f.ph) * 0.4); f.m.rotation.z = dirx > 0 ? 0 : PI; f.m.scale.setScalar(clamp(Math.min(k * 8, (1 - k) * 8), 0, 1)); }); } });
+
+    /* ----- 魚群（鯖魚 / 沙丁魚）：海面下一大團暗影，銀色魚身翻轉時閃光，背鰭劃破水面、偶爾有魚跳出 ----- */
+    const sardineGeo = () => G.sardine || (G.sardine = (() => {
+      const L = 0.32;
+      const body = loft({ len: L, nu: 22, nv: 10,
+        w: curve([[0, 0.003], [0.1, 0.009], [0.35, 0.026], [0.6, 0.03], [0.85, 0.024], [1, 0.003]]),
+        top: curve([[0, 0.004], [0.1, 0.015], [0.35, 0.042], [0.6, 0.047], [0.85, 0.035], [1, 0.005]]),
+        bot: curve([[0, 0.004], [0.1, 0.013], [0.35, 0.036], [0.6, 0.04], [0.85, 0.03], [1, 0.005]]),
+        color(u, s, cs, a, out) { out.setHex(0xf0f2f2).convertSRGBToLinear().lerp(cA.setHex(0xcfd9df).convertSRGBToLinear(), sstep(-0.5, 0, s)).lerp(cA.setHex(0x1f4b5c).convertSRGBToLinear(), sstep(0.3, 0.6, s));
+          if (s > 0.5 && Math.sin(u * 70 + s * 9) > 0.4) out.lerp(cA.setHex(0x0d2229).convertSRGBToLinear(), 0.6); } });
+      const tail = fin([[0.02, 0], [-0.04, 0.045], [-0.07, 0.065], [-0.045, 0.012], [-0.04, 0], [-0.045, -0.012], [-0.07, -0.065], [-0.04, -0.045]], 0.006);
+      tail.rotateY(-PI / 2); tail.translate(0, 0, -L / 2 + 0.012);
+      return merge([[body, null], [tail, (p, n, o) => o.setHex(0x2a4a55).convertSRGBToLinear()]]);
+    })());
+    const shadowTex = () => G.shadow || (G.shadow = (() => { const c = document.createElement("canvas"); c.width = c.height = 128; const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 62);
+      gr.addColorStop(0, "rgba(8,22,34,.75)"); gr.addColorStop(0.6, "rgba(8,22,34,.35)"); gr.addColorStop(1, "rgba(8,22,34,0)"); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); })());
+    const school = (x, z, dirx) => {
+      const N = 60, mat = fleshMat(0.32, 1, 0.22, 0.85, 1.3), u = mat.userData.u, im = new THREE.InstancedMesh(sardineGeo(), mat, N);
+      im.frustumCulled = false; im.castShadow = false; root.add(im);
+      const patch = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: shadowTex(), transparent: true, depthWrite: false, opacity: 0 }));
+      patch.rotation.x = -PI / 2; patch.scale.set(8, 5, 1); patch.renderOrder = 1; root.add(patch);
+      const fish = [], d = new THREE.Object3D(); d.rotation.order = "YXZ";
+      for (let i = 0; i < N; i++) { const r = Math.sqrt(Math.random()), a = rand(0, PI * 2); fish.push({ ox: Math.cos(a) * r * 3.2, oz: Math.sin(a) * r * 2.0, ph: rand(0, 6.28), sp: rand(0.8, 1.3), jt: -1, jT: 0, jH: 0 }); }
+      let leapT = 0.5;
+      Sh.ev.push({ kind: "school", t: 0, upd(dt, e) { e.t += dt; const k = e.t / 22;
+        if (k >= 1) { im.parent && im.parent.remove(im); patch.parent && patch.parent.remove(patch); mat.dispose(); patch.material.dispose(); patch.geometry.dispose(); im.dispose(); e.done = true; return; }
+        const cx = x + dirx * e.t * 3.0, cz = z + Math.sin(e.t * 0.4) * 2, fade = clamp(Math.min(k * 8, (1 - k) * 8), 0, 1), turn = Math.cos(e.t * 0.4) * 0.8 * 0.4 / 3.0;
+        patch.position.set(cx, SEA + 0.03, cz); patch.material.opacity = 0.55 * fade; u.uPh.value += dt * 16; u.uAmp.value = 0.05;
+        if ((leapT -= dt) <= 0 && fade > 0.5) { leapT = rand(0.12, 0.45); const f = fish[Math.floor(Math.random() * N)]; if (f.jt < 0) { f.jt = 0; f.jT = rand(0.35, 0.6); f.jH = rand(0.25, 0.6); f.splashed = false; splash(cx + f.ox, cz + f.oz, 0.15); } }
+        for (let i = 0; i < N; i++) { const f = fish[i], wob = e.t * 2 * f.sp + f.ph;
+          let y = SEA - 0.03 + Math.sin(wob * 1.3) * 0.028, pitch = 0;
+          const fx = cx + f.ox + Math.sin(wob) * 0.35, fz = cz + f.oz + Math.cos(wob * 0.85) * 0.35;
+          if (f.jt >= 0) { f.jt += dt; const q = f.jt / f.jT; if (q >= 1) { f.jt = -1; splash(fx, fz, 0.18); } else { y += f.jH * 4 * q * (1 - q) + 0.05; pitch = -Math.atan(f.jH * 4 * (1 - 2 * q) / (3 * f.jT)); } }
+          d.position.set(fx, y, fz); d.rotation.set(pitch, (dirx > 0 ? PI / 2 : -PI / 2) + turn + Math.cos(wob) * 0.25, Math.sin(wob * 1.7) * 0.7);   // 側翻：銀色魚腹反光一閃一閃
+          d.scale.setScalar(fade); d.updateMatrix(); im.setMatrixAt(i, d.matrix); }
+        im.instanceMatrix.needsUpdate = true;
+      } });
     };
 
     const splash2 = (x, z) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: ringTex, transparent: true, depthWrite: false, opacity: 0.7 })); m.rotation.x = -PI / 2; m.position.set(x, WY + 0.02, z); root.add(m); Sh.ev.push({ kind: "ring", m, age: 0, upd(dt, e) { e.age += dt; const k = e.age / 1.3; m.scale.setScalar(0.4 + k * 1.8); m.material.opacity = 0.7 * (1 - k); if (k >= 1) { e.done = true; m.parent && m.parent.remove(m); } } }); };
