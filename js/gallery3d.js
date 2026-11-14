@@ -14,7 +14,7 @@
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
   const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
-  const UY = 3.3, STAIR = { x0: -4.5, x1: 0.47, z0: -4.95, z1: 0.55 }, STAIRS = [STAIR, { x0: 5.9, x1: 11.4, z0: 0.47, z1: 5.4 }];   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
+  const UY = 3.3, STAIR = { x0: -4.5, x1: 0.47, z0: -4.95, z1: 0.55 }, STAIRS = [STAIR, { x0: 12.2, x1: 13.8, z0: -1.7, z1: 5.1 }, { x0: 7.0, x1: 12.3, z0: 3.5, z1: 5.1 }, { x0: 7.0, x1: 8.6, z0: 0.47, z1: 3.7 }];   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
   const DECK_HD = 8.6;                                  // 露台半寬（z）
@@ -39,9 +39,11 @@
     if (x >= -4.5 && x <= -3.1 && z >= -4.95 && z < -0.85) return (UY / 2) * (z + 4.95) / 4.1;                 // 第一段（由北往南）
     if (x >= -4.5 && x <= -3.1 && z >= -0.85 && z <= 0.55) return UY / 2;                                     // 轉角平台
     if (x > -3.1 && x <= -0.43 && z >= -0.85 && z <= 0.55) return UY / 2 + (UY / 2) * (x + 3.1) / 2.67;       // 第二段（往東，到二樓西牆的門）
-    if (x >= 5.9 && x < 10.0 && z >= 4.0 && z <= 5.4) return (UY / 2) * (x - 5.9) / 4.1;                       // 東側樓梯：第一段（往東）
-    if (x >= 10.0 && x <= 11.4 && z > 4.0 && z <= 5.4) return UY / 2;                                         // 東側：轉角平台
-    if (x >= 10.0 && x <= 11.4 && z >= 1.3 && z <= 4.0) return UY / 2 + (UY / 2) * (4.0 - z) / 2.7;           // 東側：第二段（往北，到南牆東端的門）
+    if (x >= 12.3 && x <= 13.7 && z >= -1.6 && z < 3.6) return (UY / 3) * (z + 1.6) / 5.2;                          // 東側樓梯：第一段（從一樓東門往南，貼著東牆）
+    if (x >= 12.3 && x <= 13.7 && z >= 3.6 && z <= 5.0) return UY / 3;                                              // 轉角平台 1
+    if (x >= 8.5 && x < 12.3 && z >= 3.6 && z <= 5.0) return UY / 3 + (UY / 3) * (12.3 - x) / 3.8;                   // 第二段（往西）
+    if (x >= 7.1 && x < 8.5 && z >= 3.6 && z <= 5.0) return (2 * UY) / 3;                                           // 轉角平台 2
+    if (x >= 7.1 && x <= 8.5 && z >= 0.9 && z < 3.6) return (2 * UY) / 3 + (UY / 3) * (3.6 - z) / 2.7;              // 第三段（往北，到南牆的門）
     return null;
   };
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -1173,8 +1175,8 @@
       // 外牆（北、東為整面高牆；西、南走進去會降低）
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, TOP, 0.14), plasterH, (X0 + X1) / 2, TOP / 2, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);
       shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, -0.65 - Z0, X0, (Z0 - 0.65) / 2, plasterH, "U", 0.48, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2, 0); addObs(X0, (Z0 - 0.65) / 2, 0.1, (-0.65 - Z0) / 2, 1);
-      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(10.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 10.2) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 11.2, WT, 0.14, (11.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
-      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 10.2) / 2, Z1, (10.2 - X0) / 2, 0.1, 1); addObs((11.2 + X1) / 2, Z1, (X1 - 11.2) / 2, 0.1, 1);
+      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(7.4 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 7.4) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 8.4, WT, 0.14, (8.4 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
+      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 7.4) / 2, Z1, (7.4 - X0) / 2, 0.1, 1); addObs((8.4 + X1) / 2, Z1, (X1 - 8.4) / 2, 0.1, 1);
       mk(new THREE.BoxGeometry(0.14, TOP, DW0 - Z0), plasterH, X1, TOP / 2, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP, Z1 - DW1), plasterH, X1, TOP / 2, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP - 2.1, DW1 - DW0), plasterH, X1, 2.1 + (TOP - 2.1) / 2, (DW0 + DW1) / 2);                                    // 門楣 + 門上方牆
@@ -1198,14 +1200,18 @@
         const brownD = M(0x4a2c1c, 0.6); for (const z of [-0.65, 0.35]) mk(new THREE.BoxGeometry(0.18, 2.15, 0.1), brownD, X0, UY + 1.075, z); mk(new THREE.BoxGeometry(0.18, 0.12, 1.1), brownD, X0, UY + 2.15, -0.15);   // 門框
       }
 
-      // 東側（右邊）屋外逆時針旋轉樓梯：西邊地面 → 往東爬到轉角平台 → 轉向北爬到門口平台 → 南牆東端的門（x 10.2~11.2，進來就是客廳）
+      // 右邊（東側）屋外樓梯：從一樓東門出來 → 往南（貼東牆）→ 右轉往西（貼南牆）→ 右轉往北 → 二樓南牆的門（x 7.4~8.4，進來就是客廳）
       { const rail = (x0, z0, x1, z1, y0) => { const len = Math.hypot(x1 - x0, z1 - z0), m = mk(new THREE.BoxGeometry(len, 0.06, 0.06), bronze, (x0 + x1) / 2, y0 + 1.0, (z0 + z1) / 2, false); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); };
-        const NA = 10, dxA = 4.1 / NA; for (let k = 0; k < NA; k++) { const h = (UY / 2) * (k + 1) / NA; mk(new THREE.BoxGeometry(dxA, h, 1.4), wood, 5.9 + (k + 0.5) * dxA, h / 2, 4.7); }
-        mk(new THREE.BoxGeometry(1.4, UY / 2, 1.4), wood, 10.7, UY / 4, 4.7);
-        const NB = 10, dzB = 2.7 / NB; for (let k = 0; k < NB; k++) { const h = UY / 2 + (UY / 2) * (k + 1) / NB; mk(new THREE.BoxGeometry(1.4, h, dzB), wood, 10.7, h / 2, 4.0 - (k + 0.5) * dzB); }
-        mk(new THREE.BoxGeometry(1.4, UY, 0.83), wood, 10.7, UY / 2, 0.885);
-        rail(5.9, 3.95, 10.0, 3.95, UY * 0.25 - 0.45); rail(5.9, 5.45, 10.0, 5.45, UY * 0.25 - 0.45); rail(10.0, 5.45, 11.45, 5.45, UY / 2); rail(11.45, 5.45, 11.45, 0.5, UY * 0.75 - 0.4); rail(9.95, 4.0, 9.95, 0.5, UY * 0.75 - 0.4);
-        addObs(7.95, 3.9, 2.1, 0.06); addObs(7.95, 5.5, 2.1, 0.06); addObs(10.7, 5.5, 0.8, 0.06); addObs(11.5, 3.0, 0.06, 2.6); addObs(9.95, 2.0, 0.06, 1.55);
+        const NA = 12, dzA = 5.2 / NA; for (let k = 0; k < NA; k++) { const h = (UY / 3) * (k + 1) / NA; mk(new THREE.BoxGeometry(1.4, h, dzA), wood, 13.0, h / 2, -1.6 + (k + 0.5) * dzA); }              // 第一段
+        mk(new THREE.BoxGeometry(1.4, UY / 3, 1.4), wood, 13.0, UY / 6, 4.3);                                                                                                               // 轉角 1
+        const NB = 10, dxB = 3.8 / NB; for (let k = 0; k < NB; k++) { const h = UY / 3 + (UY / 3) * (k + 1) / NB; mk(new THREE.BoxGeometry(dxB, h, 1.4), wood, 12.3 - (k + 0.5) * dxB, h / 2, 4.3); }  // 第二段
+        mk(new THREE.BoxGeometry(1.4, (2 * UY) / 3, 1.4), wood, 7.8, UY / 3, 4.3);                                                                                                          // 轉角 2
+        const NC = 10, dzC = 2.7 / NC; for (let k = 0; k < NC; k++) { const h = (2 * UY) / 3 + (UY / 3) * (k + 1) / NC; mk(new THREE.BoxGeometry(1.4, h, dzC), wood, 7.8, h / 2, 3.6 - (k + 0.5) * dzC); }   // 第三段
+        mk(new THREE.BoxGeometry(1.4, UY, 0.43), wood, 7.8, UY / 2, 0.685);                                                                                                                 // 門口平台
+        // 扶手
+        rail(13.75, -1.6, 13.75, 5.05, 0.2); rail(12.25, -1.6, 12.25, 3.55, 0.2); rail(7.05, 5.05, 13.75, 5.05, UY / 3 - 0.4); rail(8.45, 3.55, 12.25, 3.55, UY / 3 - 0.2); rail(7.05, 0.5, 7.05, 5.05, UY * 0.6); rail(8.55, 0.5, 8.55, 3.55, UY * 0.6);
+        // 碰撞（只有一樓東門出口、與最上面的門是通的）
+        addObs(13.8, 1.7, 0.06, 3.4); addObs(12.2, 1.0, 0.06, 2.6); addObs(10.4, 5.1, 3.4, 0.06); addObs(10.4, 3.5, 2.0, 0.06); addObs(7.0, 2.8, 0.06, 2.3); addObs(8.6, 2.0, 0.06, 1.5);
       }
 
       /* ---- 一樓家具（lv 0）---- */
@@ -1319,7 +1325,7 @@
           door(2.0, -6.6, 0, 1.4, 1.0, "z", 2.0, -6.1);                 // 浴室門（西牆，往浴室裡開）
           door(0.5, -0.65, 0, 1.48, 1.0, "z", 0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
           door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);
-          door(11.2, Z1, -PI / 2, -PI, 1.0, "x", 10.7, Z1);           // 東側出口門（南牆東端，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
+          door(8.4, Z1, -PI / 2, -PI, 1.0, "x", 7.9, Z1);             // 右邊樓梯上來的門（南牆 x 7.4~8.4，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
           tickHooks.push((dt) => {
             const onUp = py > UY * 0.5;
             for (const d of doors) {
@@ -1344,15 +1350,15 @@
         { const bf = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.4), new THREE.MeshStandardMaterial({ color: 0xb6b8bc, roughness: 0.3 })); bf.rotation.x = -PI / 2; bf.position.set(1.65, UY + 0.014, -6.8); bf.receiveShadow = true; scene.add(bf); }
         const por = M(0xffffff, 0.2);
         // 馬桶
-        U(new THREE.BoxGeometry(0.4, 0.4, 0.18), por, 1.95, 0.62, -7.8); const bowl = U(new THREE.CylinderGeometry(0.19, 0.15, 0.38, 20), por, 1.95, 0.2, -7.55); bowl.scale.z = 1.35; U(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 20), por, 1.95, 0.4, -7.55).scale.z = 1.35; addObs(1.95, -7.6, 0.25, 0.35, 1);
+        U(new THREE.BoxGeometry(0.4, 0.4, 0.18), por, 1.2, 0.62, -7.8); const bowl = U(new THREE.CylinderGeometry(0.19, 0.15, 0.38, 20), por, 1.2, 0.2, -7.55); bowl.scale.z = 1.35; U(new THREE.CylinderGeometry(0.2, 0.2, 0.04, 20), por, 1.2, 0.4, -7.55).scale.z = 1.35; addObs(1.2, -7.6, 0.25, 0.35, 1);
         // 立柱洗手台 + 圓鏡
-        U(new THREE.CylinderGeometry(0.07, 0.09, 0.62, 12), por, 2.45, 0.31, -7.62); const basin = U(new THREE.SphereGeometry(0.24, 18, 10, 0, PI * 2, 0, PI / 2), por, 2.45, 0.66, -7.6); basin.scale.set(1, 0.5, 0.8); addObs(2.45, -7.6, 0.26, 0.26, 1);
-        U(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), M(0xc9cdd3, 0.2, 0.9), 2.45, 0.82, -7.8);
+        U(new THREE.CylinderGeometry(0.07, 0.09, 0.62, 12), por, 0.1, 0.31, -7.62); const basin = U(new THREE.SphereGeometry(0.24, 18, 10, 0, PI * 2, 0, PI / 2), por, 0.1, 0.66, -7.6); basin.scale.set(1, 0.5, 0.8); addObs(0.1, -7.6, 0.26, 0.26, 1);
+        U(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), M(0xc9cdd3, 0.2, 0.9), 0.1, 0.82, -7.8);
         { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 64, 64); gr.addColorStop(0, "#f7fbff"); gr.addColorStop(0.5, "#d4e4f2"); gr.addColorStop(1, "#a9c2d8"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(10, 0, 10, 64); const tt = new THREE.CanvasTexture(c); if (THREE.sRGBEncoding) tt.encoding = THREE.sRGBEncoding;
-          const mr = U(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ map: tt, toneMapped: false }), 2.45, 1.45, -7.9); mr.rotation.y = 0; U(new THREE.TorusGeometry(0.3, 0.018, 8, 32), M(0xc9cdd3, 0.2, 0.9), 2.45, 1.45, -7.9); }
+          const mr = U(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ map: tt, toneMapped: false }), 0.1, 1.45, -7.9); mr.rotation.y = 0; U(new THREE.TorusGeometry(0.3, 0.018, 8, 32), M(0xc9cdd3, 0.2, 0.9), 0.1, 1.45, -7.9); }
         // 淋浴間（西北角）：蓮蓬頭、水管、小門檻
-        U(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), M(0xc9cdd3, 0.2, 0.9), 0.62, 1.15, -7.4); { const rs = U(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), M(0xc9cdd3, 0.2, 0.9), 0.7, 1.82, -7.4); rs.rotation.z = PI / 2 + 0.5; }
-        U(new THREE.BoxGeometry(0.04, 0.06, 1.0), wh, 1.52, 0.03, -7.4);
+        U(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), M(0xc9cdd3, 0.2, 0.9), 2.65, 1.15, -7.4); { const rs = U(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), M(0xc9cdd3, 0.2, 0.9), 2.55, 1.82, -7.4); rs.rotation.z = PI / 2 + 0.5; }
+        U(new THREE.BoxGeometry(0.04, 0.06, 1.0), wh, 1.9, 0.03, -7.4);
         for (let k = _c0; k < scene.children.length; k++) scene.children[k].position.x += 2.7;
         scene.children[_c0 + 1].visible = false;   // 西牆有門洞，不貼大理石
         for (let k = _o0; k < obstacles.length; k++) { obstacles[k].minX += 2.7; obstacles[k].maxX += 2.7; }
@@ -1455,7 +1461,7 @@
       // 門口地墊與信箱
       const homeT = mkTex(THREE, decalCanvas(512, 200, (c, w, h) => { c.fillStyle = "#6a4a2e"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 78px Georgia, serif"; c.fillText("HOME", w / 2, 118); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("David & ARIES", w / 2, 168); }), aniso);
       const mat0 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.6), new THREE.MeshStandardMaterial({ map: homeT, roughness: 1 })); mat0.rotation.x = -PI / 2; mat0.rotation.z = PI / 2; mat0.position.set(X1 + 0.9, 0.04, (DW0 + DW1) / 2); scene.add(mat0);
-      mk(new THREE.BoxGeometry(0.06, 1.0, 0.06), M(0x5a4028, 0.8), X1 + 1.5, 0.5, -0.9); mk(new THREE.BoxGeometry(0.38, 0.22, 0.24), M(0xc0392b, 0.6), X1 + 1.5, 1.1, -0.9); addObs(X1 + 1.5, -0.9, 0.2, 0.2);
+      mk(new THREE.BoxGeometry(0.06, 1.0, 0.06), M(0x5a4028, 0.8), X1 + 3.0, 0.5, -0.9); mk(new THREE.BoxGeometry(0.38, 0.22, 0.24), M(0xc0392b, 0.6), X1 + 3.0, 1.1, -0.9); addObs(X1 + 3.0, -0.9, 0.2, 0.2);
 
       // ===== 公園（房子外面，一路到美術館入口）=====
       const tree = (x, z, s = 1) => {
