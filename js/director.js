@@ -132,7 +132,7 @@
     const hook = (dt, t) => {
       const dx = pos.x - npc.x, dz = pos.z - npc.z, dist = Math.hypot(dx, dz);
       inRoom = ctx.roomAt(npc.x, npc.z);
-      const blocked = document.body.classList.contains("board-open") || document.body.classList.contains("news-open") || document.body.classList.contains("locked");
+      const blocked = window.PERSONA === "aeris" || document.body.classList.contains("board-open") || document.body.classList.contains("news-open") || document.body.classList.contains("locked");
       cool -= dt;
       if (state === "talk") {
         speed = 0; npc.face += angDiff(npc.face, Math.atan2(dx, dz)) * Math.min(1, dt * 7);
