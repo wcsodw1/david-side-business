@@ -14,7 +14,7 @@
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
   const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
-  const UY = 3.3, STAIR = { x0: -5.5, x1: -0.5, z0: -4.95, z1: 0.55 }, STAIRS = [STAIR, { x0: 12.2, x1: 13.8, z0: -1.7, z1: 5.1 }, { x0: 7.0, x1: 12.3, z0: 3.5, z1: 5.1 }, { x0: 7.0, x1: 8.6, z0: 0.47, z1: 3.7 }];   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
+  const UY = 3.3, STAIR = { x0: -5.5, x1: -0.5, z0: -4.95, z1: 0.55 }, STAIRS = [STAIR, { x0: 12.2, x1: 13.8, z0: -1.7, z1: 5.1 }, { x0: 9.9, x1: 12.3, z0: 3.5, z1: 5.1 }, { x0: 9.9, x1: 11.5, z0: 0.47, z1: 3.7 }];   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
   const DECK_HD = 8.6;                                  // 露台半寬（z）
@@ -39,11 +39,9 @@
     if (x >= -5.5 && x <= -4.1 && z >= -4.95 && z < -0.85) return (UY / 2) * (z + 4.95) / 4.1;                 // 第一段（由北往南）
     if (x >= -5.5 && x <= -4.1 && z >= -0.85 && z <= 0.55) return UY / 2;                                     // 轉角平台
     if (x > -4.1 && x <= -1.43 && z >= -0.85 && z <= 0.55) return UY / 2 + (UY / 2) * (x + 4.1) / 2.67;       // 第二段（往東，到二樓西牆的門）
-    if (x >= 12.3 && x <= 13.7 && z >= -1.6 && z < 3.6) return (UY / 3) * (z + 1.6) / 5.2;                          // 東側樓梯：第一段（從一樓東門往南，貼著東牆）
-    if (x >= 12.3 && x <= 13.7 && z >= 3.6 && z <= 5.0) return UY / 3;                                              // 轉角平台 1
-    if (x >= 8.5 && x < 12.3 && z >= 3.6 && z <= 5.0) return UY / 3 + (UY / 3) * (12.3 - x) / 3.8;                   // 第二段（往西）
-    if (x >= 7.1 && x < 8.5 && z >= 3.6 && z <= 5.0) return (2 * UY) / 3;                                           // 轉角平台 2
-    if (x >= 7.1 && x <= 8.5 && z >= 0.9 && z < 3.6) return (2 * UY) / 3 + (UY / 3) * (3.6 - z) / 2.7;              // 第三段（往北，到南牆的門）
+    if (x >= 12.3 && x <= 13.7 && z >= -1.6 && z < 3.6) return (0.8 * UY) * (z + 1.6) / 5.2;                          // 東側樓梯：第一段（從一樓東門往南，貼著東牆）
+    if (x >= 10.0 && x <= 13.7 && z >= 3.6 && z <= 5.0) return 0.8 * UY;                                           // 轉角平台（平的，一路連到最右邊的門前）
+    if (x >= 10.0 && x <= 11.4 && z >= 0.9 && z < 3.6) return 0.8 * UY + (0.2 * UY) * (3.6 - z) / 2.7;             // 第二段（往北，到南牆最右邊的門）
     return null;
   };
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -1176,8 +1174,8 @@
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, TOP, 0.14), plasterH, (X0 + X1) / 2, TOP / 2, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);
       shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, -0.65 - Z0, X0 - 1.0, (Z0 - 0.65) / 2, plasterH, "U", 0.48, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2, 0); addObs(X0 - 1.0, (Z0 - 0.65) / 2, 0.1, (-0.65 - Z0) / 2, 1);
       shellBox(1.14, WT, 0.14, X0 - 0.5, Z0, plasterH, "U", 0.48, UY); shellBox(1.14, WT, 0.14, X0 - 0.5, Z1, plasterH, "U", 0.48, UY); addObs(X0 - 0.5, Z0, 0.57, 0.1, 1); addObs(X0 - 0.5, Z1, 0.57, 0.1, 1);   // 二樓北 / 南牆跟著往西接長
-      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(7.4 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 7.4) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 8.4, WT, 0.14, (8.4 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
-      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 7.4) / 2, Z1, (7.4 - X0) / 2, 0.1, 1); addObs((8.4 + X1) / 2, Z1, (X1 - 8.4) / 2, 0.1, 1);
+      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(10.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 10.2) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 11.2, WT, 0.14, (11.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
+      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 10.2) / 2, Z1, (10.2 - X0) / 2, 0.1, 1); addObs((11.2 + X1) / 2, Z1, (X1 - 11.2) / 2, 0.1, 1);
       mk(new THREE.BoxGeometry(0.14, TOP, DW0 - Z0), plasterH, X1, TOP / 2, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP, Z1 - DW1), plasterH, X1, TOP / 2, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP - 2.1, DW1 - DW0), plasterH, X1, 2.1 + (TOP - 2.1) / 2, (DW0 + DW1) / 2);                                    // 門楣 + 門上方牆
@@ -1201,18 +1199,14 @@
         const brownD = M(0x4a2c1c, 0.6); for (const z of [-0.65, 0.35]) mk(new THREE.BoxGeometry(0.18, 2.15, 0.1), brownD, X0 - 1.0, UY + 1.075, z); mk(new THREE.BoxGeometry(0.18, 0.12, 1.1), brownD, X0 - 1.0, UY + 2.15, -0.15);   // 門框
       }
 
-      // 右邊（東側）屋外樓梯：從一樓東門出來 → 往南（貼東牆）→ 右轉往西（貼南牆）→ 右轉往北 → 二樓南牆的門（x 7.4~8.4，進來就是客廳）
+      // 最右邊（東側）屋外樓梯：從一樓東門出來 → 往南（貼東牆）→ 右轉往西（平台）→ 右轉往北 → 二樓南牆最右邊的門（x 10.2~11.2，進來就是客廳）
       { const rail = (x0, z0, x1, z1, y0) => { const len = Math.hypot(x1 - x0, z1 - z0), m = mk(new THREE.BoxGeometry(len, 0.06, 0.06), bronze, (x0 + x1) / 2, y0 + 1.0, (z0 + z1) / 2, false); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); };
-        const NA = 12, dzA = 5.2 / NA; for (let k = 0; k < NA; k++) { const h = (UY / 3) * (k + 1) / NA; mk(new THREE.BoxGeometry(1.4, h, dzA), wood, 13.0, h / 2, -1.6 + (k + 0.5) * dzA); }              // 第一段
-        mk(new THREE.BoxGeometry(1.4, UY / 3, 1.4), wood, 13.0, UY / 6, 4.3);                                                                                                               // 轉角 1
-        const NB = 10, dxB = 3.8 / NB; for (let k = 0; k < NB; k++) { const h = UY / 3 + (UY / 3) * (k + 1) / NB; mk(new THREE.BoxGeometry(dxB, h, 1.4), wood, 12.3 - (k + 0.5) * dxB, h / 2, 4.3); }  // 第二段
-        mk(new THREE.BoxGeometry(1.4, (2 * UY) / 3, 1.4), wood, 7.8, UY / 3, 4.3);                                                                                                          // 轉角 2
-        const NC = 10, dzC = 2.7 / NC; for (let k = 0; k < NC; k++) { const h = (2 * UY) / 3 + (UY / 3) * (k + 1) / NC; mk(new THREE.BoxGeometry(1.4, h, dzC), wood, 7.8, h / 2, 3.6 - (k + 0.5) * dzC); }   // 第三段
-        mk(new THREE.BoxGeometry(1.4, UY, 0.43), wood, 7.8, UY / 2, 0.685);                                                                                                                 // 門口平台
-        // 扶手
-        rail(13.75, -1.6, 13.75, 5.05, 0.2); rail(12.25, -1.6, 12.25, 3.55, 0.2); rail(7.05, 5.05, 13.75, 5.05, UY / 3 - 0.4); rail(8.45, 3.55, 12.25, 3.55, UY / 3 - 0.2); rail(7.05, 0.5, 7.05, 5.05, UY * 0.6); rail(8.55, 0.5, 8.55, 3.55, UY * 0.6);
-        // 碰撞（只有一樓東門出口、與最上面的門是通的）
-        addObs(13.8, 1.7, 0.06, 3.4); addObs(12.2, 1.0, 0.06, 2.6); addObs(10.4, 5.1, 3.4, 0.06); addObs(10.4, 3.5, 2.0, 0.06); addObs(7.0, 2.8, 0.06, 2.3); addObs(8.6, 2.0, 0.06, 1.5);
+        const NA = 14, dzA = 5.2 / NA; for (let k = 0; k < NA; k++) { const h = (0.8 * UY) * (k + 1) / NA; mk(new THREE.BoxGeometry(1.4, h, dzA), wood, 13.0, h / 2, -1.6 + (k + 0.5) * dzA); }                // 第一段
+        mk(new THREE.BoxGeometry(3.7, 0.8 * UY, 1.4), wood, 11.85, 0.4 * UY, 4.3);                                                                                                          // 平台（x 10~13.7）
+        const NC = 8, dzC = 2.7 / NC; for (let k = 0; k < NC; k++) { const h = 0.8 * UY + (0.2 * UY) * (k + 1) / NC; mk(new THREE.BoxGeometry(1.4, h, dzC), wood, 10.7, h / 2, 3.6 - (k + 0.5) * dzC); }   // 第二段
+        mk(new THREE.BoxGeometry(1.4, UY, 0.43), wood, 10.7, UY / 2, 0.685);                                                                                                                // 門口平台
+        rail(13.75, -1.6, 13.75, 5.05, 0.2); rail(12.25, -1.6, 12.25, 3.55, 0.2); rail(9.95, 5.05, 13.75, 5.05, UY * 0.8 - 1.0); rail(11.45, 0.5, 11.45, 3.55, UY * 0.8); rail(9.95, 0.5, 9.95, 5.05, UY * 0.8);
+        addObs(13.8, 1.7, 0.06, 3.4); addObs(12.2, 1.0, 0.06, 2.6); addObs(11.85, 5.1, 1.95, 0.06); addObs(9.95, 2.8, 0.06, 2.3); addObs(11.5, 2.0, 0.06, 1.5); addObs(11.85, 3.5, 0.45, 0.06);
       }
 
       /* ---- 一樓家具（lv 0）---- */
@@ -1326,7 +1320,7 @@
           door(2.0, -7.3, 0, -1.4, 1.0, "z", 2.0, -6.8);                // 浴室門（西牆正中間，往臥室裡開）
           door(-0.5, -0.65, 0, 1.48, 1.0, "z", -0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
           door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);
-          door(8.4, Z1, -PI / 2, -PI, 1.0, "x", 7.9, Z1);             // 右邊樓梯上來的門（南牆 x 7.4~8.4，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
+          door(11.2, Z1, -PI / 2, -PI, 1.0, "x", 10.7, Z1);           // 最右邊的門（南牆 x 10.2~11.2，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
           tickHooks.push((dt) => {
             const onUp = py > UY * 0.5;
             for (const d of doors) {
