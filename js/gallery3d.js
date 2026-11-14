@@ -1650,7 +1650,7 @@
     const chairNearIdx = () => { if (sitting >= 0) return -1; let best = -1, bd = 1e9; for (let c = 0; c < chairSpots.length; c++) { const q = chairSpots[c]; if (q.sofa ? lvl !== 1 : (inside !== sPB || sPB <= 0)) continue; const d = Math.hypot(pos.x - q.front.x, pos.z - q.front.z); if (d < (q.sofa ? 0.85 : 1.3) && d < bd) { bd = d; best = c; } } return best; };
     const stand = () => { if (sitting < 0) return; const c = chairSpots[sitting]; pos.x = c.front.x; pos.z = c.front.z; sitting = -1; };
     const sitDown = (c) => { sitting = c; pos.x = chairSpots[c].x; pos.z = chairSpots[c].z; facing = chairSpots[c].face; cancelRoute(); };
-    const nearAct = () => ((sitting >= 0 || inside >= 0 || chairNearIdx() >= 0) ? null : interact.find((a) => (a.lvl === undefined || a.lvl === lvl) && Math.hypot(pos.x - a.x, pos.z - a.z) < a.r && (!a.when || a.when())) || null);
+    const nearAct = () => ((sitting >= 0 || chairNearIdx() >= 0) ? null : interact.find((a) => (a.lvl === undefined || a.lvl === lvl) && Math.hypot(pos.x - a.x, pos.z - a.z) < a.r && (!a.when || a.when())) || null);
     const activate = () => {
       if (!ov.hidden) return;
       if (sitting >= 0) return stand();

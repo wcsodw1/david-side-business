@@ -807,3 +807,10 @@ body.locked .music-btn { display: none; }
 .robot-chat .rc-h span { flex: 1; font-size: 12px; color: rgba(244,240,255,.62); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .robot-chat .rc-h button { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #f4f0ff; cursor: pointer; font-size: 14px; }
 .robot-chat .office-ai .ai-msgs { min-height: 160px; max-height: min(42vh, 380px); }
+
+/* 咖啡廳：菜單放大檢視 */
+.menu-ov { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8,6,20,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.mo-card { position: relative; width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; padding: 22px 26px 24px; border-radius: 18px; background: #23261f; color: #f4f0e0; border: 3px solid #c9a36a; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.mo-card h3 { margin: 0 0 2px; font-size: 22px; } .mo-card p { margin: 0 0 12px; font-size: 13px; color: rgba(244,240,224,.6); }
+.mo-card ul { list-style: none; margin: 0; padding: 0; } .mo-card li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px dashed rgba(201,163,106,.35); font-size: 17px; } .mo-card li b { color: #ffd48a; font-variant-numeric: tabular-nums; }
+.mo-x { position: absolute; top: 12px; right: 12px; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08); color: #f4f0e0; cursor: pointer; }

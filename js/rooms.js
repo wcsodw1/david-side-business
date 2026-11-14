@@ -20,7 +20,7 @@
     const { THREE, scene, P, rowOf, L2W, addObs, mkTex, aniso, hooks } = ctx;
     if (!rowOf || !mkTex || !L2W) return;
     const root = new THREE.Group(); scene.add(root);
-    const anim = [], tex = [], mats = new Map(), rooms = [];
+    const anim = [], tex = [], mats = new Map(), rooms = [], cleanup = [], interact = ctx.interact, pickables = ctx.pickables;
     const lin = (c) => new THREE.Color(c).convertSRGBToLinear();   // 這個版本的 three 不做色彩管理：純色要先轉線性，才會和 canvas 貼圖一樣的顏色
     const M = (c, r = 0.65, m = 0) => { const k = `${c}|${r}|${m}`; let x = mats.get(k); if (!x) { x = new THREE.MeshStandardMaterial({ color: lin(c), roughness: r, metalness: m }); mats.set(k, x); } return x; };
     const E = (c, i = 1.4) => { const k = `e${c}|${i}`; let x = mats.get(k); if (!x) { x = new THREE.MeshStandardMaterial({ color: lin(c), emissive: lin(c), emissiveIntensity: i, roughness: 0.5 }); mats.set(k, x); } return x; };
@@ -43,7 +43,7 @@
       // 貼圖平面：ry = 0 朝 +z（門外）、PI/2 朝 +x（貼左牆）、-PI/2 朝 -x（貼右牆）、PI 朝 -z（貼後牆）
       K.pln = (w, h, map, x, y, z, ry = 0, o = {}) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map, roughness: o.rough || 0.6, emissive: o.glow ? 0xffffff : 0x000000, emissiveMap: o.glow ? map : null, emissiveIntensity: o.glow || 0, transparent: !!o.alpha, polygonOffset: !!o.off, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })); m.position.set(x, y, z); m.rotation.set(o.rx || 0, ry, o.rz || 0); m.receiveShadow = true; (o.p || g).add(m); return m; };
       K.obs = (lx, lz, hw, hd, h) => { const w = L2W(s, lx, lz); addObs(w.x, w.z, hw, hd, undefined, h); };
-      K.anim = (fn) => anim.push(fn);
+      K.anim = (fn) => anim.push(fn); K.w = (lx, lz) => L2W(s, lx, lz); K.s = s;
       // 地板：畫布 → 蓋在原本地板上；X(x)、Z(z) 把房間座標換成畫布像素
       K.floor = (draw) => {
         const W = 1240, Hh = 880, c = cvs(W, Hh, (gx) => draw(gx, W, Hh, (x) => (x + 3.1) / 6.2 * W, (z) => (z + 6.1) / 4.4 * Hh, W / 6.2, (t, x, y) => { gx.save(); gx.translate(x, y); if (K.rot) gx.rotate(PI); gx.fillText(t, 0, 0); gx.restore(); }));
@@ -368,10 +368,17 @@
         // 菜單黑板（後牆）
         const menuT = tx(640, 512, (c, w, h) => { c.fillStyle = "#23261f"; c.fillRect(0, 0, w, h); c.strokeStyle = "#c9a36a"; c.lineWidth = 10; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = "#f4f0e0"; c.textAlign = "center"; c.font = "800 42px Georgia"; c.fillText("COFFEE BEANS  / 磅", w / 2, 60); c.font = "600 29px 'Noto Sans TC'"; [["衣索比亞 獅王花蜜藝伎",1200],["衣索比亞 露娜藝伎",1100],["衣索比亞 西達摩水洗",1100],["衣索比亞 粉紅蜜桃耶加",950],["衣索比亞 沃卡香菲日曬",900],["衣索比亞 沃卡香妃水洗",900],["烏拉嘎 風信子水洗",900],["巴西 可可精靈日曬",900],["瓜地馬拉 薇薇特南果",800],["瓜地馬拉 酒香背影",900],["薩爾瓦多 紅蠻牛紅蜜",900],["哥斯大黎加 捷豹黑蜜",900]].forEach(([n, pr], k) => { c.textAlign = "left"; c.fillText(n, 36, 112 + k * 33); c.textAlign = "right"; c.fillStyle = "#ffd48a"; c.fillText("$" + pr, w - 36, 112 + k * 33); c.fillStyle = "#f4f0e0"; }); });
         K.pln(1.5, 1.2, menuT, -2.3, K.wh - 0.8, -6.11, 0, { glow: 0.15 });
-        { const q = K.grp(-1.9, 0, -2.4), wd = M(0x3a2416, 0.6);   // 立式菜單黑板：兩面都有字，從哪個方向看都讀得到
-          for (const dx of [-0.6, 0.6]) box(0.05, 1.0, 0.05, wd, dx, 0.5, 0, { p: q });
-          box(1.5, 0.05, 0.08, wd, 0, 0.45, 0, { p: q }); box(1.3, 1.05, 0.04, M(0x23261f, 0.8), 0, 0.98, 0, { p: q, k: 1 });
-          K.pln(1.2, 0.97, menuT, 0, 0.98, 0.025, 0, { p: q, glow: 0.2 }); K.pln(1.2, 0.97, menuT, 0, 0.98, -0.025, PI, { p: q, glow: 0.2 }); obs(-1.9, -2.4, 0.7, 0.15); }
+        { const q = K.grp(1.35, 0, -5.5), wd = M(0x3a2416, 0.6);   // 立式菜單黑板：兩面都有字，從哪個方向看都讀得到
+          for (const dx of [-0.45, 0.45]) box(0.05, 1.0, 0.05, wd, dx, 0.5, 0, { p: q });
+          box(1.2, 0.05, 0.08, wd, 0, 0.45, 0, { p: q }); box(1.0, 0.86, 0.04, M(0x23261f, 0.8), 0, 0.98, 0, { p: q, k: 1 });
+          K.pln(0.92, 0.74, menuT, 0, 0.98, 0.025, 0, { p: q, glow: 0.2 }); K.pln(0.92, 0.74, menuT, 0, 0.98, -0.025, PI, { p: q, glow: 0.2 }); obs(1.35, -5.5, 0.6, 0.15);
+          const items = [["衣索比亞 獅王花蜜藝伎", 1200], ["衣索比亞 露娜藝伎", 1100], ["衣索比亞 西達摩水洗", 1100], ["衣索比亞 粉紅蜜桃耶加", 950], ["衣索比亞 沃卡香菲日曬", 900], ["衣索比亞 沃卡香妃水洗", 900], ["烏拉嘎 風信子水洗", 900], ["巴西 可可精靈日曬", 900], ["瓜地馬拉 薇薇特南果", 800], ["瓜地馬拉 酒香背影", 900], ["薩爾瓦多 紅蠻牛紅蜜", 900], ["哥斯大黎加 捷豹黑蜜", 900]];
+          const open = () => { if (document.querySelector(".menu-ov")) return; const ov = document.createElement("div"); ov.className = "menu-ov"; ov.innerHTML = `<div class="mo-card"><button type="button" class="mo-x" aria-label="關閉">✕</button><h3>☕ 咖啡豆菜單</h3><p>每磅價格</p><ul>${items.map(([n, p]) => `<li><span>${n}</span><b>$${p}</b></li>`).join("")}</ul></div>`; document.body.appendChild(ov); document.body.classList.add("robot-open");
+            const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } }, close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
+            window.addEventListener("keydown", kd, true); ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".mo-x")) close(); }); };
+          const wp = K.w(1.35, -4.9), sp0 = K.w(1.35, -4.9), act = { id: "menu" + K.s, x: wp.x, z: wp.z, r: 1.7, lvl: 0, html: "<kbd>Enter</kbd> 看 <b>咖啡豆菜單</b> <small>　點黑板也可以</small>", fn: open };
+          interact.push(act); cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); });
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.3, 0.5), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(1.35, 0.8, -5.5); hit.userData = { station: K.s, kind: "act", act: open, stand: { x: sp0.x, z: sp0.z } }; K.g.add(hit); pickables.push(hit); cleanup.push(() => { const i = pickables.indexOf(hit); if (i >= 0) pickables.splice(i, 1); }); }
       },
 
       /* ===== Gumroad Digital Products：數位商品工作室 ===== */
@@ -425,12 +432,12 @@
     });
     const tick = (dt, t) => { for (const f of anim) f(dt, t); };
     hooks.push(tick);
-    R = { root, hooks, tick, tex, rooms, scene };
+    R = { root, hooks, tick, tex, rooms, scene, cleanup };
   }
 
   function unmount() {
     if (!R) return;
-    const i = R.hooks.indexOf(R.tick); if (i >= 0) R.hooks.splice(i, 1);
+    R.cleanup.forEach((f) => f()); const i = R.hooks.indexOf(R.tick); if (i >= 0) R.hooks.splice(i, 1);
     R.scene.remove(R.root); R.tex.forEach((t) => t.dispose && t.dispose()); R = null;
   }
 })();
