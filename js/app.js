@@ -217,35 +217,48 @@
           <span class="g-last">${esc((latest(p) || {}).title || "—")}</span>
         </a>`;
       const cols = ["backlog", "idea", "building", "live", "paused"];
-      // 看板兩頁：第 1 頁 = ON-PROCESS（最左，滑鼠移過去像窗戶向右展開，秀出 Current Status / Next Step）+ TODO（最右）；第 2 頁 = Backlog（以及 PENDING / BLOCK / FINISH 等其他）
+      // 儀表板整合看板：每個類型條列式，每個專案一行「一句話目前狀態」；右邊的 ✎ 滑鼠移過去會向左展開，直接填更新。
+      // 第 1 頁 = ON-PROCESS + TODO；第 2 頁 = Backlog + 其他（PENDING / BLOCK / FINISH）
       const eff = (p) => p.wbStatus || ({ building: "ON PROCESS", idea: "TODO", live: "FINISH", paused: "PENDING", backlog: "BACKLOG" }[p.status] || "TODO");   // 白板有填就用白板的狀態，沒填就由專案狀態換算
       const CLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH", BACKLOG: "BACKLOG" };
       const chip = (e) => `<span class="ps-chip ps-${CLS[e] || "TODO"}">${esc(e === "ON PROCESS" ? "ON-PROCESS" : e)}</span>`;
       const bucket = (p) => { const e = eff(p); return e === "ON PROCESS" ? "proc" : e === "TODO" ? "todo" : e === "BACKLOG" ? "back" : "other"; };
       const inB = (b) => P.filter((p) => bucket(p) === b);
-      const stk = (p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></a>`;
-      const winCard = (p) => `
-        <a class="sticky wb-proc" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}" aria-label="${esc(p.name)}：移過去看目前狀態與 Next Step">
-          <span class="wb-main"><b>${esc(p.name)}</b><small>${p.progress ?? 0}%</small></span>
-          <span class="st-win">
-            <span class="win-pane"><em>A · Current Status</em>${chip(eff(p))}<span class="win-t">${esc(p.wbNote || "（還沒有更新）")}</span></span>
-            <span class="win-pane"><em>B · Next Step</em><span class="win-t">${esc(p.next || "（還沒有設定）")}</span></span>
+      const OPTS = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"];
+      const row = (p, showChip) => `
+        <li class="kb-row" data-pid="${esc(p.id)}" style="--c:${accent(P.indexOf(p))}">
+          <a class="kb-name" href="#/p/${esc(p.id)}">${esc(p.name)}</a>${showChip ? chip(eff(p)) : ""}
+          <span class="kb-now ${p.wbNote ? "" : "none"}" title="${esc(p.wbNote || "")}">${esc(p.wbNote || "（還沒有更新）")}</span>
+          <span class="kb-upd">
+            <button type="button" class="kb-btn" aria-label="更新 ${esc(p.name)}">✎ 更新</button>
+            <form class="kb-form" autocomplete="off">
+              <b>${esc(p.name)}</b>
+              <span class="kb-line"><select name="st" aria-label="狀態"><option value="">狀態不變（${esc(eff(p) === "ON PROCESS" ? "ON-PROCESS" : eff(p))}）</option>${OPTS.map((o) => `<option value="${o}">${o === "ON PROCESS" ? "ON-PROCESS" : o}</option>`).join("")}</select></span>
+              <input name="note" maxlength="140" placeholder="一句話更新目前狀態…" aria-label="目前狀態">
+              <input name="next" maxlength="140" placeholder="Next Step" value="${esc(p.next || "")}" aria-label="Next Step">
+              <button type="submit">送出更新</button>
+            </form>
           </span>
-        </a>`;
-      const col = (title, dot, n, body) => `<div class="wb-col"><h3><i class="pill-dot" style="background:${dot}"></i>${title}<span>${n}</span></h3>${body || `<p class="wb-empty">—</p>`}</div>`;
-      const others = inB("other");
+        </li>`;
+      const sect = (title, dot, list, showChip) => `
+        <section class="kb-sec">
+          <h3><i class="pill-dot" style="background:${dot}"></i>${title}<span>${list.length}</span></h3>
+          <ul class="kb-list">${list.map((p) => row(p, showChip)).join("") || `<li class="kb-empty">—</li>`}</ul>
+        </section>`;
       const board = `
-        <div class="wb-pager" role="tablist">
-          <button type="button" data-wbp="0" class="${wbPage === 0 ? "on" : ""}" role="tab">1 · 進行中 / 待辦</button>
-          <button type="button" data-wbp="1" class="${wbPage === 1 ? "on" : ""}" role="tab">2 · Backlog</button>
-        </div>
-        <div class="wb-cols wb-page" data-wbpage="0" ${wbPage === 0 ? "" : "hidden"}>
-          ${col("ON-PROCESS", "#2f7be0", inB("proc").length, inB("proc").map(winCard).join(""))}
-          ${col("TODO", "#7a7a8a", inB("todo").length, inB("todo").map(stk).join(""))}
-        </div>
-        <div class="wb-cols wb-page" data-wbpage="1" ${wbPage === 1 ? "" : "hidden"}>
-          ${col("Backlog", S.backlog ? S.backlog.color : "#7fb4ff", inB("back").length, inB("back").map(stk).join(""))}
-          ${col("其他", "#9aa3b2", others.length, others.map((p) => `<a class="sticky" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}"><b>${esc(p.name)}</b>${chip(eff(p))}</a>`).join(""))}
+        <div class="kb">
+          <div class="wb-pager" role="tablist">
+            <button type="button" data-wbp="0" class="${wbPage === 0 ? "on" : ""}" role="tab">1 · 進行中 / 待辦</button>
+            <button type="button" data-wbp="1" class="${wbPage === 1 ? "on" : ""}" role="tab">2 · Backlog</button>
+          </div>
+          <div class="wb-page" data-wbpage="0" ${wbPage === 0 ? "" : "hidden"}>
+            ${sect("ON-PROCESS", "#2f7be0", inB("proc"))}
+            ${sect("TODO", "#9a9aae", inB("todo"))}
+          </div>
+          <div class="wb-page" data-wbpage="1" ${wbPage === 1 ? "" : "hidden"}>
+            ${sect("Backlog", S.backlog ? S.backlog.color : "#7fb4ff", inB("back"))}
+            ${sect("其他", "#9aa3b2", inB("other"), true)}
+          </div>
         </div>`;
       const seg = cols.map((k) => `<i style="flex:${by(k).length};background:${S[k].color}" title="${esc(S[k].label)} ${by(k).length}"></i>`).join("");
       return `
@@ -257,10 +270,6 @@
             <p>每個 Side Business 的即時現況，都貼在這間辦公室裡。</p>
           </div>
           <div class="office-room">
-            <aside class="whiteboard">
-              <h2>看板 · KANBAN</h2>
-              <div class="wb-board">${board}</div>
-            </aside>
 
             <div class="monitor">
               <div class="bezel">
@@ -272,6 +281,7 @@
                   <div><b>${by("idea").length}</b><span>發想中</span></div>
                   <div><b>${avg}<small>%</small></b><span>平均進度</span></div>
                 </div>
+                ${board}
                 <div class="gauges">${P.map(gauge).join("")}</div>
                 <div class="energy"><span>整體分布</span><div class="seg">${seg}</div></div>
               </div>
@@ -416,8 +426,16 @@
       });
     } else if (seg === "office") {
       $$("[data-wbp]", app).forEach((b) => b.addEventListener("click", () => { wbPage = +b.dataset.wbp; $$("[data-wbp]", app).forEach((x) => x.classList.toggle("on", x === b)); $$("[data-wbpage]", app).forEach((x) => (x.hidden = +x.dataset.wbpage !== wbPage)); }));
-      // 觸控裝置沒有「滑鼠移過去」：第一次點進行中的卡片先展開，再點一次才進專案
-      $$(".wb-proc", app).forEach((c) => c.addEventListener("click", (e) => { if (matchMedia("(hover: none)").matches && !c.classList.contains("open")) { e.preventDefault(); $$(".wb-proc.open", app).forEach((x) => x.classList.remove("open")); c.classList.add("open"); } }));
+      // ✎ 更新：滑鼠移過去自動向左展開；觸控裝置點一下展開 / 收合
+      $$(".kb-btn", app).forEach((b) => b.addEventListener("click", () => { const r = b.closest(".kb-row"), was = r.classList.contains("open"); $$(".kb-row.open", app).forEach((x) => x.classList.remove("open")); if (!was) { r.classList.add("open"); const f = r.querySelector("input[name=note]"); f && f.focus(); } }));
+      $$(".kb-form", app).forEach((f) => f.addEventListener("submit", (ev) => {
+        ev.preventDefault(); const pid = f.closest(".kb-row").dataset.pid, p = P.find((x) => x.id === pid), S2 = window.Store; if (!p || !S2) return;
+        const fd = new FormData(f), st = String(fd.get("st") || ""), note = String(fd.get("note") || "").trim(), next = String(fd.get("next") || "").trim();
+        if (st && st !== p.wbStatus) S2.setStatus(pid, st);
+        if (next !== (p.next || "")) S2.setNext(pid, next);
+        if (note) S2.setNote(pid, note);
+        const y = scrollY; render(); scrollTo(0, y);
+      }));
       const om = $("[data-office-ai]", app);
       if (om && window.AIChat) window.AIChat.mount(om, { id: "__office", name: "辦公室", office: true, projects: P });
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
