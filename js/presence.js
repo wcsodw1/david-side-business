@@ -115,7 +115,7 @@
       } else {
         const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, -Math.PI / 2, 0); av.root.rotation.order = "XYZ"; av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
         av.update(dt, 0, t); av.torso.rotation.x = Math.sin(t * 1.4) * 0.02; av.head.rotation.set(0, 0.3, 0);
-        tag.visible = false; zzz.visible = true; const f = (t * 0.5) % 1; zzz.position.set(b.x - 1.45 + f * 0.1, b.y + 0.4 + f * 0.5, b.z); zzz.material.opacity = 1 - f * 0.9;
+        tag.visible = false; zzz.visible = true; const f = (t * 0.5) % 1; zzz.position.set(b.x + 1.55 + f * 0.1, b.y + 0.5 + f * 0.5, b.z); zzz.material.opacity = 1 - f * 0.9;
         { const w = camera.position.distanceTo(zzz.position) * 0.06; zzz.scale.set(w, w, 1); }
       }
       { const w = camera.position.distanceTo(tag.position) * 0.07; tag.scale.set(w, w * 0.3125, 1); }
