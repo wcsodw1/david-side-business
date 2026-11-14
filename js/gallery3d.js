@@ -1291,16 +1291,16 @@
         // 走道（南側一條）：與臥室以 z = -0.55 的牆隔開，西端是出口門，東端（x 4.3~5.3，靠右）有門進主臥室
         shell(3.8, 0.12, 2.4, -0.55);
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
-        shell(0.12, 6.8, 5.5, -4.6); shell(0.12, 0.6, 5.5, 0.1);
-        // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
-        shell(0.12, 2.4, 2.8, -6.8); shell(1.3, 0.12, 2.15, -5.6);   // 浴室南牆：門在左（西）側 x 0.6~1.5
-        for (const x of [0.6, 1.5]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
+        shell(0.12, 6.8, 5.5, -4.6);   // 走道東端（右下角）不砌牆
+        // 浴室：x 3.2~5.5（東牆 = 隔間牆，直接靠牆）、z -8~-5.6；門在西牆（面向左側）z -6.6~-5.6
+        shell(0.12, 1.4, 3.2, -7.3); shell(2.3, 0.12, 4.35, -5.6);
         // 浴室：大理石牆面（腰線以下）+ 灰地磚
         const mc = document.createElement("canvas"); mc.width = mc.height = 256; const mg = mc.getContext("2d"); mg.fillStyle = "#f4f4f2"; mg.fillRect(0, 0, 256, 256);
         for (let k = 0; k < 14; k++) { mg.strokeStyle = `rgba(110,112,118,${0.12 + Math.random() * 0.2})`; mg.lineWidth = 0.8 + Math.random() * 1.8; mg.beginPath(); let x = Math.random() * 256, y = 0; mg.moveTo(x, y); while (y < 256) { x += (Math.random() - 0.35) * 22; y += 12 + Math.random() * 14; mg.lineTo(x, y); } mg.stroke(); }
         const mt = new THREE.CanvasTexture(mc); mt.wrapS = mt.wrapT = THREE.RepeatWrapping; if (THREE.sRGBEncoding) mt.encoding = THREE.sRGBEncoding;
         const marble = new THREE.MeshStandardMaterial({ map: mt, roughness: 0.18, metalness: 0.05 });
         const pnl = (w, h, x, y, z, ry) => { const q = new THREE.Mesh(new THREE.PlaneGeometry(w, h), marble); q.position.set(x, UY + y, z); q.rotation.y = ry; scene.add(q); return q; };
+        const _c0 = scene.children.length, _o0 = obstacles.length;   // 以下浴室內部先照舊座標建好，最後整體往右（東）平移 2.7
         pnl(2.2, 1.3, 1.65, 0.65, -7.92, 0); pnl(2.4, 1.3, 0.57, 0.65, -6.8, PI / 2); pnl(2.4, 1.3, 2.73, 0.65, -6.8, -PI / 2);
         { const bf = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.4), new THREE.MeshStandardMaterial({ color: 0xb6b8bc, roughness: 0.3 })); bf.rotation.x = -PI / 2; bf.position.set(1.65, UY + 0.014, -6.8); bf.receiveShadow = true; scene.add(bf); }
         const por = M(0xffffff, 0.2);
@@ -1314,6 +1314,9 @@
         // 淋浴間（西北角）：蓮蓬頭、水管、小門檻
         U(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), M(0xc9cdd3, 0.2, 0.9), 0.62, 1.15, -7.4); { const rs = U(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), M(0xc9cdd3, 0.2, 0.9), 0.7, 1.82, -7.4); rs.rotation.z = PI / 2 + 0.5; }
         U(new THREE.BoxGeometry(0.04, 0.06, 1.0), wh, 1.52, 0.03, -7.4);
+        for (let k = _c0; k < scene.children.length; k++) scene.children[k].position.x += 2.7;
+        scene.children[_c0 + 1].visible = false;   // 西牆有門洞，不貼大理石
+        for (let k = _o0; k < obstacles.length; k++) { obstacles[k].minX += 2.7; obstacles[k].maxX += 2.7; }
         // 長條窗：客廳東牆（含淺藍天空 + 遠方大樓），金色窗框，下方白色嵌入式矮櫃
         const sk = document.createElement("canvas"); sk.width = 512; sk.height = 128; const sg = sk.getContext("2d"), gr = sg.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, "#9ccdf5"); gr.addColorStop(1, "#e4f0fb"); sg.fillStyle = gr; sg.fillRect(0, 0, 512, 128);
         sg.fillStyle = "rgba(255,255,255,.85)"; for (const [cx, cy, r] of [[90, 30, 22], [120, 36, 28], [330, 24, 20], [360, 30, 26], [440, 40, 18]]) { sg.beginPath(); sg.arc(cx, cy, r, 0, 7); sg.fill(); }
