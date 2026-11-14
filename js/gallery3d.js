@@ -1260,7 +1260,7 @@
       }
       bed(1.75, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
-      U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -0.95); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -0.95 + dz); addObs(5.18, -0.95, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
+      U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       { // 書桌 / 梳妝桌：木頭桌面（有厚度）、一側抽屜櫃、另一側桌腳、橢圓立鏡（有木框與支架）、檯燈、筆電、椅子
         const dw = M(0xc89a62, 0.55), dwD = M(0xa8793f, 0.6), dx = 3.4, dz = -0.95;
         U(new THREE.BoxGeometry(1.5, 0.05, 0.62), dw, dx, 0.745, dz); U(new THREE.BoxGeometry(1.46, 0.04, 0.58), dwD, dx, 0.7, dz);
@@ -1288,9 +1288,9 @@
       { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.48, UY); addObs(x, z, w / 2, d / 2, 1); };
         // 門在東端（x 10.2~11.2），進來就是客廳
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
-        shell(0.12, 4.6, 5.5, -5.7); shell(0.12, 2.8, 5.5, -1.0);
-        for (const z of [-3.4, -2.4]) U(new THREE.BoxGeometry(0.16, 2.1, 0.1), brown, 5.5, 1.05, z);
-        { const leaf = U(new THREE.BoxGeometry(0.9, 2.05, 0.04), brown, 5.05, 1.03, -3.4); leaf.rotation.y = 0; }   // 門片（打開、貼著牆）
+        shell(0.12, 6.8, 5.5, -4.6); shell(0.12, 0.6, 5.5, 0.1);
+        for (const z of [-1.2, -0.2]) U(new THREE.BoxGeometry(0.16, 2.1, 0.1), brown, 5.5, 1.05, z);
+        { const leaf = U(new THREE.BoxGeometry(0.04, 2.05, 0.9), brown, 5.38, 1.03, -1.7); leaf.rotation.y = 0; }   // 門片（打開、貼著牆）
         // 浴室：x 0.5~2.8、z -8~-5.6；門在南牆 x 1.5~2.4
         shell(0.12, 2.4, 2.8, -6.8); shell(1.0, 0.12, 1.0, -5.6); shell(0.4, 0.12, 2.6, -5.6);
         for (const x of [1.5, 2.4]) U(new THREE.BoxGeometry(0.1, 2.1, 0.16), brown, x, 1.05, -5.6);
