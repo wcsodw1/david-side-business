@@ -128,6 +128,7 @@
       const pu = add(sph(hr * (o.slit ? 0.07 : 0.11), 10, 8), pupil, head, sx * hr * 0.5, hr * 0.2, hr * 0.84); pu.scale.set(o.slit ? 0.45 : 0.8, o.slit ? 1.9 : 1, 0.5);
       add(sph(hr * 0.045, 8, 6), white, head, sx * hr * 0.53, hr * 0.27, hr * 0.88);
       if (o.ear === "long") { const e = add(sph(hr * 0.3, 14, 10), fur, head, sx * hr * 0.38, hr * 1.5, -hr * 0.1); e.scale.set(0.42, 3.3, 0.7); e.rotation.z = -sx * 0.18; const ei = add(sph(hr * 0.2, 10, 8), pink, head, sx * hr * 0.38, hr * 1.5, hr * 0.02); ei.scale.set(0.3, 2.7, 0.4); ei.rotation.z = -sx * 0.18; }
+      else if (o.ear === "bat") { for (const [rw, hh, ec] of [[0.62, 1.05, 0], [0.4, 0.75, 1]]) { const e = add(new THREE.ConeGeometry(hr * rw, hr * hh, 20), ec ? plain(o.earIn || 0xe9a4ac, 0.8) : fur, head, sx * hr * 0.62, hr * (ec ? 0.92 : 0.98), -hr * (ec ? 0.0 : 0.1)); e.rotation.z = -sx * 0.32; e.scale.z = ec ? 0.35 : 0.55; } }   // 法鬥的蝙蝠耳：寬、短、圓
       else if (o.ear === "point") { const e = add(new THREE.ConeGeometry(hr * 0.5, hr * 1.25, 18), o.earBack ? plain(o.earBack, 0.9) : fur, head, sx * hr * 0.55, hr * 1.0, -hr * 0.15); e.rotation.z = -sx * 0.25; add(new THREE.ConeGeometry(hr * 0.32, hr * 0.8, 14), o.earIn ? plain(o.earIn, 0.8) : dark, head, sx * hr * 0.55, hr * 0.96, -hr * 0.03).rotation.z = -sx * 0.25; }
       else if (o.ear === "deer") { const e = add(sph(hr * 0.5, 16, 12), fur, head, sx * hr * 0.9, hr * 0.7, -hr * 0.15); e.scale.set(0.35, 1.35, 0.75); e.rotation.z = -sx * 0.9; add(sph(hr * 0.34, 12, 10), pink, head, sx * hr * 0.9, hr * 0.68, -hr * 0.07).scale.set(0.25, 1.1, 0.45); }
       else { const e = add(sph(hr * 0.55, 16, 12), fm(o.earCol || o.dark || 0x4a3626), head, sx * hr * 0.8, hr * 0.42, -hr * 0.05); e.scale.set(0.36, 1.25, 0.8); e.rotation.z = -sx * 0.5; }   // 垂耳
@@ -163,6 +164,7 @@
     deer: { body: [1.0, 0.4, 0.28], legH: 0.7, legR: 0.04, headR: 0.14, ear: "deer", antlers: true, tail: "short", col: 0x9a6a3e, belly: 0xefe2cb, dorsal: 0x8c5a30, light: 0xcdb391, sock: 0x6e4a2c, dark: 0x1a1410, hoof: true, eye: 0x1a110a, neck: 0.85, snout: 1.25, snW: 0.85, speed: 0.8, stride: 3.5, flee: 3.6, scale: 1.05, chestDeep: 0.18, waist: 0.14 },
     fox: { body: [0.66, 0.26, 0.2], legH: 0.26, legR: 0.036, headR: 0.115, ear: "point", earBack: 0x1c120c, tail: "brush", tailTip: 0xfff6ee, col: 0xc4571c, belly: 0xf3e6d6, light: 0xf5ebe0, sock: 0x20140e, dark: 0x1a100a, earIn: 0xe8d6c4, chest: 0xf6eee4, eye: 0xb88a2a, slit: false, neck: 0.4, snout: 1.4, snW: 0.8, whisk: true, speed: 1.1, stride: 5.5, flee: 4.4, chestDeep: 0.12, waist: 0.14 },
     dog: { body: [0.66, 0.3, 0.25], legH: 0.32, legR: 0.05, headR: 0.14, ear: "round", earCol: 0xa8762f, tail: "long", tailL: 0.42, col: 0xd2a05a, belly: 0xf1ddb8, light: 0xe8c890, sock: 0xe8c890, dark: 0x2a1e14, collar: 0xc7352b, tongue: true, eye: 0x3a2412, neck: 0.45, snout: 1.15, speed: 1.0, stride: 5, wag: 7, wagAmp: 0.5, tailUp: -0.2, chestDeep: 0.16, waist: 0.16 },
+    frenchie: { body: [0.42, 0.3, 0.3], legH: 0.2, legR: 0.055, headR: 0.17, ear: "bat", earIn: 0xe9a4ac, tail: "short", col: 0xd0aa84, belly: 0xefe3cf, dorsal: 0xb08a62, light: 0xefe3cf, sock: 0xe6d6bb, dark: 0x1a1410, collar: 0x2f9bd0, tongue: true, eye: 0x1a1008, neck: 0.2, snout: 0.28, snW: 1.35, speed: 0.75, stride: 6.5, wag: 5, wagAmp: 0.3, chestDeep: 0.22, waist: 0.0, scale: 1.0 },
     cat: { body: [0.48, 0.19, 0.16], legH: 0.18, legR: 0.03, headR: 0.095, ear: "point", earIn: 0xe9a4ac, tail: "long", tailL: 0.5, col: 0x8b7d6a, belly: 0xe6dccb, dorsal: 0x6c5f4f, light: 0xe6dccb, sock: 0xddd2bf, dark: 0x2a2622, eye: 0x9fb040, slit: true, whisk: true, collar: 0x2f9bd0, neck: 0.4, snout: 0.7, speed: 0.8, stride: 6, wag: 1.2, wagAmp: 0.35, tailUp: -0.4, chestDeep: 0.1, waist: 0.12 },
   };
   Object.keys(KINDS).forEach((k) => (KINDS[k].kind = k));
@@ -210,9 +212,9 @@
       list.push(a); return a;
     };
     // 走獸：3 隻兔子、2 隻小鹿、1 隻狐狸
-    [["rabbit", 9.5, 2.0], ["rabbit", 17.5, -2.0], ["rabbit", 22.5, 1.5], ["deer", 13.5, -2.5], ["deer", 19.5, 3.0], ["fox", 11.5, 4.0]].forEach(([k, x, z]) => spawn(k, wildOK, Z.wild, x, z));
+    [["rabbit", 9.5, 2.0], ["deer", 13.5, -2.5]].forEach(([k, x, z]) => spawn(k, wildOK, Z.wild, x, z));
     // 家裡：一隻貓、一隻狗
-    spawn("dog", petOK, Z.pets, 7.4, -2.6); spawn("cat", petOK, Z.pets, 4.6, -2.4);
+    spawn("dog", petOK, Z.pets, 7.4, -2.6); spawn("cat", petOK, Z.pets, 4.6, -2.4); spawn("frenchie", petOK, Z.pets, 6.2, -1.6);
 
     const step = (a, dt, t) => {
       const { cfg } = a;
