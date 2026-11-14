@@ -489,6 +489,7 @@
     const obstacles = [];  // {minX,maxX,minZ,maxZ}
     const addObs = (cx, cz, hw, hd, lv, h) => obstacles.push({ minX: cx - hw, maxX: cx + hw, minZ: cz - hd, maxZ: cz + hd, lv, h });   // h：障礙物高度（≤0.85 的可以用 Space 跳過去）
     addObs(0.05, (-DECK_HD + 1.4) / 2, 0.05, (1.4 + DECK_HD) / 2); addObs(0.05, (6.6 + DECK_HD) / 2, 0.05, (DECK_HD - 6.6) / 2);   // 西側欄杆（缺口 z 1.4–6.6 通往船尾）
+    const tickHooks = [], interact = [];   // interact：站在附近按 Enter 可觸發的東西；tickHooks：每幀要跑的函式（要在蓋房子之前先宣告）
     const akari = { k: 0 };   // 二樓和紙燈：有人在二樓才亮
     const roomLights = [];   // 房間 / 辦公室的室內燈：白天幾乎不亮、天黑才亮
     const pickables = [], pools = [], bangs = [], panelMats = [], boardMats = [], boardTex = [], panelTex = [], roomSignTex = [];
@@ -1727,7 +1728,7 @@
     camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
-    const tickHooks = [], interact = [];   // interact：站在附近按 Enter 可觸發的東西（例如辦公室機器人）
+
 
     if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
