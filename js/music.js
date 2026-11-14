@@ -1,8 +1,8 @@
 /* ============================================================
    藝廊音樂：走進美術館（藝廊）響起藝廊的音樂；回到家裡換成另一首溫馨的音樂；走到戶外則漸漸換成海浪聲。
    全部用 Web Audio 即時合成（沒有任何現成曲子或音檔，沒有版權問題）：
-   · 柔和的和弦鋪底（Cmaj7 → Am7 → Fmaj7 → G6 循環）
-   · 鋼琴般的輕柔分解音與偶爾的鈴聲，加上空間殘響
+   · 藝廊：輕鬆的波薩諾瓦（約 88 BPM）：尼龍吉他的切分和弦 + 輕柔貝斯 + 沙鈴 + 偶爾出現的長笛旋律，F 大調 8 小節循環
+   · 家裡：溫馨的音樂盒與鋼琴搖籃曲（和弦鋪底 + 分解音）；皆加上空間殘響
    右上角有靜音按鈕（記住你的選擇）。瀏覽器規定要先有點擊或按鍵才能出聲，登入後第一次操作就會開始。
    ============================================================ */
 (() => {
@@ -17,6 +17,21 @@
   const THEMES = {
     gallery: { chords: CHORDS, scale: SCALE, chordLen: 7.2, beat: 0.9, padVol: 0.05, padAtt: 2.2, lp: 3200 },
     home: { chords: [[53, 57, 60, 64, 67], [50, 57, 60, 64, 65], [46, 58, 62, 65, 69], [48, 55, 60, 62, 64]], scale: [77, 79, 81, 84, 86], chordLen: 8.8, beat: 1.1, padVol: 0.042, padAtt: 3.2, lp: 2300 },   // Fmaj7 / Dm9 / Bbmaj7 / Cadd9
+  };
+
+  // 藝廊 = 波薩諾瓦：每小節 8 個八分音符；8 小節一輪（Fmaj9 Fmaj9 Em9 Dm9 | G13 G13 Cmaj9 Am7）
+  const BOSSA = {
+    step: 0.34,   // 八分音符秒數（約 88 BPM）
+    prog: [
+      { bass: [41, 48], v: [57, 60, 64, 67] }, { bass: [41, 48], v: [57, 60, 64, 67] },   // Fmaj9
+      { bass: [40, 47], v: [55, 59, 62, 66] },                                             // Em9
+      { bass: [38, 45], v: [53, 57, 60, 64] },                                             // Dm9
+      { bass: [43, 50], v: [53, 59, 62, 64] }, { bass: [43, 50], v: [53, 59, 62, 64] },   // G13
+      { bass: [48, 43], v: [55, 59, 62, 64] },                                             // Cmaj9
+      { bass: [45, 52], v: [55, 60, 64, 67] },                                             // Am7
+    ],
+    clave: [[0, 3, 6], [2, 4]],                    // 波薩諾瓦節奏型：第一小節 1 / 2& / 4，第二小節 2 / 3
+    mel: [67, 69, 71, 72, 74, 76, 79, 81, 83, 84],   // 旋律用的 C 大調音（全曲和弦皆在此調內）
   };
 
   function mount(ctx) {
@@ -66,12 +81,53 @@
       o1.start(t); o2.start(t); o1.stop(t + 3.4); o2.stop(t + 3.4); K.notes++;
     };
 
+    // 波薩諾瓦的樂器：尼龍吉他（和弦）、貝斯、沙鈴、長笛般的旋律
+    const nylon = (t, midi, vel, th) => {
+      const ac = K.ac, g = ac.createGain(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(3400, t); f.frequency.exponentialRampToValueAtTime(900, t + 0.5);
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      const o1 = ac.createOscillator(), o2 = ac.createOscillator(); o1.type = "triangle"; o2.type = "sine"; o1.frequency.value = mtof(midi); o2.frequency.value = mtof(midi) * 2.003;
+      const g2 = ac.createGain(); g2.gain.value = 0.3; o1.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(th.g);
+      o1.start(t); o2.start(t); o1.stop(t + 1.2); o2.stop(t + 1.2); K.notes++;
+    };
+    const bassNote = (t, midi, vel, th) => {
+      const ac = K.ac, g = ac.createGain(), f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 520;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+      const o1 = ac.createOscillator(), o2 = ac.createOscillator(); o1.type = "sine"; o2.type = "triangle"; o1.frequency.value = mtof(midi); o2.frequency.value = mtof(midi);
+      const g2 = ac.createGain(); g2.gain.value = 0.25; o1.connect(f); o2.connect(g2); g2.connect(f); f.connect(g); g.connect(th.g);
+      o1.start(t); o2.start(t); o1.stop(t + 0.6); o2.stop(t + 0.6); K.notes++;
+    };
+    const shaker = (t, vel, th) => {
+      const ac = K.ac; if (!K.nbuf) { const n = ac.createBuffer(1, Math.ceil(ac.sampleRate * 0.09), ac.sampleRate), d = n.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.6); K.nbuf = n; }
+      const s = ac.createBufferSource(); s.buffer = K.nbuf; const f = ac.createBiquadFilter(); f.type = "highpass"; f.frequency.value = 6500; const g = ac.createGain(); g.gain.value = vel;
+      s.connect(f); f.connect(g); g.connect(th.g); s.start(t);
+    };
+    const flute = (t, midi, dur, vel, th) => {
+      const ac = K.ac, g = ac.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vel, t + 0.07); g.gain.setValueAtTime(vel, t + dur * 0.6); g.gain.linearRampToValueAtTime(0, t + dur);
+      const o = ac.createOscillator(); o.type = "sine"; o.frequency.value = mtof(midi);
+      const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = 5.2; lg.gain.value = 7; lfo.connect(lg); lg.connect(o.detune);
+      o.connect(g); g.connect(th.g); o.start(t); lfo.start(t); o.stop(t + dur + 0.05); lfo.stop(t + dur + 0.05); K.notes++;
+    };
+
     // 排程：每首曲子各自排（藝廊 / 家裡）；只在聽得到的時候才排，省電
     const st = { gallery: { c: 0, b: 0, ci: 0, beat: 0 }, home: { c: 0, b: 0, ci: 0, beat: 0 } };
     const schedTheme = (name, level) => {
       const th = THEMES[name], S = st[name], ac = K.ac;
-      if (level < 0.02 && th.g.gain.value < 0.02) { S.c = S.b = 0; return; }
+      if (level < 0.02 && th.g.gain.value < 0.02) { S.c = S.b = 0; S.step = 0; return; }
       const now = ac.currentTime, n = th.chords.length;
+      if (name === "gallery") {   // 波薩諾瓦：以八分音符為單位排程
+        if (!S.c) { S.c = now + 0.2; S.step = 0; S.mi = 4; S.lastMel = -9; }
+        while (S.c < now + 1.2) {
+          const bar = Math.floor(S.step / 8), pos = S.step % 8, ch = BOSSA.prog[bar % BOSSA.prog.length], t = S.c + rand(0, 0.006);
+          if (pos === 0) bassNote(t, ch.bass[0], 0.16, th); else if (pos === 3) bassNote(t, ch.bass[1], 0.12, th); else if (pos === 4) bassNote(t, ch.bass[0], 0.13, th); else if (pos === 7) bassNote(t, ch.bass[1], 0.11, th);   // 低音：根音 / 五音交替
+          if (BOSSA.clave[bar % 2].includes(pos)) ch.v.forEach((m, k) => nylon(t + k * 0.011, m, (pos === 0 ? 0.075 : 0.062) - k * 0.006, th));                                                      // 切分和弦（輕輕掃弦）
+          shaker(t, pos % 2 === 0 ? 0.03 : 0.018, th);                                                                                                                                               // 沙鈴：八分音符
+          if ([1, 3, 5, 6].includes(pos) && S.step - S.lastMel > 2 && Math.random() < 0.3) {   // 偶爾一個長笛音，沿音階慢慢走
+            S.mi = Math.max(0, Math.min(BOSSA.mel.length - 1, S.mi + Math.floor(rand(-2, 3)))); flute(t, BOSSA.mel[S.mi], rand(0.5, 1.1), 0.05, th); S.lastMel = S.step;
+          }
+          S.c += BOSSA.step; S.step++;
+        }
+        return;
+      }
       if (!S.c) { S.c = S.b = now + 0.15; S.ci = Math.floor(Math.random() * n); S.beat = 0; }
       while (S.c < now + 1.2) { for (const m of th.chords[S.ci % n].slice(0, 4)) pad(S.c, m, th.chordLen, th); S.c += th.chordLen; S.ci++; }
       while (S.b < now + 1.2) {
