@@ -226,7 +226,8 @@
       const inB = (b) => P.filter((p) => bucket(p) === b);
       const OPTS = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"];
       const lastReal = (p) => (p.updates || []).find((u) => !/專案頁建立/.test(u.title));   // 最近一筆真正的更新（略過自動建立的那筆）
-      const row = (p, showChip) => { const u = lastReal(p), txt = p.wbNote || (u ? u.title : ""), when = p.wbNote ? p.wbNoteAt : (u ? u.date : ""), isNew = !!(u && window.News && window.News.isUnread && window.News.isUnread(p, u)); return `
+      // 沒有進度一句話時，至少顯示目標（AI 總管只設目標時，這列才不會看起來「沒改」）
+      const row = (p, showChip) => { const u = lastReal(p), txt = p.wbNote || (u ? u.title : "") || (p.goal ? "🎯 目標：" + p.goal : ""), when = p.wbNote ? p.wbNoteAt : (u ? u.date : ""), isNew = !!(u && window.News && window.News.isUnread && window.News.isUnread(p, u)); return `
         <li class="kb-row" data-pid="${esc(p.id)}" style="--c:${accent(P.indexOf(p))}">
           <a class="kb-name" href="#/p/${esc(p.id)}">${esc(p.name)}</a>${showChip ? chip(eff(p)) : ""}
           <span class="kb-now ${txt ? "" : "none"}" title="${esc(txt)}">${esc(txt || "（還沒有更新）")}</span>${isNew ? `<em class="kb-new">NEW</em>` : ""}${when ? `<time class="kb-t">${esc(String(when).slice(5).replace("-", "."))}</time>` : ""}
