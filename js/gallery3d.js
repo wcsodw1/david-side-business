@@ -1190,8 +1190,8 @@
         const np = wd > 1.8 ? 2 : 1; for (let k = 0; k < np; k++) mk(new THREE.BoxGeometry(0.42, 0.12, 0.6), white, bx - 0.75, y0 + 0.56, bz + (np === 2 ? (k ? 0.45 : -0.45) : 0));
         addObs(bx, bz, 1.15, wd / 2 + 0.05, lv, 0.65);
       };
-      bed(1.75, -6.85, 1.98, teal);                                                                                                   // David 的 king size 大床（北西角）
-      mk(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, -5.65); mk(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffe9b8, emissive: 0xffc878, emissiveIntensity: 1.5 }), 0.95, 0.62, -5.65, false);   // 床頭櫃 + 小燈
+      // （一樓沒有床：床在二樓，兩個人睡同一張雙人床）
+
       mk(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.4, 1.1, Z0 + 0.4); addObs(4.4, Z0 + 0.4, 0.75, 0.32, 0);                       // 衣櫃
       mk(new THREE.BoxGeometry(1.5, 0.05, 0.75), wood, 2.2, 0.75, -3.9); for (const dx of [-0.65, 0.65]) for (const dz of [-0.3, 0.3]) mk(new THREE.BoxGeometry(0.05, 0.75, 0.05), dk, 2.2 + dx, 0.37, -3.9 + dz);
       mk(new THREE.BoxGeometry(0.5, 0.03, 0.34), M(0x2a2550, 0.4, 0.4), 2.2, 0.79, -3.8); { const lt = mk(new THREE.BoxGeometry(0.46, 0.3, 0.02), M(0x101018, 0.4, 0.3), 2.2, 0.95, -4.15); lt.rotation.x = -0.2; }
@@ -1228,8 +1228,8 @@
 
       /* ---- 二樓：Aeris 的房間（lv 1）---- */
       const U = (geo, mat, x, y, z, cast = true) => mk(geo, mat, x, UY + y, z, cast);
-      bed(1.75, -3.6, 1.7, pinkB, UY, 1);                                                                                              // Aeris 的床
-      U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, -2.55); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: 0xffd8e8, emissive: 0xffa8c8, emissiveIntensity: 1.5 }), 0.95, 0.62, -2.55, false);
+      bed(1.75, -3.6, 1.98, pinkB, UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
+      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
       U(new THREE.BoxGeometry(1.4, 2.2, 0.55), bedF, 4.6, 1.1, Z0 + 0.4); addObs(4.6, Z0 + 0.4, 0.75, 0.32, 1);                         // 衣櫃
       U(new THREE.BoxGeometry(1.5, 0.05, 0.6), M(0xf4e4ec, 0.5), 3.4, 0.74, -0.9); for (const dx of [-0.65, 0.65]) U(new THREE.BoxGeometry(0.05, 0.74, 0.05), dk, 3.4 + dx, 0.37, -0.9);
       U(new THREE.BoxGeometry(0.9, 1.1, 0.04), M(0xdfe8f4, 0.1, 0.8), 3.4, 1.35, -1.15); U(new THREE.BoxGeometry(0.4, 0.4, 0.4), M(0xe9a9c0, 0.8), 3.4, 0.22, -0.4); addObs(3.4, -0.75, 0.85, 0.45, 1, 0.8);     // 梳妝台 + 鏡子 + 小凳
@@ -1259,7 +1259,7 @@
         let posterN = 0;
         const PHOTOS = (window.SITE && window.SITE.posterPhotos) || [];   // 要放真正的照片：把圖片放進 img/posters/，並把檔名依序寫進 data/projects.js 的 SITE.posterPhotos
         const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
-          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso); const photo = PHOTOS.length ? PHOTOS[posterN++ % PHOTOS.length] : null;
+          const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso); const photo = pw >= 0.6 && posterN < PHOTOS.length ? PHOTOS[posterN++] : null;   // 每張大海報用不同的照片（小的那張保留程式畫的風格）
           const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
           const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
           const pl = new THREE.Mesh(new THREE.PlaneGeometry(pw, ph), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.18 })); pl.position.z = 0.02; grp.add(pl);
@@ -1273,7 +1273,7 @@
         poster(1.3, 1.55, NZ, 0, 0); poster(2.45, 1.55, NZ, 0, 1); poster(2.0, 0.55, NZ, 0, 3, 0.5, 0.75);                         // 北牆（床頭那側）
         poster(7.2, 1.5, NZ, 0, 2); poster(8.4, 1.5, NZ, 0, 4); poster(9.6, 1.5, NZ, 0, 0); poster(10.8, 1.5, NZ, 0, 3);          // 北牆（樓梯口上方，從上往下看最明顯）
         if (PHOTOS.length) {   // CC BY 4.0 要求標註作者與授權：在海報牆下方放一塊說明牌
-          const cr = mkTex(THREE, decalCanvas(1024, 120, (g, w, h) => { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2218"; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = "#2a2218"; g.textAlign = "center"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("Photos: ggbye1127 · OXO — CC BY 4.0 — via Wikimedia Commons", w / 2, 50); g.font = "500 28px 'Noto Sans TC', sans-serif"; g.fillText("海報照片：ggbye1127、OXO（CC BY 4.0，來源 Wikimedia Commons）", w / 2, 92); }), aniso);
+          const cr = mkTex(THREE, decalCanvas(1024, 120, (g, w, h) => { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2218"; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = "#2a2218"; g.textAlign = "center"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("Photos: ggbye1127 · OXO · SHAQ Photo — CC BY 4.0 — via Wikimedia Commons (resized)", w / 2, 50); g.font = "500 28px 'Noto Sans TC', sans-serif"; g.fillText("海報照片：ggbye1127、OXO、SHAQ Photo（CC BY 4.0，來源 Wikimedia Commons，已縮小尺寸）", w / 2, 92); }), aniso);
           const cp = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.4), new THREE.MeshStandardMaterial({ map: cr, roughness: 0.7 })); cp.position.set(9.0, UY + 0.5, NZ + 0.01); scene.add(cp);
         }
         poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
@@ -1551,7 +1551,8 @@
     };
 
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
-    const bedZ = window.PERSONA === "aeris" ? -3.6 : -6.85;                          // 開場：躺在自己的床上（ARIES 在二樓、David 在一樓）
+    const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
+    const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 2.0;           // 起床後站在自己那一側的床邊
     const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 2.55, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
@@ -1564,7 +1565,7 @@
     let boardArmed = true, officeArmed = true;
     let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;
     let wake = spawn < 0 ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
-    if (wake && window.PERSONA === "aeris") { lvl = 1; py = UY; lvlS = 1; }
+    if (wake) { lvl = 1; py = UY; lvlS = 1; }   // 開場在二樓
     camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
@@ -1917,14 +1918,12 @@
       if (swimT < 0.01 && !wake) { av.root.rotation.order = "XYZ"; av.root.rotation.x = 0; av.root.rotation.z = 0; }   // 修正：開場動畫之後角色身體殘留的歪斜（倒著走）
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
-        wake.t += dt; const T = wake.t, bx = 2.55, by = (window.PERSONA === "aeris" ? UY : 0) + 0.74, ex = 3.5, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        wake.t += dt; const T = wake.t, bx = 2.55, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
         if (T < 2.2) { av.root.position.set(bx, by, bedZ); av.root.quaternion.copy(lieQ); av.torso.rotation.x = Math.sin(T * 1.6) * 0.02; }              // 躺著（輕輕呼吸）
-        else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), bedZ); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
+        else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), lerp(bedZ, standZ, e)); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
         else {
-          const skipped = wake.skipped; wake = null; pos.x = ex; pos.z = bedZ; facing = Math.PI / 2; camT.x = pos.x; camT.z = pos.z;
-          const way = window.PERSONA === "aeris"
-            ? [{ x: 5.4, z: -6.1 }, { x: 5.4, z: -7.05 }, { x: 6.6, z: -7.05 }, { x: 10.8, z: -7.05 }, { x: 11.5, z: -6.2 }, { x: 9.9, z: -4.7 }, { x: 7.5, z: -3.5 }]   // 下樓：樓梯口 → 一樓 → 餐桌
-            : [{ x: 6.0, z: -5.0 }, { x: 7.5, z: -3.5 }];
+          const skipped = wake.skipped; wake = null; pos.x = ex; pos.z = standZ; facing = Math.PI / 2; camT.x = pos.x; camT.z = pos.z;
+          const way = (window.PERSONA === "aeris" ? [{ x: 3.7, z: -2.0 }] : [{ x: 3.7, z: -5.2 }]).concat([{ x: 5.4, z: -6.1 }, { x: 5.4, z: -7.05 }, { x: 6.6, z: -7.05 }, { x: 10.8, z: -7.05 }, { x: 11.5, z: -6.2 }, { x: 9.9, z: -4.7 }, { x: 7.5, z: -3.5 }]);   // 先離開床邊 → 樓梯口 → 下樓 → 一樓 → 餐桌
           if (!skipped) goRoute(way);
         }
       }
