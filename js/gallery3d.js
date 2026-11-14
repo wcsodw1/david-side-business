@@ -1308,7 +1308,8 @@
         // 立柱洗手台 + 圓鏡
         U(new THREE.CylinderGeometry(0.07, 0.09, 0.62, 12), por, 2.45, 0.31, -7.62); const basin = U(new THREE.SphereGeometry(0.24, 18, 10, 0, PI * 2, 0, PI / 2), por, 2.45, 0.66, -7.6); basin.scale.set(1, 0.5, 0.8); addObs(2.45, -7.6, 0.26, 0.26, 1);
         U(new THREE.CylinderGeometry(0.016, 0.016, 0.16, 8), M(0xc9cdd3, 0.2, 0.9), 2.45, 0.82, -7.8);
-        { const mr = U(new THREE.CircleGeometry(0.3, 32), M(0xe3edf6, 0.05, 0.85), 2.45, 1.45, -7.9); mr.rotation.y = 0; }
+        { const c = document.createElement("canvas"); c.width = c.height = 64; const g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, 64, 64); gr.addColorStop(0, "#f7fbff"); gr.addColorStop(0.5, "#d4e4f2"); gr.addColorStop(1, "#a9c2d8"); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); g.fillStyle = "rgba(255,255,255,.55)"; g.fillRect(10, 0, 10, 64); const tt = new THREE.CanvasTexture(c); if (THREE.sRGBEncoding) tt.encoding = THREE.sRGBEncoding;
+          const mr = U(new THREE.CircleGeometry(0.3, 32), new THREE.MeshBasicMaterial({ map: tt, toneMapped: false }), 2.45, 1.45, -7.9); mr.rotation.y = 0; U(new THREE.TorusGeometry(0.3, 0.018, 8, 32), M(0xc9cdd3, 0.2, 0.9), 2.45, 1.45, -7.9); }
         // 淋浴間（西北角）：蓮蓬頭、水管、小門檻
         U(new THREE.CylinderGeometry(0.014, 0.014, 1.5, 8), M(0xc9cdd3, 0.2, 0.9), 0.62, 1.15, -7.4); { const rs = U(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), M(0xc9cdd3, 0.2, 0.9), 0.7, 1.82, -7.4); rs.rotation.z = PI / 2 + 0.5; }
         U(new THREE.BoxGeometry(0.04, 0.06, 1.0), wh, 1.52, 0.03, -7.4);
