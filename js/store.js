@@ -34,6 +34,7 @@
       const done = ms.filter((m) => m.done).length, pct = Math.round((done / ms.length) * 100);
       return { progress: pct, mode: "milestone", reason: `依里程碑自動評估：完成 ${done}/${ms.length}` };
     }
+    if (r && typeof r.progress === "number") return { progress: r.progress, mode: "manual", reason: "手動設定（" + (r.progressAt || "") + "）" };   // 白板 / AI 總管設定的完成度
     return { progress: p._base ? p._base.progress : p.progress, mode: "manual", reason: "尚未設定里程碑，目前是手動數字" };
   }
 
@@ -74,6 +75,8 @@
     setGoal(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).goal = String(text).trim(); save(); apply(p); emit({ pid, kind: "goal", text: rec(pid).goal }); bc({ pid, goal: rec(pid).goal }); },
     setStatus(pid, st) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.status = r.status === st ? "" : st; save(); apply(p); emit({ pid, kind: "status", text: r.status }); bc({ pid, status: r.status }); },
     setNote(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; text = String(text).trim(); if (!text) return; const r = rec(pid); r.note = text; r.noteAt = today(); save(); api.addUpdate(pid, { type: "進度", text }); emit({ pid, kind: "note", text }); bc({ pid, note: text, noteAt: r.noteAt }); },
+    // 沒有里程碑的專案：直接設定完成度 0–100（有里程碑的專案完成度由里程碑計算）
+    setProgress(pid, n) { const p = P.find((x) => x.id === pid); if (!p) return null; const r = rec(pid); if (r.milestones.length) return null; r.progress = Math.max(0, Math.min(100, Math.round(+n || 0))); r.progressAt = today(); save(); apply(p); emit({ pid, kind: "progress", text: r.progress + "%" }); bc({ pid, progress: r.progress }); return r.progress; },
     setNext(pid, text) { const p = P.find((x) => x.id === pid); if (!p) return; rec(pid).next = String(text).trim(); save(); apply(p); emit({ pid, kind: "next", text: rec(pid).next }); bc({ pid, next: rec(pid).next }); },
     // 收到對方（另一位玩家）傳來的專案更新：寫進自己的紀錄，並讓 NEWS 彈出提示
     applyRemote(m) {
@@ -82,6 +85,7 @@
       if (m.status !== undefined) { r.status = m.status; kind = "status"; text = m.status; }
       if (m.next !== undefined) { r.next = m.next; kind = "next"; text = m.next; }
       if (m.tasks !== undefined) { r.tasks = m.tasks; kind = "tasks"; text = "時程表有更新"; }
+      if (m.progress !== undefined) { r.progress = m.progress; r.progressAt = today(); kind = "progress"; text = m.progress + "%"; }
       if (m.note !== undefined) { r.note = m.note; r.noteAt = m.noteAt || today(); kind = "note"; text = m.note; r.updates.unshift({ date: today(), title: m.note.length > 24 ? m.note.slice(0, 24) + "…" : m.note, text: m.note, type: "進度", at: Date.now(), local: false, remote: true }); }
       save(); apply(p); emit({ pid: m.pid, kind, text, remote: true, who: m.who });
     },
@@ -107,7 +111,7 @@
     removeTask(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.tasks = r.tasks.filter((x) => x.id !== id); save(); apply(p); emit({ pid, kind: "tasks", text: "刪除了一個任務" }); bc({ pid, tasks: r.tasks }); },
     exportText() {
       const out = {};
-      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length || r.status || r.note || r.next || (r.tasks && r.tasks.length)) out[pid] = { tasks: r.tasks || [], goal: r.goal, status: r.status || "", note: r.note || "", next: r.next || "", milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
+      Object.keys(data).forEach((pid) => { const r = data[pid]; if (r.updates.length || r.goal || r.milestones.length || r.status || r.note || r.next || (r.tasks && r.tasks.length) || typeof r.progress === "number") out[pid] = { progress: typeof r.progress === "number" ? r.progress : undefined, tasks: r.tasks || [], goal: r.goal, status: r.status || "", note: r.note || "", next: r.next || "", milestones: r.milestones.map((m) => ({ text: m.text, done: m.done })), updates: r.updates.map((u) => ({ date: u.date, title: u.title, text: u.text })) }; });
       return JSON.stringify(out, null, 2);
     },
     hasData: () => Object.keys(data).some((k) => data[k].updates.length || data[k].goal || data[k].milestones.length || data[k].status || data[k].next || (data[k].tasks && data[k].tasks.length)),

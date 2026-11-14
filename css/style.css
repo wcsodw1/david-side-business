@@ -1052,3 +1052,32 @@ body.locked .santa-fab { display: none; }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop::before { content: "■"; font-size: 10px; }
 @media (max-width: 640px) { .ai-comp-hint { display: none; } :is(.ai, .office-ai) .ai-form.ai-composer { padding: 12px 14px 10px; border-radius: 20px; } }
 .ai-bar button { white-space: nowrap; flex: none; } .office-ai .ai-bar { flex-wrap: nowrap; } .office-ai .ai-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
+
+/* ============ AI 總管：圓潤的邊角（不要直角） ============ */
+.office-ai { border-radius: 28px; overflow: hidden; }
+.office-ai::before { left: 0; right: 0; height: 3px; border-radius: 0; }
+.robot-chat:not(.rc-full) .office-ai { border-radius: 28px; }
+.robot-chat.rc-full .office-ai { border-radius: 0; }
+.office-ai .ai-msgs { border-radius: 20px; }
+.office-ai .cv { border-radius: 22px; overflow: hidden; }
+.office-ai .cv-main .ai-msgs, .office-ai .vs-main .ai-msgs { border-radius: 0; }
+.office-ai .cv-list li, .office-ai .vs-list li { border-radius: 12px; margin: 2px 6px; border-left: 0; }
+.office-ai .cv-list li.on, .office-ai .vs-list li.on { box-shadow: inset 3px 0 0 var(--hm-orange), 0 6px 16px -10px rgba(42,31,23,.35); }
+.office-ai .vs { border-radius: 22px; overflow: hidden; }
+.office-ai .ai-user .ai-b { border-radius: 20px 20px 6px 20px; }
+.office-ai .ai-ai .ai-b { border-left: 0; padding-left: 0; }
+.office-ai .ai-ai { position: relative; padding-left: 20px; }
+.office-ai .ai-ai::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 3px; background: linear-gradient(var(--hm-orange), rgba(227,101,29,.25)); }
+.office-ai .ai-err .ai-b { border-radius: 16px; border-left: 0; box-shadow: inset 3px 0 0 #b3261e; }
+.office-ai .ai-acts { border-radius: 14px; border-left: 0; box-shadow: inset 3px 0 0 var(--hm-orange); }
+.office-ai .ai-think { border-radius: 14px; }
+.office-ai .ai-b code { border-radius: 6px; } .office-ai .ai-b pre { border-radius: 14px; }
+.office-ai .ai-cfg { border-radius: 20px; }
+.office-ai .ai-cfg input, .office-ai .ai-cfg select { border-radius: 12px; }
+.office-ai .ai-cfg > button { border-radius: 999px; }
+.office-ai .ai-img { border-radius: 14px; }
+.office-ai .vs-menu { border-radius: 16px; overflow: hidden; } .office-ai .vs-menu button { border-radius: 10px; }
+.office-ai .vs-termview .tm-box, .office-ai .tm-body { border-radius: 16px; overflow: hidden; }
+.office-ai .tm-tab { border-radius: 999px; }
+.office-ai .vs-plus, .office-ai .vs-more, .office-ai .cv-list li button, .office-ai .vs-list li button { border-radius: 50%; }
+.office-ai .ai-th img { border-radius: 12px; }

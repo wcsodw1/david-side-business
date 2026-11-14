@@ -78,7 +78,7 @@
   const officePrompt = (p) => `你是 David 的 Side Business「辦公室總管」AI，用繁體中文、簡潔直接地回答。` +
     `原則：不要每題都套大框架，簡單問題簡單答；除了回答問題，也要指出 David 可能沒想到但重要的問題；建議要能執行、能衡量、能驗證（診斷瓶頸 → 小規模實驗 → 驗證，而不是只鼓勵繼續做）。` +
     `以下是目前所有專案的白板資料（需要時再引用，不要整份複述）：\n` +
-    (p.projects || []).map((q) => `- ${q.name}${q.zh ? "（" + q.zh + "）" : ""}｜目標：${q.goal || "未設定"}｜狀態：${q.wbStatus || "未設定"}${q.wbNote ? "（" + q.wbNote + "）" : ""}｜Next Step：${q.next || "未設定"}`).join("\n");
+    (p.projects || []).map((q) => `- ${q.name}${q.zh ? "（" + q.zh + "）" : ""}｜目標：${q.goal || "未設定"}｜狀態：${q.wbStatus || "未設定"}${q.wbNote ? "（" + q.wbNote + "）" : ""}｜Next Step：${q.next || "未設定"}｜完成度：${q.progress ?? 0}%${(q.milestones || []).length ? "（里程碑：" + q.milestones.map((m) => (m.done ? "✓" : "○") + m.text).join("、") + "）" : ""}`).join("\n");
   const sysPrompt = (p) => p.office ? officePrompt(p) : `你是「${p.name}${p.zh ? "（" + p.zh + "）" : ""}」這個專案白板上的助理，用繁體中文、簡潔直接地回答。` +
     `專案目標：${p.goal || "尚未設定"}。目前狀態：${p.wbStatus || "未設定"}${p.wbNote ? "（" + p.wbNote + "）" : ""}。Next Step：${p.next || "尚未設定"}。需要時可以參考這些資訊，不需要時不要複述。`;
   const dataParts = (u) => { const m = /^data:(.*?);base64,(.*)$/.exec(u) || []; return { type: m[1] || "image/jpeg", data: m[2] || "" }; };
@@ -98,6 +98,8 @@
   const TOOLS = [
     fn("update_project", "更新專案白板：狀態、目前進度一句話（會寫進進度紀錄與 NEWS）、Next Step、目標。只填要改的欄位。", { project: PJ, status: { type: "string", enum: P_ST }, note: { type: "string", description: "目前進度 / 最新狀況一句話" }, next: { type: "string", description: "下一步" }, goal: { type: "string", description: "專案目標" } }, ["project"]),
     fn("add_milestones", "替專案加里程碑（完成度會依里程碑計算）", { project: PJ, items: { type: "array", items: { type: "string" } } }, ["project", "items"]),
+    fn("complete_milestone", "把專案的某個里程碑打勾（完成）或取消打勾；有里程碑的專案，完成度就是依這個算", { project: PJ, milestone: { type: "string", description: "里程碑名稱（可以只寫部分）" }, done: { type: "boolean", description: "true = 完成（預設），false = 取消" } }, ["project", "milestone"]),
+    fn("set_progress", "設定專案完成度 0–100%（只用在「沒有里程碑」的專案；有里程碑的請改用 complete_milestone）", { project: PJ, percent: { type: "number" } }, ["project", "percent"]),
     fn("add_task", "在專案時程表（PM 甘特圖）新增任務", { project: PJ, name: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] }, owner: { type: "string" }, status: { type: "string", enum: T_ST }, progress: { type: "number", description: "0–100" }, start: { type: "string", description: "YYYY-MM-DD" }, end: { type: "string", description: "YYYY-MM-DD" } }, ["project", "name"]),
     fn("update_task", "更新時程表上既有的任務（用任務名稱找）", { project: PJ, task: { type: "string", description: "任務名稱" }, status: { type: "string", enum: T_ST }, progress: { type: "number" }, end: { type: "string" }, owner: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] } }, ["project", "task"]),
   ];
@@ -121,7 +123,7 @@
 1. 工具是你自己呼叫的。絕對不要叫 David 去執行 repo_tree / repo_search 之類的工具、也不要說「請把程式碼貼給我」——${repoOn() ? "需要看程式就自己查" : "（現在是線上版，沒有 repo 工具；需要看程式時說明要從 Mac 上的「AISO1 辦公室 AI.command」打開本機版）"}。
 2. 先查證再說。不知道就查；查不到就說查不到。不要猜架構（這個網站是純 HTML / CSS / JS，沒有 React / Vue）。
 3. 直接給結論和做法，不要寫「三層架構」「第一層、第二層」那種教科書式的大綱，也不要反問「你要現在開始嗎？」。
-4. 誠實說明能力邊界：你能改白板資料（狀態、進度、Next Step、目標、里程碑、時程表）${repoOn() ? "、能讀程式碼 repo" : ""}；你「不能」改網站程式碼、不能操作 AISO1 主機。被要求改介面 / 程式時：${repoOn() ? "先自己用工具找到相關程式，" : ""}說清楚「改哪個檔、哪幾行、改成什麼」，並說這種程式改動要交給 Claude Code（David 電腦上的開發助理）執行。
+4. 誠實說明能力邊界：你能改白板資料（狀態、進度、完成度 %、里程碑打勾、Next Step、目標、時程表）${repoOn() ? "、能讀程式碼 repo" : ""}；你「不能」改網站程式碼、不能操作 AISO1 主機。被要求改介面 / 程式時：${repoOn() ? "先自己用工具找到相關程式，" : ""}說清楚「改哪個檔、哪幾行、改成什麼」，並說這種程式改動要交給 Claude Code（David 電腦上的開發助理）執行。
 5. 錯誤訊息要翻成白話、講原因和解法。這裡的已知狀況：
    - 「image input is not supported … mmproj」= 目前連到的模型沒有載入看圖用的 mmproj（AISO1 的 18082 是純文字版；8080 才是看圖版）。解法：從 Mac 雙擊「AISO1 辦公室 AI.command」打開本機版，它會自動用看圖版；或在 AISO1 上執行 ~/start-llama-8080.sh。
    - 連不到 AISO1 = SSH 通道或模型服務沒開；同樣是用那個 .command 啟動器最簡單。
@@ -149,6 +151,15 @@
         if (!done.length) return { ok: true, text: `${nm}：沒有需要改的` };
       } else if (name === "add_milestones") {
         const n = S.addMilestones(pj.id, a.items || []); done.push(`新增 ${n} 個里程碑`);
+      } else if (name === "complete_milestone") {
+        const L = pj.milestones || [], q = squash(a.milestone), m = L.find((x) => squash(x.text) === q) || L.find((x) => squash(x.text).includes(q) || q.includes(squash(x.text)));
+        if (!m) return { ok: false, error: `${nm} 找不到里程碑「${a.milestone || ""}」` + (L.length ? `（現有：${L.map((x) => x.text).join("、")}）` : "（這個專案還沒有里程碑）") };
+        const want = a.done !== false; if (!!m.done !== want) S.toggleMilestone(pj.id, m.id);
+        done.push(`里程碑「${m.text}」${want ? "✓ 完成" : "取消完成"} → 完成度 ${pj.progress}%`);
+      } else if (name === "set_progress") {
+        if ((pj.milestones || []).length) return { ok: false, error: `${nm} 有 ${pj.milestones.length} 個里程碑，完成度是依里程碑算的（目前 ${pj.progress}%）；請改用 complete_milestone 打勾` };
+        const v = S.setProgress(pj.id, a.percent); if (v === null) return { ok: false, error: "設定失敗" };
+        done.push(`完成度 → ${v}%`);
       } else if (name === "add_task") {
         const t = S.addTask(pj.id, { name: a.name, pri: a.pri, owner: a.owner, start: a.start, end: a.end }); if (!t) return { ok: false, error: "任務名稱是空的" };
         const patch = {}; if (T_ST.includes(a.status)) patch.status = a.status; if (a.progress !== undefined && !isNaN(+a.progress)) patch.progress = Math.max(0, Math.min(100, +a.progress)); if (Object.keys(patch).length) S.updateTask(pj.id, t.id, patch);
