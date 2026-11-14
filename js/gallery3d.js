@@ -1298,7 +1298,7 @@
         // 隔間牆 x = 5.0（客廳 | 臥室），門口在 z -3.4 ~ -2.4
         shell(0.12, 7.45, 5.5, -4.275);   // 走道東端（右下角）不砌牆
         // 浴室：x 3.2~5.5（東牆 = 隔間牆，直接靠牆）、z -8~-5.6；門在西牆（面向左側）z -6.6~-5.6
-        shell(0.12, 1.4, 2.6, -7.3); shell(2.9, 0.12, 4.05, -5.6);
+        shell(0.12, 1.4, 2.0, -7.3); shell(3.5, 0.12, 3.75, -5.6);
         // 浴室：大理石牆面（腰線以下）+ 灰地磚
         const mc = document.createElement("canvas"); mc.width = mc.height = 256; const mg = mc.getContext("2d"); mg.fillStyle = "#f4f4f2"; mg.fillRect(0, 0, 256, 256);
         for (let k = 0; k < 14; k++) { mg.strokeStyle = `rgba(110,112,118,${0.12 + Math.random() * 0.2})`; mg.lineWidth = 0.8 + Math.random() * 1.8; mg.beginPath(); let x = Math.random() * 256, y = 0; mg.moveTo(x, y); while (y < 256) { x += (Math.random() - 0.35) * 22; y += 12 + Math.random() * 14; mg.lineTo(x, y); } mg.stroke(); }
@@ -1323,6 +1323,7 @@
         scene.children[_c0 + 1].visible = false;   // 西牆有門洞，不貼大理石
         for (let k = _o0; k < obstacles.length; k++) { obstacles[k].minX += 2.7; obstacles[k].maxX += 2.7; }
         pnl(0.62, 1.3, 2.91, 0.65, -7.92, 0); { const bf2 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 2.4), new THREE.MeshStandardMaterial({ color: 0xb6b8bc, roughness: 0.3 })); bf2.rotation.x = -PI / 2; bf2.position.set(2.91, UY + 0.014, -6.8); bf2.receiveShadow = true; scene.add(bf2); }   // 往左（西）延長 0.6 m
+        pnl(0.62, 1.3, 2.29, 0.65, -7.92, 0); { const bf3 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 2.4), new THREE.MeshStandardMaterial({ color: 0xb6b8bc, roughness: 0.3 })); bf3.rotation.x = -PI / 2; bf3.position.set(2.29, UY + 0.014, -6.8); bf3.receiveShadow = true; scene.add(bf3); }   // 再往左（西）延長 0.6 m
         // 長條窗：客廳東牆（含淺藍天空 + 遠方大樓），金色窗框，下方白色嵌入式矮櫃
         const sk = document.createElement("canvas"); sk.width = 512; sk.height = 128; const sg = sk.getContext("2d"), gr = sg.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, "#9ccdf5"); gr.addColorStop(1, "#e4f0fb"); sg.fillStyle = gr; sg.fillRect(0, 0, 512, 128);
         sg.fillStyle = "rgba(255,255,255,.85)"; for (const [cx, cy, r] of [[90, 30, 22], [120, 36, 28], [330, 24, 20], [360, 30, 26], [440, 40, 18]]) { sg.beginPath(); sg.arc(cx, cy, r, 0, 7); sg.fill(); }
