@@ -1258,6 +1258,7 @@
 
       /* ---- 二樓：Aeris 的房間（lv 1）---- */
       const U = (geo, mat, x, y, z, cast = true) => mk(geo, mat, x, UY + y, z, cast);
+      const _f2a = scene.children.length;   // 二樓所有東西從這裡開始記錄：人在一樓（屋內）時整層藏起來
       { // 二樓吊燈：和紙圓球燈籠（Akari 風）：橫向竹骨 + 兩條縱向接縫，從天花板垂下
         const cv = document.createElement("canvas"); cv.width = 256; cv.height = 256; const g2 = cv.getContext("2d");
         g2.fillStyle = "#f3e6c9"; g2.fillRect(0, 0, 256, 256);
@@ -1453,6 +1454,8 @@
         poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
       }
 
+      { const floor2 = scene.children.slice(_f2a).filter((o) => o.isMesh || o.isGroup || o.isSprite); let hid = false;
+        tickHooks.push(() => { const hide = insH > 0.5 && lvlS < 0.5; if (hide !== hid) { hid = hide; for (const o of floor2) o.visible = !hide; } }); }   // 在一樓時看不到二樓
       // 門口地墊與信箱
       const homeT = mkTex(THREE, decalCanvas(512, 200, (c, w, h) => { c.fillStyle = "#6a4a2e"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 78px Georgia, serif"; c.fillText("HOME", w / 2, 118); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("David & ARIES", w / 2, 168); }), aniso);
       const mat0 = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.6), new THREE.MeshStandardMaterial({ map: homeT, roughness: 1 })); mat0.rotation.x = -PI / 2; mat0.rotation.z = PI / 2; mat0.position.set(X1 + 0.9, 0.04, (DW0 + DW1) / 2); scene.add(mat0);
