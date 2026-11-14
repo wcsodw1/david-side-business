@@ -1237,8 +1237,35 @@
       for (let r = 0; r < 4; r++) for (let k = 0; k < 6; k++) U(new THREE.BoxGeometry(0.1, 0.4, 0.26), M(new THREE.Color().setHSL((k * 0.11 + r * 0.17 + 0.5) % 1, 0.35, 0.5), 0.8), X1 - 0.55, 0.4 + r * 0.5, -4.1 + k * 0.3, false);
       const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(6.3, UY + 0.012, -2.4); rugP.receiveShadow = true; scene.add(rugP);
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
-      U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 7.6, 0.8, -1.0); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 7.6, 1.7, -1.0, false);
+      U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 9.6, 0.8, -0.6); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 9.6, 1.7, -0.6, false);
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
+
+      // 毛毛蟲沙發：圍著圓地毯東側的一整條弧形沙發 —— 8 節毛茸茸的綠色身體（每一節都能坐）+ 笑笑的頭（眼睛、腮紅、觸角）
+      { const fc = mkCanvas(128, 128), fg = fc.getContext("2d"); fg.fillStyle = "#808080"; fg.fillRect(0, 0, 128, 128);
+        for (let i = 0; i < 1100; i++) { const x = Math.random() * 128, y = Math.random() * 128, l = 3 + Math.random() * 5, a = Math.random() * 6.28; fg.strokeStyle = Math.random() < 0.5 ? "rgba(255,255,255,.4)" : "rgba(0,0,0,.35)"; fg.lineWidth = 1.2; fg.beginPath(); fg.moveTo(x, y); fg.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); fg.stroke(); }
+        const furT = mkTex(THREE, fc, aniso); furT.wrapS = furT.wrapT = THREE.RepeatWrapping; furT.repeat.set(2, 2);
+        const fur = (h, l = 0.4) => new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(h, 0.6, l), roughness: 1, bumpMap: furT, bumpScale: 1.6 });
+        const SC = { x: 6.3, z: -2.4, R: 2.0 }, N = 8, TH0 = -60, STEP = 17, d2r = PI / 180;
+        for (let i = 0; i < N; i++) {
+          const th = (TH0 + i * STEP) * d2r, c = Math.cos(th), sn = Math.sin(th), phi = -(th + PI / 2), m = fur(0.36 - i * 0.014, 0.4 + (i % 2) * 0.05), k = i === N - 1 ? 0.82 : 1;
+          const seat = U(new THREE.SphereGeometry(1, 18, 14), m, SC.x + SC.R * c, 0.3, SC.z + SC.R * sn); seat.scale.set(0.46 * k, 0.34 * k, 0.52 * k); seat.rotation.y = phi;                         // 坐墊
+          const back = U(new THREE.SphereGeometry(1, 18, 14), m, SC.x + (SC.R + 0.3) * c, 0.62, SC.z + (SC.R + 0.3) * sn); back.scale.set(0.46 * k, 0.5 * k, 0.28 * k); back.rotation.y = phi;         // 靠背（朝外）
+          addObs(SC.x + (SC.R + 0.12) * c, SC.z + (SC.R + 0.12) * sn, 0.4, 0.4, 1, 0.62);
+        }
+        // 頭：接在第一節前面（朝向北邊樓梯方向）
+        const th = TH0 * d2r, c = Math.cos(th), sn = Math.sin(th), fx = sn, fz = -c, hx = SC.x + SC.R * c + fx * 0.62, hz = SC.z + SC.R * sn + fz * 0.62;
+        const hd = new THREE.Group(); hd.position.set(hx, UY, hz); hd.rotation.y = Math.atan2(-fz, fx); scene.add(hd);
+        const part = (geo, mat, x, y, z, sc) => { const q = new THREE.Mesh(geo, mat); q.position.set(x, y, z); if (sc) q.scale.set(sc[0], sc[1], sc[2]); q.castShadow = true; hd.add(q); return q; };
+        const white = M(0xffffff, 0.4), black = M(0x16121e, 0.3), pinkC = M(0xff9bb5, 0.8), headM = fur(0.27, 0.5);
+        part(new THREE.SphereGeometry(1, 20, 16), headM, 0, 0.6, 0, [0.55, 0.52, 0.56]);
+        for (const sz of [-1, 1]) {
+          part(new THREE.SphereGeometry(0.13, 12, 10), white, 0.44, 0.78, sz * 0.2); part(new THREE.SphereGeometry(0.065, 10, 8), black, 0.55, 0.78, sz * 0.2);   // 眼睛
+          part(new THREE.SphereGeometry(0.09, 10, 8), pinkC, 0.42, 0.56, sz * 0.36, [0.5, 1, 1]);                                                                // 腮紅
+          const an = part(new THREE.CylinderGeometry(0.025, 0.025, 0.42, 6), black, 0.02, 1.2, sz * 0.22); an.rotation.x = -sz * 0.3; part(new THREE.SphereGeometry(0.08, 10, 8), pinkC, 0.02, 1.43, sz * 0.3);   // 觸角
+        }
+        part(new THREE.TorusGeometry(0.11, 0.022, 6, 14, PI), black, 0.52, 0.55, 0).rotation.set(0, PI / 2, PI);                                                // 微笑
+        addObs(hx, hz, 0.5, 0.5, 1, 0.9);
+      }
 
       // 二樓牆上的海報：朴燦烈 Park Chanyeol（程式畫的舞台風格海報，用剪影與燈光，不是本人照片；之後可以換成你自己的圖）
       { const NAME = "朴燦烈";
