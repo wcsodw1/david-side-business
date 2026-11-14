@@ -478,6 +478,8 @@
   });
   $("#lockBtn").addEventListener("click", lock);
   window.addEventListener("hashchange", () => { if (!document.body.classList.contains("locked")) render(); });
+  // AI 總管直接改了白板資料（狀態 / Next Step / 時程表…）→ 重畫目前頁面，看板與甘特圖立刻反映（3D 藝廊自己會聽 store:change）
+  window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   let ok = false;
   try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; } catch (_) {}

@@ -76,6 +76,55 @@
     `專案目標：${p.goal || "尚未設定"}。目前狀態：${p.wbStatus || "未設定"}${p.wbNote ? "（" + p.wbNote + "）" : ""}。Next Step：${p.next || "尚未設定"}。需要時可以參考這些資訊，不需要時不要複述。`;
   const dataParts = (u) => { const m = /^data:(.*?);base64,(.*)$/.exec(u) || []; return { type: m[1] || "image/jpeg", data: m[2] || "" }; };
 
+  /* ---------- 讓 AI 直接更新藝廊（工具呼叫，AISO1 / 自訂端點）----------
+     模型回傳 tool_calls → 這裡用 Store 直接改白板資料（和按「✎ 更新」、白板、時程表是同一套），藝廊 / 辦公室 / NEWS 立刻更新。
+     資料一樣只存在這個瀏覽器；每次改動前先存快照，對話裡有「復原」。 */
+  const STORE_KEY = "dsb-local", P_ST = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"], T_ST = ["To Do", "Doing", "Done", "Blocked"];
+  const projList = (p) => (p.office ? p.projects || [] : [p]);
+  const squash = (x) => String(x || "").toLowerCase().replace(/[\s\-_]+/g, "");
+  const findProj = (p, q) => {
+    if (!q && !p.office) return p; const n = squash(q), L = projList(p); if (!n) return null;
+    return L.find((x) => squash(x.id) === n) || L.find((x) => squash(x.name) === n || squash(x.zh) === n) || L.find((x) => squash(x.name).includes(n) || n.includes(squash(x.name)) || (x.zh && (squash(x.zh).includes(n) || n.includes(squash(x.zh))))) || null;
+  };
+  const fn = (name, description, props, required) => ({ type: "function", function: { name, description, parameters: { type: "object", properties: props, required } } });
+  const PJ = { type: "string", description: "專案 id 或名稱，例如 coffee-shop / Coffee Shop" };
+  const TOOLS = [
+    fn("update_project", "更新專案白板：狀態、目前進度一句話（會寫進進度紀錄與 NEWS）、Next Step、目標。只填要改的欄位。", { project: PJ, status: { type: "string", enum: P_ST }, note: { type: "string", description: "目前進度 / 最新狀況一句話" }, next: { type: "string", description: "下一步" }, goal: { type: "string", description: "專案目標" } }, ["project"]),
+    fn("add_milestones", "替專案加里程碑（完成度會依里程碑計算）", { project: PJ, items: { type: "array", items: { type: "string" } } }, ["project", "items"]),
+    fn("add_task", "在專案時程表（PM 甘特圖）新增任務", { project: PJ, name: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] }, owner: { type: "string" }, status: { type: "string", enum: T_ST }, progress: { type: "number", description: "0–100" }, start: { type: "string", description: "YYYY-MM-DD" }, end: { type: "string", description: "YYYY-MM-DD" } }, ["project", "name"]),
+    fn("update_task", "更新時程表上既有的任務（用任務名稱找）", { project: PJ, task: { type: "string", description: "任務名稱" }, status: { type: "string", enum: T_ST }, progress: { type: "number" }, end: { type: "string" }, owner: { type: "string" }, pri: { type: "string", enum: ["P0", "P1", "P2"] } }, ["project", "task"]),
+  ];
+  const toolPrompt = (p) => `\n\n你可以用工具直接更新 David 的藝廊（白板狀態、進度、Next Step、目標、里程碑、時程表任務）。今天是 ${window.Store ? window.Store.today() : ""}。` +
+    `David 要你記錄、更新、改狀態、排任務時，一定要真的呼叫工具去做（每次都要，即使之前做過類似的事），不要只在文字裡說「已更新」、不要寫「[已執行]」之類的字，也不要叫他自己改；只是問問題時就不要動資料。工具執行完再用一兩句話回報。` +
+    `\n各專案的時程表任務：\n` + projList(p).map((q) => `- ${q.id}（${q.name}）：${(q.tasks || []).length ? q.tasks.map((t) => `${t.name}［${t.status} ${t.progress || 0}% ${t.start}~${t.end}］`).join("、") : "沒有任務"}`).join("\n");
+  const runTool = (p, name, a) => {
+    const S = window.Store; if (!S) return { ok: false, error: "藝廊資料還沒載入" };
+    const pj = findProj(p, a.project); if (!pj) return { ok: false, error: `找不到專案「${a.project || ""}」` };
+    const done = [], nm = pj.name;
+    try {
+      if (name === "update_project") {
+        const st = P_ST.find((x) => squash(x) === squash(a.status));
+        if (st && st !== pj.wbStatus) { S.setStatus(pj.id, st); done.push("狀態 → " + (st === "ON PROCESS" ? "ON-PROCESS" : st)); }
+        if (a.goal && String(a.goal).trim()) { S.setGoal(pj.id, a.goal); done.push("目標 → " + String(a.goal).trim()); }
+        if (a.next !== undefined && String(a.next).trim() !== (pj.next || "")) { S.setNext(pj.id, a.next); done.push("Next Step → " + (String(a.next).trim() || "（清空）")); }
+        if (a.note && String(a.note).trim()) { S.setNote(pj.id, a.note); done.push("進度 → " + String(a.note).trim()); }
+        if (!done.length) return { ok: true, text: `${nm}：沒有需要改的` };
+      } else if (name === "add_milestones") {
+        const n = S.addMilestones(pj.id, a.items || []); done.push(`新增 ${n} 個里程碑`);
+      } else if (name === "add_task") {
+        const t = S.addTask(pj.id, { name: a.name, pri: a.pri, owner: a.owner, start: a.start, end: a.end }); if (!t) return { ok: false, error: "任務名稱是空的" };
+        const patch = {}; if (T_ST.includes(a.status)) patch.status = a.status; if (a.progress !== undefined && !isNaN(+a.progress)) patch.progress = Math.max(0, Math.min(100, +a.progress)); if (Object.keys(patch).length) S.updateTask(pj.id, t.id, patch);
+        done.push(`時程表新增「${t.name}」（${t.start}~${t.end}）`);
+      } else if (name === "update_task") {
+        const L = pj.tasks || [], q = squash(a.task), t = L.find((x) => squash(x.name) === q) || L.find((x) => squash(x.name).includes(q) || q.includes(squash(x.name)));
+        if (!t) return { ok: false, error: `${nm} 的時程表找不到任務「${a.task || ""}」` };
+        const patch = {}; if (T_ST.includes(a.status)) patch.status = a.status; if (a.progress !== undefined && !isNaN(+a.progress)) patch.progress = Math.max(0, Math.min(100, +a.progress)); if (a.end) patch.end = a.end; if (a.owner) patch.owner = a.owner; if (a.pri) patch.pri = a.pri;
+        S.updateTask(pj.id, t.id, patch); done.push(`任務「${t.name}」→ ` + Object.entries(patch).map(([k, v]) => `${k} ${v}${k === "progress" ? "%" : ""}`).join("、"));
+      } else return { ok: false, error: "不認得的工具：" + name };
+    } catch (e) { return { ok: false, error: `${nm}：${e.message || e}` }; }
+    return { ok: true, text: `${nm}：${done.join("；")}` };
+  };
+
   async function callAI(s, p, signal, onDelta) {
     const hist = s.msgs.filter((m) => m.role === "user" || m.role === "ai").slice(-24);
     if (cfg.provider === "anthropic") {
@@ -91,43 +140,69 @@
       return { text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"), imgs: [] };
     }
     if (isLocal()) {
-      const base = baseOf(), messages = [{ role: "system", content: sysPrompt(p) }];
+      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
       for (const m of hist) {
         if (m.role === "user") messages.push({ role: "user", content: (m.imgs || []).length ? [...m.imgs.map((u) => ({ type: "image_url", image_url: { url: u } })), { type: "text", text: m.text || "（圖片）" }] : (m.text || "（圖片）") });
-        else messages.push({ role: "assistant", content: m.text || "（圖片）" });
+        else {
+          const calls = (m.actions || []).filter((a) => a.name);   // 之前真的呼叫過的工具：照原樣放回去（工具呼叫 + 結果），模型才會學到要真的呼叫
+          if (calls.length) { messages.push({ role: "assistant", content: "", tool_calls: calls.map((a, k) => ({ id: "h" + hist.indexOf(m) + "_" + k, type: "function", function: { name: a.name, arguments: JSON.stringify(a.args || {}) } })) });
+            calls.forEach((a, k) => messages.push({ role: "tool", tool_call_id: "h" + hist.indexOf(m) + "_" + k, content: JSON.stringify(a.fail ? { ok: false, error: a.text } : { ok: true, text: a.text + (m.undone ? "（之後被 David 復原了）" : "") }) })); }
+          messages.push({ role: "assistant", content: m.text || (calls.length ? "完成。" : "（圖片）") });
+        }
       }
       const headers = { "content-type": "application/json" }; if (cfg.key) headers.authorization = "Bearer " + cfg.key;
-      const body = { messages, stream: true }; if (modelOf()) body.model = modelOf();
-      body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
-      if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
-      if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
-      let r;
-      try { r = await fetch(base + "/chat/completions", { ...LNA(), method: "POST", signal, headers, body: JSON.stringify(body) }); }
-      catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。${LAUNCH_HELP} 或確認：① 瀏覽器允許這個網站存取本機：${LNA_HELP} ② 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL}（出現 Address already in use 代表已經開著，沒問題）③ AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }
-      if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${r.status}`); }
       const tidy = (t) => String(t || "").replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^\s+/, "");
       const stats = (tm, us, model) => { const name = String(model || "").split("/").pop().replace(/\.gguf$/i, ""), n = tm ? tm.predicted_n : us && us.completion_tokens;
         return [name, n ? n + " tokens" : "", tm && tm.predicted_per_second ? tm.predicted_per_second.toFixed(1) + " tok/s" : "", tm && tm.prompt_n ? "讀入 " + tm.prompt_n + " tokens" : ""].filter(Boolean).join(" · "); };
-      if (!/event-stream/.test(r.headers.get("content-type") || "") || !r.body) {   // 端點不支援串流：當成一般回應
-        const j = await r.json().catch(() => ({})), ch = (j.choices && j.choices[0] && j.choices[0].message) || {};
-        return { text: tidy(ch.content).trim(), think: String(ch.reasoning_content || "").trim(), imgs: [], meta: stats(j.timings, j.usage, j.model) };
-      }
-      // 串流：像 llama.cpp WebUI 一樣一個字一個字出來
-      const rd = r.body.getReader(), dec = new TextDecoder(); let buf = "", text = "", think = "", tm = null, us = null, model = "";
-      for (;;) {
-        const { value, done } = await rd.read(); if (done) break;
-        buf += dec.decode(value, { stream: true }); const lines = buf.split("\n"); buf = lines.pop();
-        for (const ln of lines) {
-          const d = ln.trim(); if (!d.startsWith("data:")) continue; const pl = d.slice(5).trim(); if (pl === "[DONE]") continue;
-          let j; try { j = JSON.parse(pl); } catch (_) { continue; }
-          if (j.error) throw new Error(j.error.message || String(j.error));
-          const dl = (j.choices && j.choices[0] && j.choices[0].delta) || {};
-          if (dl.content) text += dl.content; if (dl.reasoning_content) think += dl.reasoning_content;
-          if (j.timings) tm = j.timings; if (j.usage) us = j.usage; if (j.model) model = j.model;
-          if (onDelta) onDelta({ text: tidy(text), think });
+      let text = "", think = "", tm = null, us = null, model = "", undo = null; const actions = [];
+      const push = () => onDelta && onDelta({ text: tidy(text), think, actions });
+      // 最多 4 輪：模型呼叫工具 → 這裡執行（直接改藝廊資料）→ 把結果交回模型 → 模型回報做了什麼
+      for (let round = 0; round < 4; round++) {
+        const body = { messages, stream: true }; if (modelOf()) body.model = modelOf();
+        body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
+        if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
+        if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
+        if (useTools && round < 3) body.tools = TOOLS;
+        let r;
+        try { r = await fetch(base + "/chat/completions", { ...LNA(), method: "POST", signal, headers, body: JSON.stringify(body) }); }
+        catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。${LAUNCH_HELP} 或確認：① 瀏覽器允許這個網站存取本機：${LNA_HELP} ② 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL}（出現 Address already in use 代表已經開著，沒問題）③ AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }
+        if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error((j.error && (j.error.message || j.error)) || `HTTP ${r.status}`); }
+        const calls = []; let rtext = "";
+        if (!/event-stream/.test(r.headers.get("content-type") || "") || !r.body) {   // 端點不支援串流：當成一般回應
+          const j = await r.json().catch(() => ({})), ch = (j.choices && j.choices[0] && j.choices[0].message) || {};
+          rtext = ch.content || ""; think += ch.reasoning_content || ""; tm = j.timings || tm; us = j.usage || us; model = j.model || model;
+          (ch.tool_calls || []).forEach((c) => calls.push({ id: c.id, name: c.function.name, args: c.function.arguments || "" }));
+          text += (text && rtext ? "\n\n" : "") + rtext; push();
+        } else {
+          // 串流：像 llama.cpp WebUI 一樣一個字一個字出來
+          const rd = r.body.getReader(), dec = new TextDecoder(), lead = text ? "\n\n" : ""; let buf = "";
+          for (;;) {
+            const { value, done } = await rd.read(); if (done) break;
+            buf += dec.decode(value, { stream: true }); const lines = buf.split("\n"); buf = lines.pop();
+            for (const ln of lines) {
+              const d = ln.trim(); if (!d.startsWith("data:")) continue; const pl = d.slice(5).trim(); if (pl === "[DONE]") continue;
+              let j; try { j = JSON.parse(pl); } catch (_) { continue; }
+              if (j.error) throw new Error(j.error.message || String(j.error));
+              const dl = (j.choices && j.choices[0] && j.choices[0].delta) || {};
+              if (dl.content) rtext += dl.content; if (dl.reasoning_content) think += dl.reasoning_content;
+              for (const tc of dl.tool_calls || []) { const k = tc.index ?? calls.length; const c = (calls[k] = calls[k] || { id: "", name: "", args: "" }); if (tc.id) c.id = tc.id; if (tc.function) { if (tc.function.name) c.name += tc.function.name; if (tc.function.arguments) c.args += tc.function.arguments; } }
+              if (j.timings) tm = j.timings; if (j.usage) us = j.usage; if (j.model) model = j.model;
+              if (onDelta) onDelta({ text: tidy(text + (rtext ? lead + rtext : "")), think, actions });
+            }
+          }
+          if (rtext) text += lead + rtext;
         }
+        const todo = calls.filter((c) => c && c.name); if (!todo.length) break;
+        if (undo === null) { try { undo = localStorage.getItem(STORE_KEY) || "{}"; } catch (_) { undo = "{}"; } }   // 第一次改動前先存一份，讓 David 可以一鍵復原
+        messages.push({ role: "assistant", content: rtext || "", tool_calls: todo.map((c, k) => ({ id: c.id || "call_" + round + "_" + k, type: "function", function: { name: c.name, arguments: c.args || "{}" } })) });
+        todo.forEach((c, k) => { let a = {}; try { a = JSON.parse(c.args || "{}"); } catch (_) {}
+          const res = runTool(p, c.name, a); actions.push(res.ok ? { text: res.text, name: c.name, args: a } : { text: res.error, fail: true, name: c.name, args: a });
+          messages.push({ role: "tool", tool_call_id: c.id || "call_" + round + "_" + k, content: JSON.stringify(res) }); });
+        push();
       }
-      return { text: tidy(text).trim(), think: think.trim(), imgs: [], meta: stats(tm, us, model) };
+      const out = { text: tidy(text).trim(), think: think.trim(), imgs: [], meta: stats(tm, us, model) };
+      if (actions.length) { out.actions = actions; if (actions.some((a) => !a.fail)) out.undo = undo; }
+      return out;
     }
     // OpenAI Responses API（可用 image_generation 工具產圖）
     const input = hist.map((m) => m.role === "user"
@@ -147,10 +222,10 @@
     if (s.pending) return; text = String(text || "").trim(); if (!text && !imgs.length) return;
     s.msgs.push({ role: "user", text, imgs: imgs.slice(), at: Date.now() }); s.pending = true; s.ctl = new AbortController(); s.notify();
     const live = { role: "ai", text: "", imgs: [], at: Date.now(), live: true }; let raf = 0;   // 串流中的那則回覆（第一個字到了才放進對話）
-    const onDelta = (d) => { if (!s.msgs.includes(live)) s.msgs.push(live); live.text = d.text; live.think = d.think; if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.notify(); }); };
+    const onDelta = (d) => { if (!s.msgs.includes(live)) s.msgs.push(live); live.text = d.text; live.think = d.think; if (d.actions && d.actions.length) live.actions = d.actions.slice(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.notify(); }); };
     try {
       const out = await callAI(s, p, s.ctl.signal, onDelta), i = s.msgs.indexOf(live);
-      const m = { role: "ai", text: out.text || (out.imgs.length ? "" : "（沒有回應）"), imgs: out.imgs, at: Date.now() }; if (out.think) m.think = out.think; if (out.meta) m.meta = out.meta;
+      const m = { role: "ai", text: out.text || (out.imgs.length || (out.actions || []).length ? "" : "（沒有回應）"), imgs: out.imgs, at: Date.now() }; if (out.think) m.think = out.think; if (out.meta) m.meta = out.meta; if (out.actions) m.actions = out.actions; if (out.undo) m.undo = out.undo;
       if (i >= 0) s.msgs[i] = m; else s.msgs.push(m);
     }
     catch (e) {
@@ -160,6 +235,7 @@
     }
     cancelAnimationFrame(raf);
     s.pending = false; s.ctl = null; s.notify(); s.save();
+    const lastAi = s.msgs[s.msgs.length - 1]; if (lastAi && (lastAi.actions || []).some((x) => !x.fail)) window.dispatchEvent(new CustomEvent("ai:applied"));
   }
 
   /* ---------- 介面 ---------- */
@@ -202,9 +278,13 @@
     const paint = () => {
       const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型。<br><b>${esc(LAUNCH_HELP)}</b><br><br>在線上網站直接連的話：<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
-      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
+      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${m.undone ? " undone" : ""}">${x.fail ? "✗" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出";
       const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);
+      msgs.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", () => {   // 還原成這次改動前的白板資料，重新整理讓藝廊全部重畫
+        const m = s.msgs[+b.dataset.undo]; if (!m || !m.undo || !confirm("把這次 AI 做的改動全部復原？")) return;
+        try { localStorage.setItem(STORE_KEY, m.undo); } catch (_) {} m.undone = true; s.save().then(() => location.reload());
+      }));
     };
     const sub = () => { if (!el.isConnected) { s.subs.delete(sub); return; } paint(); };
     s.subs.add(sub); s.ready.then(paint); title(); paint();
