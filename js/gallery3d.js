@@ -1260,8 +1260,10 @@
       }
       bed(1.75, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1);                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 0.95, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 0.95, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
-      U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
-      { // 書桌 / 梳妝桌：木頭桌面（有厚度）、一側抽屜櫃、另一側桌腳、橢圓立鏡（有木框與支架）、檯燈、筆電、椅子
+      const SHOW_BEDROOM_EXTRAS = false;   // 臥室的衣櫃 / 書桌 / 鏡子 / 椅子先移除（要放回來改成 true）
+      if (SHOW_BEDROOM_EXTRAS) {U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
+      }
+      if (SHOW_BEDROOM_EXTRAS) { // 書桌 / 梳妝桌：木頭桌面（有厚度）、一側抽屜櫃、另一側桌腳、橢圓立鏡（有木框與支架）、檯燈、筆電、椅子
         const dw = M(0xc89a62, 0.55), dwD = M(0xa8793f, 0.6), dx = 3.6, dz = -2.2;
         U(new THREE.BoxGeometry(1.5, 0.05, 0.62), dw, dx, 0.745, dz); U(new THREE.BoxGeometry(1.46, 0.04, 0.58), dwD, dx, 0.7, dz);
         U(new THREE.BoxGeometry(0.45, 0.68, 0.56), dw, dx + 0.52, 0.35, dz); for (const yy of [0.22, 0.5]) { U(new THREE.BoxGeometry(0.4, 0.2, 0.012), dwD, dx + 0.52, yy, dz + 0.286); U(new THREE.BoxGeometry(0.1, 0.014, 0.014), M(0xe9e3d4, 0.3, 0.8), dx + 0.52, yy + 0.04, dz + 0.3); }   // 抽屜 + 把手
