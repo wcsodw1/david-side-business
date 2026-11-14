@@ -70,7 +70,7 @@
       const box = document.createElement("div"); box.className = "robot-chat";
       box.innerHTML = `<section class="office-ai"><header class="rc-h"><b>🤖 AI 總管</b><span>我看得到所有專案的目標、狀態與 Next Step</span><button type="button" data-fs aria-label="全螢幕" title="全螢幕（F）">⤢</button><button type="button" data-x aria-label="關閉">✕</button></header><div class="ai-mount" data-m></div></section>`;
       document.body.appendChild(box); R.box = box; document.body.classList.add("robot-open");
-      window.AIChat.mount(box.querySelector("[data-m]"), { id: "__office", name: "辦公室", office: true, projects: ctx.P });
+      (window.AIChat.mountConv || window.AIChat.mount)(box.querySelector("[data-m]"), { id: "__office", name: "辦公室", office: true, projects: ctx.P });
       box.querySelector("[data-x]").addEventListener("click", close);
       // 全螢幕：再按一次（或 Esc）回到小視窗；記住上次的選擇
       const fsBtn = box.querySelector("[data-fs]"), setFs = (on) => { box.classList.toggle("rc-full", on); fsBtn.textContent = on ? "⤡" : "⤢"; fsBtn.title = on ? "縮小（F / Esc）" : "全螢幕（F）"; fsBtn.setAttribute("aria-label", on ? "縮小" : "全螢幕"); try { localStorage.setItem("dsb-robot-full", on ? "1" : ""); } catch (_) {} const m = box.querySelector(".ai-msgs"); if (m) m.scrollTop = m.scrollHeight; };

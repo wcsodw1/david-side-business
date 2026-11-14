@@ -24,10 +24,11 @@
   const isLocal = () => cfg.provider === "custom" || cfg.provider === "aiso1";   // OpenAI 相容端點（串流輸出）
   const needKey = () => !isLocal();   // 自訂端點 / AISO1 可以不用金鑰
   // 用 Mac 上的「AISO1 辦公室 AI.command」開網站時（http://localhost），走同源的 /aiso1 轉送（做法同 AISO Platform 的 launcher），不會被瀏覽器擋
-  const baseOf = () => (cfg.provider === "aiso1" ? (cfg.aisoBase || "").trim() || (aiso.proxy ? location.origin + "/aiso1/v1" : AISO_BASE) : cfg.baseUrl.trim()).replace(/\/+$/, "");
+  const baseOf = () => (cfg.provider === "aiso1" ? (cfg.aisoBase || "").trim() || (aiso.proxy ? location.origin + "/aiso1/v1" : aiso.direct || AISO_BASE) : cfg.baseUrl.trim()).replace(/\/+$/, "");
+  const AISO_DIRECT = ["http://localhost:18080/v1", "http://localhost:18082/v1"];   // 線上版直接連：先試看圖版（啟動器開的 18080 通道），再試文字版 18082
   const ready = () => (needKey() ? !!cfg.key : !!baseOf());
   const provName = () => ({ openai: "OpenAI", anthropic: "Claude", custom: "自訂", aiso1: "AISO1 本地" }[cfg.provider]);
-  const aiso = { ok: null, name: "", wait: false, proxy: false };   // 連線狀態、偵測到的模型名稱、是否卡在等瀏覽器允許
+  const aiso = { ok: null, name: "", wait: false, proxy: false, direct: "", vision: null };   // 連線狀態、偵測到的模型名稱、是否卡在等瀏覽器允許
   // Chrome「區域網路存取」：公開網站（github.io）連本機 localhost 要宣告目標是 loopback，Chrome 才會跳出允許詢問
   const LNA = () => (cfg.provider === "aiso1" && /^http:\/\/(localhost|127\.0\.0\.1)/.test(baseOf()) && location.protocol === "https:" ? { targetAddressSpace: "loopback" } : {});
   const LAUNCH_HELP = "最穩的方式：在 Mac 上雙擊 Side Business 資料夾裡的「AISO1 辦公室 AI.command」，它會自動開通道並打開本機版辦公室（http://localhost:5180），AI 直接連 AISO1。";
@@ -37,8 +38,14 @@
     if (!cfg.aisoBase && /^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {   // 本機啟動器有沒有在？
       try { const h = await fetch("/aiso1/health", { signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined }); aiso.proxy = h.status === 200 || h.status === 502; } catch (_) { aiso.proxy = false; }
     }
-    try { const r = await fetch(baseOf() + "/models", { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
+    const T = (ms) => (AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+    if (!cfg.aisoBase && !aiso.proxy) {   // 沒有啟動器：挑一個連得到的（看圖版優先）
+      for (const b of AISO_DIRECT) { try { const r = await fetch(b + "/models", { ...LNA(), signal: T(b === AISO_DIRECT[0] ? 5000 : 15000) }); if (r.ok) { aiso.direct = b; break; } } catch (_) {} }
+    }
+    try { const r = await fetch(baseOf() + "/models", { ...LNA(), signal: T(15000) }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
     catch (e) { aiso.ok = false; aiso.wait = e && e.name === "TimeoutError"; }
+    aiso.vision = null;
+    if (aiso.ok) { try { const pr = await (await fetch(baseOf().replace(/\/v1$/, "") + "/props", { ...LNA(), signal: T(5000) })).json(); if (pr && pr.modalities) aiso.vision = !!pr.modalities.vision; } catch (_) {} }
     return aiso;
   };
 
@@ -109,9 +116,24 @@
     const label = !j.ok ? j.error : name === "repo_tree" ? `看了檔案列表${a.dir ? "（" + a.dir + "）" : ""}：${(j.files || []).length} 個檔案` : name === "repo_search" ? `搜尋「${a.query}」：${j.total} 筆` : name === "repo_read" ? `讀了 ${a.path} 第 ${j.from}–${j.to} 行（共 ${j.total_lines} 行）` : `看了 git ${a.kind === "status" ? "status" : "log"}`;
     return { res: j, label };
   };
+  /* 做事的方式（照 Claude Code 的習慣寫給本地模型）：自己查、自己做、講結論，不要叫 David 跑工具、不要空泛教學 */
+  const WAY = (p) => `\n\n【你是怎麼做事的】
+1. 工具是你自己呼叫的。絕對不要叫 David 去執行 repo_tree / repo_search 之類的工具、也不要說「請把程式碼貼給我」——${repoOn() ? "需要看程式就自己查" : "（現在是線上版，沒有 repo 工具；需要看程式時說明要從 Mac 上的「AISO1 辦公室 AI.command」打開本機版）"}。
+2. 先查證再說。不知道就查；查不到就說查不到。不要猜架構（這個網站是純 HTML / CSS / JS，沒有 React / Vue）。
+3. 直接給結論和做法，不要寫「三層架構」「第一層、第二層」那種教科書式的大綱，也不要反問「你要現在開始嗎？」。
+4. 誠實說明能力邊界：你能改白板資料（狀態、進度、Next Step、目標、里程碑、時程表）${repoOn() ? "、能讀程式碼 repo" : ""}；你「不能」改網站程式碼、不能操作 AISO1 主機。被要求改介面 / 程式時：${repoOn() ? "先自己用工具找到相關程式，" : ""}說清楚「改哪個檔、哪幾行、改成什麼」，並說這種程式改動要交給 Claude Code（David 電腦上的開發助理）執行。
+5. 錯誤訊息要翻成白話、講原因和解法。這裡的已知狀況：
+   - 「image input is not supported … mmproj」= 目前連到的模型沒有載入看圖用的 mmproj（AISO1 的 18082 是純文字版；8080 才是看圖版）。解法：從 Mac 雙擊「AISO1 辦公室 AI.command」打開本機版，它會自動用看圖版；或在 AISO1 上執行 ~/start-llama-8080.sh。
+   - 連不到 AISO1 = SSH 通道或模型服務沒開；同樣是用那個 .command 啟動器最簡單。
+6. 這個介面本身：AI 總管的程式在 js/ai.js（對話、工具、對話紀錄側欄 mountConv）、js/santa.js（報紙下的聖誕老人）、js/robot.js（3D 辦公室機器人），樣式在 css/style.css。對話存在這個瀏覽器的 IndexedDB，對話清單在 localStorage（dsb-convs:*）。
+
+【範例】David 問：「報紙下面的聖誕老人可以換成麋鹿嗎？」
+好的回答（先 repo_search「santa」、repo_read js/santa.js）：「可以，但這是改程式：聖誕老人的圖是 js/santa.js 開頭的 SVG 常數（第 8–23 行），搖擺動畫在 css/style.css 的 .santa-sway。要換成麋鹿就是把那段 SVG 換成麋鹿的造型，動畫和『滑鼠移過去跳出對話』都不用動。我不能直接改程式，請交給 Claude Code 執行，跟它說『把 js/santa.js 的聖誕老人 SVG 換成麋鹿』就好。」
+不好的回答：叫 David 自己執行 repo_tree、沒查就猜是 React、列三層架構大綱、最後問「要開始嗎？」。`;
   const toolPrompt = (p) => `\n\n你可以用工具直接更新 David 的藝廊（白板狀態、進度、Next Step、目標、里程碑、時程表任務）。今天是 ${window.Store ? window.Store.today() : ""}。` +
     `David 要你記錄、更新、改狀態、排任務時，一定要真的呼叫工具去做（每次都要，即使之前做過類似的事），不要只在文字裡說「已更新」、不要寫「[已執行]」之類的字，也不要叫他自己改；只是問問題時就不要動資料。工具執行完再用一兩句話回報。` +
     (repoOn() ? `\n你也能「唯讀」查看這個網站的程式碼 repo（david-side-business：3D 藝廊、辦公室、AI 總管本身的程式都在裡面）：repo_tree / repo_search / repo_read / repo_git。被問到網站怎麼運作、程式在哪、最近改了什麼時，先用工具查證再回答，引用檔名與行號，不要猜；你不能改程式碼，要改的話提出具體建議（哪個檔、哪幾行、改成什麼）。檔案大就先 repo_search 找位置再分段 repo_read。` : "") +
+    WAY(p) +
     `\n各專案的時程表任務：\n` + projList(p).map((q) => `- ${q.id}（${q.name}）：${(q.tasks || []).length ? q.tasks.map((t) => `${t.name}［${t.status} ${t.progress || 0}% ${t.start}~${t.end}］`).join("、") : "沒有任務"}`).join("\n");
   const runTool = (p, name, a) => {
     const S = window.Store; if (!S) return { ok: false, error: "藝廊資料還沒載入" };
@@ -158,7 +180,11 @@
     if (isLocal()) {
       const base = baseOf(), useTools = cfg.tools !== false && !!window.Store, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
       for (const m of hist) {
-        if (m.role === "user") messages.push({ role: "user", content: (m.imgs || []).length ? [...m.imgs.map((u) => ({ type: "image_url", image_url: { url: u } })), { type: "text", text: m.text || "（圖片）" }] : (m.text || "（圖片）") });
+        if (m.role === "user") {
+          const noEyes = cfg.provider === "aiso1" && aiso.vision === false;   // 目前的模型不能看圖：不要把圖送過去（不然整段對話都會報錯），改成文字說明
+          if (noEyes && (m.imgs || []).length) messages.push({ role: "user", content: (m.text || "") + `\n（附了 ${m.imgs.length} 張圖片，但目前連到的模型不能看圖）` });
+          else messages.push({ role: "user", content: (m.imgs || []).length ? [...m.imgs.map((u) => ({ type: "image_url", image_url: { url: u } })), { type: "text", text: m.text || "（圖片）" }] : (m.text || "（圖片）") });
+        }
         else {
           const calls = (m.actions || []).filter((a) => a.name);   // 之前真的呼叫過的工具：照原樣放回去（工具呼叫 + 結果），模型才會學到要真的呼叫
           if (calls.length) { messages.push({ role: "assistant", content: "", tool_calls: calls.map((a, k) => ({ id: "h" + hist.indexOf(m) + "_" + k, type: "function", function: { name: a.name, arguments: JSON.stringify(a.args || {}) } })) });
@@ -306,7 +332,7 @@
     </div>`;
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
     const title = () => {
-      const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
+      const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" + (aiso.vision === true ? " · 可看圖" : aiso.vision === false ? " · 不能看圖" : "") : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
       const mdl = modelOf() || (cfg.provider === "aiso1" && aiso.name) || "預設模型";
       q(".ai-title").textContent = `AI · ${provName()} · ${mdl}${st}`; q(".ai-title").classList.toggle("ai-off", cfg.provider === "aiso1" && aiso.ok === false);
       const hs = q("[data-aiso-st]"); if (hs) hs.textContent = cfg.provider !== "aiso1" ? "" : aiso.ok ? `　目前：已連線（${aiso.name}）` : aiso.ok === false ? "　目前：連不到" : "";
@@ -335,7 +361,7 @@
     q("[data-att]").addEventListener("click", () => file.click()); file.addEventListener("change", () => { addFiles(file.files); file.value = ""; });
     ta.addEventListener("paste", (e) => { const fs = [...(e.clipboardData ? e.clipboardData.files : [])]; if (fs.length) { e.preventDefault(); addFiles(fs); } });
     const area = q(".ai"); area.addEventListener("dragover", (e) => { e.preventDefault(); }); area.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
-    q("[data-new]").addEventListener("click", () => { if (s.pending && s.ctl) s.ctl.abort(); s.msgs = []; s.pending = false; s.save(); s.notify(); });
+    q("[data-new]").addEventListener("click", () => { if (p.onNew) { p.onNew(); return; } if (s.pending && s.ctl) s.ctl.abort(); s.msgs = []; s.pending = false; s.save(); s.notify(); });   // 有對話清單時：開新的一段，舊的留著
     q("[data-cfg]").addEventListener("click", () => { cfgBox.hidden = !cfgBox.hidden; });
     const baseRow = q("[data-base-row]"), base = q("[data-base]");
     const showRows = (pv) => {   // 依服務商顯示需要的欄位
@@ -393,7 +419,7 @@
         </aside></div>`;
     const main = el.querySelector("[data-main]"), list = el.querySelector("[data-list]"), menu = el.querySelector("[data-menu]");
     const views = {};   // key → view div
-    const aiView = (k) => { const d = document.createElement("div"); d.className = "vs-view"; d.dataset.key = "ai:" + k; main.appendChild(d); mount(d, { ...p, id: sid(k) }); views["ai:" + k] = d; return d; };
+    const aiView = (k) => { const d = document.createElement("div"); d.className = "vs-view"; d.dataset.key = "ai:" + k; main.appendChild(d); mount(d, { ...p, id: sid(k), onNew: () => newAI() }); /* 「新對話」= 在右邊清單開一個新的，舊的留著 */ views["ai:" + k] = d; return d; };
     ids.forEach(aiView);
     TERM_ITEMS.forEach((t) => { const d = document.createElement("div"); d.className = "vs-view vs-termview"; d.dataset.key = "term:" + t.n; d.appendChild(t.box); main.appendChild(d); views["term:" + t.n] = d; });
     const paintList = () => {
@@ -435,5 +461,49 @@
     new MutationObserver(() => ids.forEach(watch)).observe(main, { childList: true });
   }
 
-  window.AIChat = { mount, mountMulti, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
+  /* ---------- 對話紀錄（像 Claude / ChatGPT 左邊的清單）----------
+     「新對話」不會再清掉舊的：每段對話各自存（IndexedDB），左邊列出來，點一下切回去、× 刪掉。
+     清單本身存在 localStorage（dsb-convs:<id>）；舊版只有一段對話的，會自動變成清單裡的第一筆。 */
+  const convKey = (pid) => "dsb-convs:" + pid;
+  const loadConvs = (pid) => { try { const v = JSON.parse(localStorage.getItem(convKey(pid)) || "null"); if (Array.isArray(v)) return v; } catch (_) {} return [{ cid: "", at: Date.now() }]; };
+  const saveConvs = (pid, L) => { try { localStorage.setItem(convKey(pid), JSON.stringify(L.slice(0, 80))); } catch (_) {} };
+  const convSid = (pid, cid) => (cid ? pid + "~" + cid : pid);
+  const ago = (t) => { const d = (Date.now() - t) / 1000; return d < 60 ? "剛剛" : d < 3600 ? Math.floor(d / 60) + " 分鐘前" : d < 86400 ? Math.floor(d / 3600) + " 小時前" : d < 86400 * 7 ? Math.floor(d / 86400) + " 天前" : new Date(t).toLocaleDateString("zh-TW", { month: "numeric", day: "numeric" }); };
+  function mountConv(el, p) {
+    let L = loadConvs(p.id), cur = L[0].cid;
+    el.innerHTML = `<div class="cv"><aside class="cv-side"><button type="button" class="cv-new" data-cnew>＋ 新對話</button><div class="cv-label">對話紀錄</div><ul class="cv-list" data-clist></ul></aside>
+      <div class="cv-main"><button type="button" class="cv-toggle" data-ctog aria-label="顯示對話紀錄">☰ 對話紀錄</button><div data-cchat></div></div></div>`;
+    const root = el.querySelector(".cv"), list = el.querySelector("[data-clist]"), chat = el.querySelector("[data-cchat]");
+    const title = (c) => { const s2 = sessions[convSid(p.id, c.cid)], m = s2 && s2.msgs.find((x) => x.role === "user"); const t = (m && m.text) || c.t || ""; return t ? t.replace(/\s+/g, " ").slice(0, 40) : "新對話"; };
+    const paint = () => {
+      if (!el.isConnected) return;
+      list.innerHTML = L.map((c) => { const s2 = sessions[convSid(p.id, c.cid)], run = s2 && s2.pending; return `<li class="${c.cid === cur ? "on" : ""}" data-cid="${esc(c.cid)}"><span class="cv-t">${esc(title(c))}</span><span class="cv-at">${run ? `<i class="vs-run"></i>回答中` : esc(ago(c.at))}</span><button type="button" data-cdel="${esc(c.cid)}" aria-label="刪除這段對話">×</button></li>`; }).join("");
+      list.querySelectorAll("li").forEach((li) => li.addEventListener("click", (e) => { const d = e.target.closest("[data-cdel]"); if (d) { e.stopPropagation(); del(d.dataset.cdel); return; } open(li.dataset.cid); root.classList.remove("side-on"); }));
+    };
+    const touch = (cid) => { const c = L.find((x) => x.cid === cid); if (!c) return; const s2 = sessions[convSid(p.id, cid)], m = s2 && s2.msgs.find((x) => x.role === "user"); if (m && m.text) c.t = m.text.slice(0, 60); c.at = s2 && s2.msgs.length ? s2.msgs[s2.msgs.length - 1].at || c.at : c.at; L.sort((a, b) => b.at - a.at); saveConvs(p.id, L); paint(); };
+    const open = (cid) => {
+      cur = cid; const sid2 = convSid(p.id, cid), s2 = session(sid2);
+      if (!s2.__cvWatch) { s2.__cvWatch = true; let last = -1; s2.subs.add(() => { if (s2.msgs.length !== last) { last = s2.msgs.length; touch(cid); } else paint(); }); }
+      mount(chat, { ...p, id: sid2, onNew: newConv }); paint();
+    };
+    const newConv = () => {
+      const empty = L.find((c) => { const s2 = sessions[convSid(p.id, c.cid)]; return s2 && !s2.msgs.length && !s2.pending; });
+      if (empty) { open(empty.cid); return; }   // 已經有一段空白的就直接用
+      const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 5); L.unshift({ cid, at: Date.now() }); saveConvs(p.id, L); open(cid);
+      const ta = chat.querySelector("textarea"); ta && ta.focus();
+    };
+    const del = async (cid) => {
+      if (!confirm("刪除這段對話？刪掉就找不回來了。")) return;
+      const s2 = sessions[convSid(p.id, cid)]; if (s2) { if (s2.pending && s2.ctl) s2.ctl.abort(); s2.msgs = []; s2.save(); }
+      L = L.filter((c) => c.cid !== cid); if (!L.length) L = [{ cid: Date.now().toString(36), at: Date.now() }]; saveConvs(p.id, L);
+      if (cid === cur) open(L[0].cid); else paint();
+    };
+    el.querySelector("[data-cnew]").addEventListener("click", newConv);
+    el.querySelector("[data-ctog]").addEventListener("click", () => root.classList.toggle("side-on"));
+    // 先把每段對話的內容載進來，清單標題才拿得到第一句話
+    L.forEach((c) => { const s2 = session(convSid(p.id, c.cid)); s2.ready.then(paint); });
+    open(cur);
+  }
+
+  window.AIChat = { mount, mountMulti, mountConv, session, config: () => ({ provider: cfg.provider, model: modelOf(), hasKey: !!cfg.key, ready: ready() }), _setCfg: (c) => { Object.assign(cfg, c); saveCfg(); } };
 })();
