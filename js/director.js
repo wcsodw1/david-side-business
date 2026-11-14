@@ -63,8 +63,15 @@
 
     /* ----- 對話 ----- */
     const projectNow = () => P[(inRoom >= 0 ? inRoom : focus) - 1] || P[0];
+    // 各專案現況下拉選單：選一個專案就看到它的狀態、目前狀態、Next Step、目標
+    const SCLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH" };
+    const psCard = (p) => `<span class="ps-chip ${p.wbStatus ? "ps-" + (SCLS[p.wbStatus] || "TODO") : "ps-none"}">${esc(p.wbStatus || "未設定")}</span>
+      <p><b>目前</b>${p.wbNote ? esc(p.wbNote) : "<i>尚無更新</i>"}${p.wbNoteAt ? ` <small>${esc(String(p.wbNoteAt).replace(/-/g, "."))}</small>` : ""}</p>
+      <p><b>Next</b>${p.next ? esc(p.next) : "<i>尚未設定</i>"}</p><p><b>目標</b>${p.goal ? esc(p.goal) : "<i>尚未設定</i>"}</p>`;
     const render = (view) => {
+      const cur = projectNow();
       bubble.innerHTML = `<div class="dir-name">館長</div><div class="dir-msg">${view.msg}</div>
+        <div class="dir-ps"><select data-ps aria-label="查看各專案狀態">${P.map((p) => `<option value="${esc(p.id)}" ${p.id === (cur && cur.id) ? "selected" : ""}>${esc(p.name)} · ${esc(p.wbStatus || "未設定")}</option>`).join("")}</select><div class="dir-ps-card" data-pscard>${cur ? psCard(cur) : ""}</div></div>
         ${view.input ? `<form class="dir-form"><input name="a" placeholder="${esc(view.input.ph || "")}" autocomplete="off"><button type="submit">回答</button></form>` : ""}
         <div class="dir-btns">${(view.buttons || []).map((b, i) => `<button type="button" data-b="${i}">${esc(b.label)}</button>`).join("")}</div>`;
       bubble.hidden = false;
@@ -74,6 +81,8 @@
         const inp = form.querySelector("input"); inp.addEventListener("focus", () => document.body.classList.add("dir-typing")); inp.addEventListener("blur", () => document.body.classList.remove("dir-typing"));
 
       }
+      const sel = bubble.querySelector("[data-ps]");
+      if (sel) { sel.addEventListener("change", () => { const p = P.find((x) => x.id === sel.value); bubble.querySelector("[data-pscard]").innerHTML = p ? psCard(p) : ""; }); sel.addEventListener("focus", () => document.body.classList.add("dir-typing")); sel.addEventListener("blur", () => document.body.classList.remove("dir-typing")); }
       bubble.querySelectorAll("[data-b]").forEach((b) => b.addEventListener("click", () => view.buttons[+b.dataset.b].fn()));
     };
     const end = (coolSec = 25) => { talk = null; bubble.hidden = true; document.body.classList.remove("dir-typing"); cool = coolSec; state = "pause"; timer = 1.5; };
