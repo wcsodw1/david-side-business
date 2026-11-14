@@ -680,3 +680,9 @@ body.locked .music-btn { display: none; }
 .office-gate .og-err { min-height: 1.2em; color: #ff8a80; font-size: 13px; }
 .office-ai .ai-bar button { color: #f4f0ff; border-color: rgba(255,255,255,.3); background: rgba(255,255,255,.08); }
 .office-ai .ai-title { color: rgba(244,240,255,.7); }
+
+/* 藝廊 YouTube 背景音樂的小播放器（走進藝廊才出現） */
+.yt-mini { position: fixed; right: 14px; bottom: 84px; z-index: 40; width: 200px; height: 113px; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 22px rgba(0,0,0,.4); opacity: 0; pointer-events: none; transform: translateY(8px); transition: opacity .6s, transform .6s; background: #000; }
+.yt-mini.on { opacity: .92; pointer-events: auto; transform: none; }
+.yt-mini iframe { width: 100%; height: 100%; display: block; }
+@media (max-width: 700px) { .yt-mini { width: 150px; height: 85px; bottom: 150px; } }

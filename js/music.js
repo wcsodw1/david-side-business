@@ -7,7 +7,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Music = { mount, unmount, sfx: (k, x, z, p) => K && K.sfx && K.sfx(k, x, z, p), state: () => (K ? { ctx: K.ac && K.ac.state, home: +(K.vHome || 0).toFixed(2), music: +K.vMusic.toFixed(2), ocean: +K.vOcean.toFixed(2), muted: K.muted, started: K.started, notes: K.notes } : null) });
+  const api = (window.Music = { mount, unmount, sfx: (k, x, z, p) => K && K.sfx && K.sfx(k, x, z, p), state: () => (K ? { ctx: K.ac && K.ac.state, home: +(K.vHome || 0).toFixed(2), music: +K.vMusic.toFixed(2), ocean: +K.vOcean.toFixed(2), muted: K.muted, started: K.started, notes: K.notes, yt: K.yt.cfg ? { ready: K.yt.ready, failed: K.yt.failed } : null } : null) });
   let K = null;
   const mtof = (m) => 440 * Math.pow(2, (m - 69) / 12);
   const rand = (a, b) => a + Math.random() * (b - a);
@@ -34,11 +34,18 @@
     mel: [67, 69, 71, 72, 74, 76, 79, 81, 83, 84],   // 旋律用的 C 大調音（全曲和弦皆在此調內）
   };
 
+  // 藝廊可改用 YouTube 影片當背景音樂：在 data/projects.js 的 SITE.galleryMusicYouTube 貼上影片或播放清單網址（留空 = 用內建合成的波薩諾瓦）
+  const ytParse = (raw) => {
+    const t = String(raw || "").trim(); if (!t) return null;
+    const list = (/[?&]list=([\w-]+)/.exec(t) || [])[1], id = (/(?:[?&]v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/.exec(t) || (/^[\w-]{11}$/.test(t) ? [0, t] : []))[1];
+    return id || list ? { id, list } : null;
+  };
+
   function mount(ctx) {
     unmount();
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
     let muted = false; try { muted = localStorage.getItem("dsb-muted") === "1"; } catch (_) {}
-    K = { ac: null, muted, started: false, vMusic: 0, vHome: 0, vOcean: 0, notes: 0, timers: [], hooks: ctx.hooks };
+    K = { ac: null, muted, started: false, vMusic: 0, vHome: 0, vOcean: 0, notes: 0, timers: [], hooks: ctx.hooks, yt: { cfg: ytParse(window.SITE && window.SITE.galleryMusicYouTube), player: null, ready: false, failed: false, box: null, acc: 0 } };
 
     // 靜音按鈕
     const btn = document.createElement("button");
@@ -145,7 +152,7 @@
         S.b += th.beat; S.beat++;
       }
     };
-    const sched = () => { const ac = K.ac; if (!ac || ac.state !== "running") return; schedTheme("gallery", K.vMusic); schedTheme("home", K.vHome); };
+    const sched = () => { const ac = K.ac; if (!ac || ac.state !== "running") return; schedTheme("gallery", ytActive() ? 0 : K.vMusic); schedTheme("home", K.vHome); };
 
     // 音效：位置感（離球場 / 門越遠越小聲）。kind: hit（球拍擊球）、bounce（落地）、net（下網）、door（自動門）、splash（水花）
     K.sfx = (kind, x, z, power = 1) => {
@@ -163,7 +170,35 @@
       else if (kind === "door") { noise(0.7, 900, 0.5, 0.18 * (power || 1), "lowpass"); tone(1320, 1320, 0.12, 0.08); }                                                // 門滑動 + 叮
       else if (kind === "splash") { noise(0.5, 1400, 0.4, 0.5 * (power || 1)); tone(300, 120, 0.25, 0.25); }
     };
+    // YouTube 播放器：走進藝廊才播、離開就暫停；載入失敗（沒網路、影片不能嵌入）就自動改回內建音樂
+    const ytActive = () => !!(K.yt.cfg && K.yt.ready && !K.yt.failed);
+    const ytInit = () => {
+      const Y = K.yt; if (!Y.cfg || Y.box || Y.failed) return;
+      const box = (Y.box = document.createElement("div")); box.className = "yt-mini"; box.innerHTML = `<div id="dsb-yt"></div>`; document.body.appendChild(box);
+      const fail = () => { Y.failed = true; Y.ready = false; box.classList.remove("on"); };
+      const make = () => {
+        try {
+          const pv = { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1, loop: 1 };
+          if (Y.cfg.list) pv.list = Y.cfg.list; if (Y.cfg.id && !Y.cfg.list) pv.playlist = Y.cfg.id;
+          Y.player = new window.YT.Player("dsb-yt", { width: 200, height: 113, videoId: Y.cfg.id || undefined, playerVars: pv,
+            events: { onReady: () => { Y.ready = true; try { Y.player.setVolume(0); } catch (_) {} }, onError: fail, onStateChange: (e) => { if (e.data === 0 && !Y.cfg.list) { try { Y.player.playVideo(); } catch (_) {} } } } });
+        } catch (_) { fail(); }
+      };
+      if (window.YT && window.YT.Player) make();
+      else { const prev = window.onYouTubeIframeAPIReady; window.onYouTubeIframeAPIReady = () => { prev && prev(); make(); }; const sc = document.createElement("script"); sc.src = "https://www.youtube.com/iframe_api"; sc.onerror = fail; document.head.appendChild(sc); }
+      setTimeout(() => { if (!Y.ready) fail(); }, 12000);
+    };
+    const ytTick = (dt) => {
+      const Y = K.yt; if (!ytActive()) return; Y.acc += dt; if (Y.acc < 0.25) return; Y.acc = 0;
+      const want = !K.muted && K.vMusic > 0.06; let ps = -1; try { ps = Y.player.getPlayerState(); } catch (_) { return; }
+      Y.box.classList.toggle("on", want);
+      try {
+        if (want) { Y.player.setVolume(Math.round(Math.min(1, K.vMusic) * 55)); if (ps !== 1 && ps !== 3) Y.player.playVideo(); }
+        else if (K.vMusic < 0.02 && ps === 1) Y.player.pauseVideo();
+      } catch (_) {}
+    };
     function start() {
+      ytInit();
       if (!K.ac) build();
       K.ac.resume && K.ac.resume().then(() => { K.started = true; });
       if (!K.timers.length) K.timers.push(setInterval(sched, 300));
@@ -176,7 +211,8 @@
       const inMus = ctx.getInsideMuseum ? ctx.getInsideMuseum() : 0, inHome = ctx.getInsideHome ? ctx.getInsideHome() : 0;
       const tM = K.muted ? 0 : inMus, tH = K.muted ? 0 : inHome, tO = K.muted ? 0 : (1 - Math.max(inMus * 0.85, inHome * 0.9)) * 0.5;   // 美術館：藝廊音樂；家：溫馨音樂；戶外：海浪聲
       K.vMusic += (tM - K.vMusic) * Math.min(1, dt * 1.2); K.vHome += (tH - K.vHome) * Math.min(1, dt * 1.2); K.vOcean += (tO - K.vOcean) * Math.min(1, dt * 1.2);
-      if (K.ac && K.musicG) { const t = K.ac.currentTime; K.musicG.gain.setTargetAtTime(K.vMusic * 0.9, t, 0.3); K.homeG.gain.setTargetAtTime(K.vHome * 0.85, t, 0.3); K.oceanG.gain.setTargetAtTime(K.vOcean * 0.55, t, 0.3); }
+      ytTick(dt);
+      if (K.ac && K.musicG) { const t = K.ac.currentTime; K.musicG.gain.setTargetAtTime(ytActive() ? 0 : K.vMusic * 0.9, t, 0.3); K.homeG.gain.setTargetAtTime(K.vHome * 0.85, t, 0.3); K.oceanG.gain.setTargetAtTime(K.vOcean * 0.55, t, 0.3); }
     };
     ctx.hooks.push(K.hook);
   }
@@ -185,6 +221,7 @@
     if (!K) return;
     const i = K.hooks.indexOf(K.hook); if (i >= 0) K.hooks.splice(i, 1);
     K.timers.forEach(clearInterval); K.off && K.off(); K.btn && K.btn.remove();
+    try { K.yt.player && K.yt.player.destroy(); } catch (_) {} K.yt.box && K.yt.box.remove();
     try { K.ac && K.ac.close(); } catch (_) {}
     K = null;
   }
