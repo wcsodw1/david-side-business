@@ -2177,6 +2177,11 @@
 
       // 屋頂 / 外牆：在外面是完整的建築，走進門才淡出屋頂、牆降低成室內視角
       insM = lerp(insM, pos.x > ENTRY + 0.4 ? 1 : 0, Math.min(1, dt * 4)); insH = lerp(insH, inHouseNow() ? 1 : 0, Math.min(1, dt * 4));
+      { // 擋在鏡頭和人之間的牆：微微透明，才看得到人
+        if (!shells._tr) { shells._tr = { box: new THREE.Box3(), ray: new THREE.Ray(), o: new THREE.Vector3(), d: new THREE.Vector3(), h: new THREE.Vector3(), hit: new THREE.Vector3() }; for (const s of shells) { s.m.material = s.m.material.clone(); s.m.material.transparent = true; s.op = 1; } }
+        const T = shells._tr; T.o.copy(camera.position); T.h.set(pos.x, py + jy + 1.0, pos.z); T.d.subVectors(T.h, T.o); const dist = T.d.length(); T.d.normalize(); T.ray.set(T.o, T.d);
+        for (const s of shells) { let want = 1; if (insH > 0.5 && s.m.visible) { s.m.updateWorldMatrix(true, false); T.box.setFromObject(s.m); const hit = T.ray.intersectBox(T.box, T.hit); if (hit && T.o.distanceTo(hit) < dist - 0.15) want = 0.3; } s.op += (want - s.op) * Math.min(1, dt * 8); s.m.material.opacity = s.op; s.m.material.depthWrite = s.op > 0.9; }
+      }
       for (const r of roofs) { const k = r.grp === "M" ? insM : r.grp === "H2" ? insH * (1 - lvlS) : insH; r.mat.opacity = 1 - k; r.mat.depthWrite = k < 0.02; r.m.visible = k < 0.97; }   // H2：二樓地板（人在一樓時消失，才看得到一樓）
       for (const w of shells) {
         if (w.grp === "U") w.m.scale.y = lerp(1, lerp(0.01, w.low, lvlS), insH);     // 二樓牆：人在二樓變矮牆，在一樓時收起來
