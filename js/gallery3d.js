@@ -14,7 +14,7 @@
   const ENTRY = 26;                                     // 美術館門面的位置（x）；之前是戶外：家 + 花園
   const HOUSE = { x0: 0.5, x1: 12.0, z0: -8.0, z1: 0.4 };    // 兩層樓：一樓 David、二樓 Aeris
   const POOL = { x0: -9.6, x1: -3.2, z0: -3.0, z1: 3.0, surface: -0.28 };   // 船尾泳池（可下水）
-  const UY = 3.3, STAIR = { x0: -4.5, x1: 0.47, z0: -4.95, z1: 0.55 };   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
+  const UY = 3.3, STAIR = { x0: -4.5, x1: 0.47, z0: -4.95, z1: 0.55 }, STAIRS = [STAIR, { x0: 5.9, x1: 11.4, z0: 0.47, z1: 5.4 }];   // 屋外旋轉樓梯的外框（細節看 stairY）   // UY：二樓地板高度；STAIR：樓梯（東端一樓入口，往西爬到二樓）
   const SPACING = 7.5, OFFICE_X = ENTRY + 13, FIRST_X = ENTRY + 13 + SPACING;
   const ROW_DZ = 1.7;                                   // 走道半寬 = 1.6 + 1.7 = 3.3（南北兩排房間夾著中央走道）
   const DECK_HD = 8.6;                                  // 露台半寬（z）
@@ -39,6 +39,9 @@
     if (x >= -4.5 && x <= -3.1 && z >= -4.95 && z < -0.85) return (UY / 2) * (z + 4.95) / 4.1;                 // 第一段（由北往南）
     if (x >= -4.5 && x <= -3.1 && z >= -0.85 && z <= 0.55) return UY / 2;                                     // 轉角平台
     if (x > -3.1 && x <= -0.43 && z >= -0.85 && z <= 0.55) return UY / 2 + (UY / 2) * (x + 3.1) / 2.67;       // 第二段（往東，到二樓西牆的門）
+    if (x >= 5.9 && x < 10.0 && z >= 4.0 && z <= 5.4) return (UY / 2) * (x - 5.9) / 4.1;                       // 東側樓梯：第一段（往東）
+    if (x >= 10.0 && x <= 11.4 && z > 4.0 && z <= 5.4) return UY / 2;                                         // 東側：轉角平台
+    if (x >= 10.0 && x <= 11.4 && z >= 1.3 && z <= 4.0) return UY / 2 + (UY / 2) * (4.0 - z) / 2.7;           // 東側：第二段（往北，到南牆東端的門）
     return null;
   };
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -1170,8 +1173,8 @@
       // 外牆（北、東為整面高牆；西、南走進去會降低）
       mk(new THREE.BoxGeometry(X1 - X0 + 0.14, TOP, 0.14), plasterH, (X0 + X1) / 2, TOP / 2, Z0); addObs((X0 + X1) / 2, Z0, (X1 - X0) / 2, 0.1);
       shellBox(0.14, FH, Z1 - Z0, X0, ZC, plasterH, "H", 0.48); shellBox(0.14, WT, -0.65 - Z0, X0, (Z0 - 0.65) / 2, plasterH, "U", 0.48, UY); addObs(X0, ZC, 0.1, (Z1 - Z0) / 2, 0); addObs(X0, (Z0 - 0.65) / 2, 0.1, (-0.65 - Z0) / 2, 1);
-      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(X1 - X0 + 0.14, WT, 0.14, (X0 + X1) / 2, Z1, plasterH, "U", 0.48, UY);
-      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 1);
+      shellBox(X1 - X0 + 0.14, FH, 0.14, (X0 + X1) / 2, Z1, plasterH, "H", 0.48); shellBox(10.2 - X0 + 0.07, WT, 0.14, (X0 - 0.07 + 10.2) / 2, Z1, plasterH, "U", 0.48, UY); shellBox(X1 + 0.07 - 11.2, WT, 0.14, (11.2 + X1 + 0.07) / 2, Z1, plasterH, "U", 0.48, UY);
+      addObs((X0 + X1) / 2, Z1, (X1 - X0) / 2, 0.1, 0); addObs((X0 + 10.2) / 2, Z1, (10.2 - X0) / 2, 0.1, 1); addObs((11.2 + X1) / 2, Z1, (X1 - 11.2) / 2, 0.1, 1);
       mk(new THREE.BoxGeometry(0.14, TOP, DW0 - Z0), plasterH, X1, TOP / 2, (Z0 + DW0) / 2); addObs(X1, (Z0 + DW0) / 2, 0.1, (DW0 - Z0) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP, Z1 - DW1), plasterH, X1, TOP / 2, (DW1 + Z1) / 2); addObs(X1, (DW1 + Z1) / 2, 0.1, (Z1 - DW1) / 2);
       mk(new THREE.BoxGeometry(0.14, TOP - 2.1, DW1 - DW0), plasterH, X1, 2.1 + (TOP - 2.1) / 2, (DW0 + DW1) / 2);                                    // 門楣 + 門上方牆
@@ -1193,6 +1196,16 @@
         rail(-4.55, -4.95, -4.55, 0.6, UY * 0.25 - 0.45); rail(-3.05, -4.95, -3.05, -0.9, UY * 0.25 - 0.45); rail(-4.55, 0.6, -0.43, 0.6, UY / 2 + 0.2); rail(-3.1, -0.9, 0.47, -0.9, UY / 2 + 0.2);
         addObs(-4.55, -2.2, 0.06, 2.75); addObs(-3.05, -2.9, 0.06, 2.05); addObs(-1.5, 0.6, 3.05, 0.06); addObs(-1.4, -0.9, 1.65, 0.06);
         const brownD = M(0x4a2c1c, 0.6); for (const z of [-0.65, 0.35]) mk(new THREE.BoxGeometry(0.18, 2.15, 0.1), brownD, X0, UY + 1.075, z); mk(new THREE.BoxGeometry(0.18, 0.12, 1.1), brownD, X0, UY + 2.15, -0.15);   // 門框
+      }
+
+      // 東側（右邊）屋外逆時針旋轉樓梯：西邊地面 → 往東爬到轉角平台 → 轉向北爬到門口平台 → 南牆東端的門（x 10.2~11.2，進來就是客廳）
+      { const rail = (x0, z0, x1, z1, y0) => { const len = Math.hypot(x1 - x0, z1 - z0), m = mk(new THREE.BoxGeometry(len, 0.06, 0.06), bronze, (x0 + x1) / 2, y0 + 1.0, (z0 + z1) / 2, false); m.rotation.y = -Math.atan2(z1 - z0, x1 - x0); };
+        const NA = 10, dxA = 4.1 / NA; for (let k = 0; k < NA; k++) { const h = (UY / 2) * (k + 1) / NA; mk(new THREE.BoxGeometry(dxA, h, 1.4), wood, 5.9 + (k + 0.5) * dxA, h / 2, 4.7); }
+        mk(new THREE.BoxGeometry(1.4, UY / 2, 1.4), wood, 10.7, UY / 4, 4.7);
+        const NB = 10, dzB = 2.7 / NB; for (let k = 0; k < NB; k++) { const h = UY / 2 + (UY / 2) * (k + 1) / NB; mk(new THREE.BoxGeometry(1.4, h, dzB), wood, 10.7, h / 2, 4.0 - (k + 0.5) * dzB); }
+        mk(new THREE.BoxGeometry(1.4, UY, 0.83), wood, 10.7, UY / 2, 0.885);
+        rail(5.9, 3.95, 10.0, 3.95, UY * 0.25 - 0.45); rail(5.9, 5.45, 10.0, 5.45, UY * 0.25 - 0.45); rail(10.0, 5.45, 11.45, 5.45, UY / 2); rail(11.45, 5.45, 11.45, 0.5, UY * 0.75 - 0.4); rail(9.95, 4.0, 9.95, 0.5, UY * 0.75 - 0.4);
+        addObs(7.95, 3.9, 2.1, 0.06); addObs(7.95, 5.5, 2.1, 0.06); addObs(10.7, 5.5, 0.8, 0.06); addObs(11.5, 3.0, 0.06, 2.6); addObs(9.95, 2.0, 0.06, 1.55);
       }
 
       /* ---- 一樓家具（lv 0）---- */
@@ -1305,7 +1318,8 @@
             doors.push({ pv, th0, th1, cx: cx ?? hx, cz: cz ?? hz, k: 0 }); };
           door(2.0, -6.6, 0, 1.4, 1.0, "z", 2.0, -6.1);                 // 浴室門（西牆，往浴室裡開）
           door(0.5, -0.65, 0, 1.48, 1.0, "z", 0.5, -0.15);              // 西邊出口門（走道盡頭，往走道裡開）
-          door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);         // 臥室門（走道北牆，往臥室裡開）
+          door(4.3, -0.55, -PI / 2, -PI, 1.0, "x", 3.8, -0.55);
+          door(11.2, Z1, -PI / 2, -PI, 1.0, "x", 10.7, Z1);           // 東側出口門（南牆東端，往客廳裡開）         // 臥室門（走道北牆，往臥室裡開）
           tickHooks.push((dt) => {
             const onUp = py > UY * 0.5;
             for (const d of doors) {
@@ -1855,7 +1869,7 @@
     const navBlocked = (x, z, l) => {
       if (x < -10.4 || x > WORLD_W - 1.2 || Math.abs(z) > DECK_HD - 0.5) return true;
       if (x < -0.2) { const ex = (-x - 1) / 10.4, lim = 7.2 * Math.sqrt(Math.max(0, 1 - ex * ex)); if (Math.abs(z) > lim) return true; }
-      if (x > STAIR.x0 - 0.3 && x < STAIR.x1 + 0.3 && z > STAIR.z0 - 0.3 && z < STAIR.z1 + 0.3) return true;      // 樓梯要自己走上去
+      for (const S of STAIRS) if (x > S.x0 - 0.3 && x < S.x1 + 0.3 && z > S.z0 - 0.3 && z < S.z1 + 0.3) return true;      // 樓梯要自己走上去
       for (const o of obstacles) { if (o.lv !== undefined && o.lv !== l) continue; if (x > o.minX - 0.24 && x < o.maxX + 0.24 && z > o.minZ - 0.24 && z < o.maxZ + 0.24) return true; }
       return false;
     };
@@ -1952,7 +1966,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, rowOf, L2W, addObs, mkTex, aniso, interact, pickables, officeZ: -ROW_DZ - 1.0, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, rowOf, L2W, addObs, mkTex, aniso, interact, pickables, STAIRS, officeZ: -ROW_DZ - 1.0, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
