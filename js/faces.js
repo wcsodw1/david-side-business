@@ -309,6 +309,26 @@
     }
     if (who === "david" && av.torso) { const chain = new THREE.Mesh(new THREE.TorusGeometry(0.066, 0.0035, 6, 48), silver); chain.position.set(0, 0.6, 0.008); chain.rotation.x = PI / 2 + 0.25; av.torso.add(chain); }   // 銀色項鍊
     if (who === "aeris" && av.torso) for (const [rad, y, tilt] of [[0.064, 0.6, 0.22], [0.05, 0.575, 0.5]]) { const ch = new THREE.Mesh(new THREE.TorusGeometry(rad, 0.0016, 6, 48), silver); ch.position.set(0, y, 0.01); ch.rotation.x = PI / 2 + tilt; av.torso.add(ch); }   // 細銀項鍊（兩條）
+    // 睡衣：直條紋（David 灰白、ARIES 藍白）+ 胸口口袋 + 鈕釦
+    try {
+      const col = who === "david" ? ["#5b5d62", "#f1f0ec", "#26272b"] : ["#5f84c9", "#f6f7fb", "#d23b4a"];
+      const cv = document.createElement("canvas"); cv.width = 64; cv.height = 64; const g = cv.getContext("2d");
+      g.fillStyle = col[1]; g.fillRect(0, 0, 64, 64); g.fillStyle = col[0]; g.fillRect(0, 0, 22, 64);
+      g.fillStyle = "rgba(0,0,0,.05)"; for (let i = 0; i < 64; i += 4) g.fillRect(0, i, 64, 1);   // 皺褶紗布質感
+      const tex = new THREE.CanvasTexture(cv); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.anisotropy = 4;
+      if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+      const striped = (m, rx, ry) => { if (!m || !m.isMeshStandardMaterial) return; const tt = tex.clone(); tt.needsUpdate = true; tt.repeat.set(rx, ry); m.map = tt; m.color.set(0xffffff); m.roughness = 0.9; m.needsUpdate = true; };
+      const top = av.torso.children.find((m) => m.isMesh && m.geometry && m.geometry.type === "LatheGeometry");
+      if (top) striped(top.material, 9, 3);
+      const lm = av.legL.hip.children[1] && av.legL.hip.children[1].material; striped(lm, 6, 2);
+      const pocketM = new THREE.MeshStandardMaterial({ color: 0xffffff, map: tex.clone(), roughness: 0.9 }); pocketM.map.repeat.set(1.5, 1); pocketM.map.needsUpdate = true;
+      const pk = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.075, 0.008), pocketM); pk.position.set(who === "david" ? 0.075 : 0.07, 0.34, 0.134); pk.rotation.x = -0.08; av.torso.add(pk);
+      const trim = new THREE.MeshStandardMaterial({ color: new THREE.Color(col[2]), roughness: 0.6 });
+      const pt = new THREE.Mesh(new THREE.BoxGeometry(0.074, 0.006, 0.01), trim); pt.position.set(pk.position.x, 0.378, 0.138); av.torso.add(pt);   // 口袋滾邊
+      for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.SphereGeometry(0.0075, 10, 8), who === "david" ? new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.5 }) : trim); b.position.set(0, 0.5 - i * 0.1, 0.139); b.scale.z = 0.6; av.torso.add(b); }   // 鈕釦
+      // 領口滾邊（V 領）
+      for (const sx of [-1, 1]) { const lp = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.11, 0.008), trim); lp.position.set(sx * 0.045, 0.5, 0.137); lp.rotation.z = -sx * 0.45; av.torso.add(lp); }
+    } catch (e) { console.warn("睡衣條紋失敗", e); }
     // 短袖：手肘以下改成皮膚（T 恤袖子到上臂）
     try {
       const skinMat = av.armL.wr.children[0].material;
