@@ -16,6 +16,7 @@
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   const GUEST_HASH = "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec";   // 訪客密碼 guest（不分大小寫，只存雜湊）：只能在二樓房間走動，看不到屋外，不能進辦公室 / 白板 / NEWS
+  const GUEST_ALT = ["738cc9a4782051a6bfff2a280b4db63e55875133e2fb3b6f0f6c9002c7a53857"];   // 訪客的另一組密碼（只存雜湊）
   window.PERSONA = "david";
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -469,8 +470,8 @@
     const v = $("#pw").value;
     if (!v) return;
     const hv = await sha256(v.trim()), ha = await sha256(v.trim().toLowerCase());   // Aeris 的密碼不分大小寫
-    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH) {
-      window.PERSONA = hv === PASS_HASH ? "david" : ha === GUEST_HASH ? "guest" : "aeris";
+    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha)) {
+      window.PERSONA = hv === PASS_HASH ? "david" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
       try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.PERSONA === "guest" ? GUEST_HASH : PASS_HASH); } catch (_) {}
       enter();
     } else {
