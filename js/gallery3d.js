@@ -1527,10 +1527,10 @@
         const goTo = (x, z) => { if (S && S.teleport) S.teleport(x, z, 0); };
         const jumpHall = () => {   // 任意門：選擇目的地
           if (document.querySelector(".any-ov")) return; const ov = document.createElement("div"); ov.className = "menu-ov any-ov"; document.body.classList.add("robot-open");
-          const dests = [["🏛️ 美術館入口", "進去逛藝廊", ENTRY - 2.4, 0.0], ["🏓 匹克球館", "打球、休息區", COURT_CX - HX + 1.8, 0.0], ["🦎 爬蟲館", "BUGS & BAR：酒吧、守宮", REP.x0 + 1.6, (REP.z0 + REP.z1) / 2]];
+          const dests = [["🏛️ 美術館入口", "進去逛藝廊", ENTRY - 2.4, 0.0], ["🏓 匹克球館", "打球、休息區", COURT_CX - HX + 1.8, 0.0]];
           ov.innerHTML = `<div class="mo-card"><button type="button" class="mo-x" aria-label="關閉">✕</button><h3>🚪 任意門</h3><p>要去哪裡？</p><div class="any-list">${dests.map((d, i) => `<button type="button" class="any-btn" data-i="${i}"><b>${d[0]}</b><small>${d[1]}</small></button>`).join("")}</div></div>`;
           document.body.appendChild(ov);
-          const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } else if (/^[1-3]$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); pick(+e.key - 1); } };
+          const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } else if (/^[1-2]$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); pick(+e.key - 1); } };
           const close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
           const pick = (i) => { close(); goTo(dests[i][2], dests[i][3]); };
           window.addEventListener("keydown", kd, true);
@@ -1538,11 +1538,13 @@
         { const act = { id: "anydoor-home", x: HOMEX, z: HOMEZ, r: 1.5, lvl: 1, html: "<kbd>Enter</kbd> 穿過 <b>任意門</b> → 選擇目的地 <small>　點門也可以</small>", fn: jumpHall }; interact.push(act);
           const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(HOMEX - 0.1, UY + 1.1, HOMEZ); hit.userData = { station: 0, kind: "act", act: jumpHall, stand: { x: HOMEX - 0.5, z: HOMEZ } }; scene.add(hit); pickables.push(hit); }
         const doors = [{ x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 1] }];
+        const homeArm = { v: false };   // 家門任意門：走到門前自動跳出目的地選單（走開 2 公尺後才會再觸發）
+        tickHooks.push((dt) => { if (window.GUESTLIKE || lvl !== 1 || document.querySelector(".any-ov")) return; const dh = Math.hypot(pos.x - HOMEX, pos.z - HOMEZ); if (dh > 2.0) homeArm.v = true; else if (dh < 0.85 && homeArm.v && ov.hidden && sitting < 0) { homeArm.v = false; jumpHall(); } });
         tickHooks.push((dt) => { if (window.GUESTLIKE || typeof sitting !== "undefined" && sitting >= 0) return;
           for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.75;
             if (!near) { d.armed = true; d.t = 0; continue; }
             if (!d.armed) continue; d.t += dt;
-            if (d.t > 0.1) { d.t = 0; for (const o of doors) o.armed = false; if (S && S.teleport) S.teleport(d.to[0], d.to[1], d.to[2] || 0); } } }); }
+            if (d.t > 0.1) { d.t = 0; for (const o of doors) o.armed = false; homeArm.v = false; if (S && S.teleport) S.teleport(d.to[0], d.to[1], d.to[2] || 0); } } }); }
       // ===== 公園（房子外面，一路到美術館入口）=====
       const tree = (x, z, s = 1) => {
         mk(new THREE.CylinderGeometry(0.12 * s, 0.17 * s, 1.6 * s, 8), M(0x6a4a2e, 0.9), x, 0.8 * s, z);
