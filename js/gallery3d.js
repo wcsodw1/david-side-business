@@ -1303,7 +1303,7 @@
       const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(8.2, UY + 0.012, -2.8); rugP.receiveShadow = true; scene.add(rugP);
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
       // （二樓落地燈已移除）
-      U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
+      // （床邊的球形玩偶已移除）
 
       /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
       { const gold = M(0xc8a96a, 0.35, 0.7), brown = M(0x4a2c1c, 0.6), wh = M(0xfbfaf6, 0.85), shell = (w, d, x, z) => { shellBox(w, WT, d, x, z, plasterH, "U", 0.82, UY); addObs(x, z, w / 2, d / 2, 1); };
