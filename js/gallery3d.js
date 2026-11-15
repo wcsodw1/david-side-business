@@ -1520,9 +1520,13 @@
           const lb = lt.clone(); lb.position.z = -0.11; lb.rotation.y = PI; g.add(lb);
           return g; };
         const HOMEX = X0 - 0.7, HOMEZ = -0.15, HALLX = COURT_CX - HX + 1.4, HALLZ = -HZ + 0.3;
-        mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
+        const homeDoor = mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
+        { const hz = HOMEZ - 0.41; homeDoor.rotation.y = 0; homeDoor.position.set(HOMEX, UY, hz + 0.41 * 0 ); homeDoor.position.x = HOMEX + 0.41 * 0; homeDoor.position.z = hz; }   // 門扇推開貼在房間內側牆邊，門框保持暢通（家的出口不被任意門卡住）
         mkDoor(HALLX, HALLZ, 0, "→ 回家"); addObs(HALLX, HALLZ, 0.62, 0.15, undefined, 3);
-        const doors = [{ x: HOMEX - 0.45, z: HOMEZ, t: 0, armed: true, to: [COURT_CX - HX + 1.8, 0.0] }, { x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 1] }];
+        const jumpHall = () => { if (S && S.teleport) S.teleport(COURT_CX - HX + 1.8, 0.0); };
+        { const act = { id: "anydoor-home", x: HOMEX, z: HOMEZ, r: 1.5, lvl: 1, html: "<kbd>Enter</kbd> 穿過 <b>任意門</b> → 匹克球館 <small>　點門也可以</small>", fn: jumpHall }; interact.push(act);
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(HOMEX - 0.1, UY + 1.1, HOMEZ); hit.userData = { station: 0, kind: "act", act: jumpHall, stand: { x: HOMEX - 0.5, z: HOMEZ } }; scene.add(hit); pickables.push(hit); }
+        const doors = [{ x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 1] }];
         tickHooks.push((dt) => { if (window.GUESTLIKE || typeof sitting !== "undefined" && sitting >= 0) return;
           for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.75;
             if (!near) { d.armed = true; d.t = 0; continue; }
@@ -1957,6 +1961,7 @@
     // 滑鼠 / 觸控：拖曳轉 360°、滾輪（門口：上滑進門 / 下滑出門；其他：縮放）、點擊
     const ptrs = new Map(); let dragMoved = 0, pinch = 0;
     const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+    cv.addEventListener("pointerdown", () => { const a = document.activeElement; if (a && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName) && !cv.contains(a)) { try { a.blur(); } catch (_) {} document.body.classList.remove("dir-typing"); } }, true);   // 點 3D 場景就放掉輸入框焦點，才不會卡住走路
     const pickHit = (ev) => {
       const r = cv.getBoundingClientRect(); ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, camera); const hit = ray.intersectObjects(pickables, false)[0]; return hit ? hit.object.userData : null;

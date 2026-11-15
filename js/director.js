@@ -77,12 +77,12 @@
       bubble.hidden = false;
       const form = bubble.querySelector(".dir-form");
       if (form) {
-        form.addEventListener("submit", (e) => { e.preventDefault(); const v = String(new FormData(form).get("a") || "").trim(); if (v) { document.body.classList.remove("dir-typing"); view.input.submit(v); } });
+        form.addEventListener("submit", (e) => { e.preventDefault(); const v = String(new FormData(form).get("a") || "").trim(); if (v) { document.body.classList.remove("dir-typing"); try { document.activeElement && document.activeElement.blur(); } catch (_) {} view.input.submit(v); } });
         const inp = form.querySelector("input"); inp.addEventListener("focus", () => document.body.classList.add("dir-typing")); inp.addEventListener("blur", () => document.body.classList.remove("dir-typing"));
 
       }
       const sel = bubble.querySelector("[data-ps]");
-      if (sel) { sel.addEventListener("change", () => { const p = P.find((x) => x.id === sel.value); bubble.querySelector("[data-pscard]").innerHTML = p ? psCard(p) : ""; }); sel.addEventListener("focus", () => document.body.classList.add("dir-typing")); sel.addEventListener("blur", () => document.body.classList.remove("dir-typing")); }
+      if (sel) { sel.addEventListener("change", () => { try { sel.blur(); } catch (_) {} const p = P.find((x) => x.id === sel.value); bubble.querySelector("[data-pscard]").innerHTML = p ? psCard(p) : ""; }); sel.addEventListener("focus", () => document.body.classList.add("dir-typing")); sel.addEventListener("blur", () => document.body.classList.remove("dir-typing")); }
       bubble.querySelectorAll("[data-b]").forEach((b) => b.addEventListener("click", () => view.buttons[+b.dataset.b].fn()));
     };
     const end = (coolSec = 25) => { talk = null; bubble.hidden = true; document.body.classList.remove("dir-typing"); cool = coolSec; state = "pause"; timer = 1.5; };
