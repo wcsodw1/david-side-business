@@ -1300,7 +1300,7 @@
         U(new THREE.BoxGeometry(0.42, 0.05, 0.4), M(0xe9a9c0, 0.8), dx - 0.2, 0.45, dz + 0.62); U(new THREE.BoxGeometry(0.42, 0.4, 0.04), M(0xe9a9c0, 0.8), dx - 0.2, 0.7, dz + 0.82);
         for (const sx of [-0.17, 0.17]) for (const sz of [-0.16, 0.16]) U(new THREE.BoxGeometry(0.035, 0.45, 0.035), dk, dx - 0.2 + sx, 0.225, dz + 0.62 + sz);
       }
-      const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(8.2, UY + 0.012, -2.8); rugP.receiveShadow = true; scene.add(rugP);
+      // （二樓的粉色圓地毯已移除）
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
       // （二樓落地燈已移除）
       // （床邊的球形玩偶已移除）
@@ -1396,12 +1396,12 @@
           }
           tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; if (dl) dl.visible = cm.visible; }); }
         // 冰箱：灰色上下兩門（上面冷凍小、下面冷藏大），放在客廳西北角（靠北牆、貼隔間牆），門朝南
-        { const fx = 7.0, fz = Z0 + 0.45, gm = new THREE.MeshStandardMaterial({ color: 0x7e838b, roughness: 0.32, metalness: 0.55 }), dk = new THREE.MeshStandardMaterial({ color: 0x4a4e55, roughness: 0.5, metalness: 0.4 });
-          U(new THREE.BoxGeometry(0.72, 1.75, 0.66), gm, fx, 0.875, fz);                                                 // 機身
-          U(new THREE.BoxGeometry(0.72, 0.012, 0.012), dk, fx, 1.28, fz + 0.335);                                       // 上下門的分隔線
-          U(new THREE.BoxGeometry(0.02, 0.28, 0.03), dk, fx - 0.28, 1.45, fz + 0.345); U(new THREE.BoxGeometry(0.02, 0.5, 0.03), dk, fx - 0.28, 1.0, fz + 0.345);   // 把手
-          U(new THREE.CylinderGeometry(0.012, 0.012, 0.004, 10), M(0xe8e8ea, 0.3, 0.6), fx + 0.1, 1.5, fz + 0.333).rotation.x = Math.PI / 2;   // 小標誌
-          addObs(fx, fz, 0.37, 0.35, 1); }
+        { const fx = 7.1, fz = Z0 + 0.55, gm = new THREE.MeshStandardMaterial({ color: 0x7e838b, roughness: 0.32, metalness: 0.55 }), dk = new THREE.MeshStandardMaterial({ color: 0x4a4e55, roughness: 0.5, metalness: 0.4 });
+          U(new THREE.BoxGeometry(0.95, 1.75, 0.82), gm, fx, 0.875, fz);                                                 // 機身
+          U(new THREE.BoxGeometry(0.95, 0.012, 0.012), dk, fx, 1.28, fz + 0.415);                                       // 上下門的分隔線
+          U(new THREE.BoxGeometry(0.02, 0.28, 0.03), dk, fx - 0.38, 1.45, fz + 0.425); U(new THREE.BoxGeometry(0.02, 0.5, 0.03), dk, fx - 0.38, 1.0, fz + 0.425);   // 把手
+          U(new THREE.CylinderGeometry(0.012, 0.012, 0.004, 10), M(0xe8e8ea, 0.3, 0.6), fx + 0.12, 1.5, fz + 0.413).rotation.x = Math.PI / 2;   // 小標誌
+          addObs(fx, fz, 0.49, 0.43, 1); }
         // 冷氣：客廳在南牆門口那一側（與海報牆對面）、臥室在北牆高處
         for (const [x, zz, s] of [[8.2, Z1 - 0.14, -1], [3.95, Z0 + 0.14, 1]]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 1.95, zz); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 1.86, zz + s * 0.11); }
       }
