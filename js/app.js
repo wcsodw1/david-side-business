@@ -448,6 +448,7 @@
   function enter() {
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
+    if (window.PERSONA === "guest") [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
     buildMega();
     if (window.News && window.PERSONA !== "guest") window.News.mount(P, {});
