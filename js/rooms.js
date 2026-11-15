@@ -445,6 +445,119 @@
       if (!rw || !fn) return;
       try { fn(kit(s, p, rw)); rooms.push(p.id); } catch (e) { console.error("房間佈景失敗：" + p.id, e); }
     });
+    /* ===== 爬蟲館（船上獨立大館）：BB 小隔間後牆的任意門 ↔ 館內西端的任意門 =====
+       位置：船身加寬的南側甲板（ctx.rep 範圍）。館內：酒吧（西）、玻璃缸牆（南）、展示島（中）、巨人守宮大缸（東）。
+       只能靠任意門進出（一般走路被甲板牆擋住），在 gallery3d 的移動限制裡有專門放行這塊範圍。 */
+    try {
+      const REP = ctx.rep, sBB = P.findIndex((p) => p.id === "bb") + 1;
+      if (REP && sBB > 0 && rowOf[sBB]) {
+        const cx = (REP.x0 + REP.x1) / 2, cz = (REP.z0 + REP.z1) / 2, HL = (REP.x1 - REP.x0) / 2, HD2 = (REP.z1 - REP.z0) / 2;
+        const K = kit(sBB, null, { sx: cx, zoff: cz, rot: 0 });
+        K.obs = (lx, lz, hw, hd, h) => addObs(cx + lx, cz + lz, hw, hd, undefined, h); K.w = (lx, lz) => ({ x: cx + lx, z: cz + lz });
+        const { box, cyl, sph, put, pln, tx, grp } = K, rd = rnd(11);
+        // 地板：深色木地板 + 大字
+        { const c = cvs(2048, 512, (g, w, h) => { g.fillStyle = "#2a1c14"; g.fillRect(0, 0, w, h); const pw = 34; for (let y = 0, row = 0; y < h; y += pw, row++) for (let x = -(row % 2) * pw * 2; x < w; x += pw * 4) { const t = 0.6 + rd() * 0.5; g.fillStyle = `rgb(${(70 * t) | 0},${(46 * t) | 0},${(30 * t) | 0})`; g.fillRect(x + 1, y + 1, pw * 4 - 2, pw - 2); }
+            g.fillStyle = "rgba(255,170,60,.2)"; g.font = "800 120px Georgia"; g.textAlign = "center"; g.fillText("BUGS & BAR · REPTILE HOUSE", w * 0.55, h * 0.56); });
+          const m = new THREE.Mesh(new THREE.PlaneGeometry(HL * 2, HD2 * 2), new THREE.MeshStandardMaterial({ map: mkT(c), roughness: 0.82 })); m.rotation.x = -PI / 2; m.position.set(0, 0.02, 0); m.receiveShadow = true; K.g.add(m); }
+        // 牆：北牆（面向主甲板）、南牆、東西牆；半高實牆 + 玻璃，頂部開放
+        const plaster = M(0x1c3a30, 0.9), trim = M(0x8a6a3e, 0.6), post = M(0x2a2d36, 0.5, 0.6);
+        for (const sg of [-1, 1]) { box(HL * 2, 1.5, 0.14, plaster, 0, 0.75, sg * HD2, { k: 1 }); box(HL * 2, 1.1, 0.04, GL(0xcfeaff, 0.18), 0, 2.05, sg * HD2); box(HL * 2, 0.06, 0.2, trim, 0, 1.52, sg * HD2); }
+        for (const sg of [-1, 1]) { box(0.14, 1.5, HD2 * 2, plaster, sg * HL, 0.75, 0, { k: 1 }); box(0.04, 1.1, HD2 * 2, GL(0xcfeaff, 0.18), sg * HL, 2.05, 0); }
+        for (const x of [-HL, HL]) for (const z of [-HD2, HD2]) box(0.16, 2.65, 0.16, post, x, 1.32, z);
+        // 北牆外面的大招牌（從主甲板看得到）
+        { const sg = tx(1400, 200, (c, w, h) => { c.fillStyle = "#0b0b0d"; rr(c, 6, 6, w - 12, h - 12, 30); c.fill(); c.strokeStyle = "#ff6ec7"; c.lineWidth = 8; rr(c, 16, 16, w - 32, h - 32, 24); c.stroke(); c.shadowColor = "#7cff6b"; c.shadowBlur = 30; c.fillStyle = "#b9ff9a"; c.font = "800 100px 'Noto Sans TC', 'Arial Black', sans-serif"; c.textAlign = "center"; c.fillText("BUGS & BAR 爬蟲館", w / 2, 128); });
+          pln(9, 1.3, sg, 0, 2.2, -HD2 - 0.1, PI, { glow: 1.1 }); pln(9, 1.3, sg, 0, 2.2, -HD2 + 0.1, 0, { glow: 1.1 }); }
+        // 光：暖色幾盞 + 吊燈泡
+        for (const lx of [-HL * 0.6, 0, HL * 0.6]) { const pl = new THREE.PointLight(0xffc880, 1.1, 14, 1.6); pl.position.set(lx, 2.3, 0); K.g.add(pl); }
+        for (let k = 0; k < 14; k++) { const lx = -HL + 2 + k * ((HL * 2 - 4) / 13); cyl(0.004, 0.004, 0.5, M(0x111), lx, 2.35, -0.3 + (k % 2) * 0.9, {}, 4); sph(0.07, E(0xffc874, 2.0), lx, 2.08, -0.3 + (k % 2) * 0.9); }
+        /* ----- 守宮 ----- */
+        const tankAt = (lx, lz, w, d, hgt, lamp, floorC, fill, name, scaleLabel = 1) => {
+          const q = grp(lx, 0, lz);
+          box(w + 0.1, 0.45, d + 0.1, M(0x1a110c, 0.6), 0, 0.225, 0, { p: q, k: 1 });                       // 底櫃
+          box(w, 0.04, d, M(floorC, 0.95), 0, 0.47, 0, { p: q });
+          for (const [dx, dz] of [[-w / 2, -d / 2], [w / 2, -d / 2], [-w / 2, d / 2], [w / 2, d / 2]]) box(0.03, hgt, 0.03, M(0x111111, 0.4, 0.5), dx, 0.45 + hgt / 2, dz, { p: q });
+          box(w, hgt, d, GL(0xcfeaff, 0.14), 0, 0.45 + hgt / 2, 0, { p: q });
+          box(w - 0.06, 0.03, d - 0.06, E(lamp, 1.6), 0, 0.45 + hgt, 0, { p: q }); box(w + 0.06, 0.05, d + 0.06, M(0x14100c, 0.5), 0, 0.45 + hgt + 0.04, 0, { p: q });
+          const lb = pln(Math.min(w, 1.1) * scaleLabel, 0.15, K.label(name, 640, 80, { bg: "#0f0d0a", fg: "#ffd48a", fs: 34 }), 0, 0.22, d / 2 + 0.06, 0, { p: q, glow: 0.5 });
+          K.cur = q; fill(q); K.cur = null; return q;
+        };
+        const rock = (q, x, z, s) => sph(0.12 * s, M(0x8c8c92, 0.9), x, 0.5, z, { p: q, s: [1.5, 0.8, 1.2] });
+        const branch = (q, x, h, tilt) => cyl(0.02, 0.03, h, M(0x6b4a2a, 0.9), x, 0.45 + h / 2, 0, { p: q, r: [0, 0, tilt] }, 6);
+        const plantP = (q, x, z, c0 = 0x3f8a3a) => { for (let k = 0; k < 4; k++) sph(0.07, M(c0, 0.8), x + (k - 1.5) * 0.05, 0.55 + (k % 2) * 0.05, z, { p: q }); };
+        const geckoAt = (q, x, y, z, ry, sc, col, spot, extra) => { const e = beast.gecko(K, x, y + 0.47, z, ry, sc, col, spot); if (extra) extra(e); return e; };
+        const fat = (e) => { const t = e.userData.tail; if (t) t.scale.set(1, 2.4, 2.4); };
+        const blk = (c0) => (e) => { for (let k = 0; k < 5; k++) sph(0.012, M(c0, 0.7), -0.03 + k * 0.03, 0.058, ((k * 37) % 3 - 1) * 0.022, { p: e, s: [1.4, 0.5, 1.4] }); };
+        // 南牆缸牆（面向北）：豹紋 / 肥尾 / 睫角 / 日行 / 大壁虎 …共 11 缸，中間穿插走道感的間距
+        const SZ = HD2 - 0.62;
+        const rowDefs = [
+          ["豹紋守宮 · 原色 Leopard", 0xe6b95c, 0x6b4420, 0xd9bb88, 0xffa860, 1.8, 0.0, null],
+          ["豹紋守宮 · 白化 Albino", 0xf3e0a0, 0xc08a3a, 0xe0cfa0, 0xffd890, 1.8, 0.0, null],
+          ["豹紋守宮 · 橘子 Tangerine", 0xf08a2a, 0x8a3a10, 0xd9bb88, 0xffa860, 1.8, 0.0, null],
+          ["豹紋守宮 · 黑夜 Black Night", 0x2a2630, 0xa6a2b0, 0xb89c70, 0xffb070, 1.8, 0.0, null],
+          ["肥尾守宮 · 原色 African Fat-tail", 0x7a5a3a, 0xf0e8d8, 0x6a4a30, 0xff9a5a, 1.9, 0.0, fat],
+          ["肥尾守宮 · 白化 Fat-tail Albino", 0xe9c27a, 0xfff2d0, 0x6a4a30, 0xff9a5a, 1.9, 0.0, fat],
+          ["睫角守宮 Crested", 0xc47a3a, 0x8a4a1a, 0x3f5a2e, 0xc890ff, 1.6, 0.34, null],
+          ["日行守宮 Day Gecko", 0x3fbf4a, 0xd22a2a, 0x3f5a2e, 0xfff0c0, 1.6, 0.34, null],
+          ["大壁虎 Tokay", 0x6f8aa0, 0xe86a1a, 0x4b3a24, 0xb48cff, 1.7, 0.0, null],
+        ];
+        const nTank = rowDefs.length, tw = 1.25, gap = 0.18, x0 = -HL + 2.4;
+        rowDefs.forEach((d, i) => {
+          const lx = x0 + i * (tw + gap) + tw / 2, [name, col, spot, floorC, lamp, sc, up, ex] = d;
+          tankAt(lx, SZ - 0.32, tw, 0.72, 0.8, lamp, floorC, (q) => { rock(q, -0.3, 0.1, 1.4); plantP(q, 0.35, -0.18); if (up) branch(q, 0.0, 0.7, 0.45); geckoAt(q, -0.05, up ? 0.3 : 0.02, 0.05, 0.6 + i, sc, col, spot, ex || blk(spot)); if (i % 2) geckoAt(q, 0.3, 0.02, 0.12, 2.8, sc * 0.8, col, spot, ex); }, name);
+        });
+        // 巨人守宮 Darth Maul（東端大缸：新喀里多尼亞巨人守宮，綠底紅黑斑）
+        { const gx = x0 + nTank * (tw + gap) + 1.35;
+          const q = tankAt(gx, SZ - 0.5, 2.5, 1.0, 1.5, 0xff8a5a, 0x4b3a24, (q) => {
+            branch(q, -0.7, 1.3, 0.22); branch(q, 0.5, 1.2, -0.3); cyl(0.04, 0.05, 1.5, M(0x6b4a2a, 0.9), 0.0, 1.0, 0, { p: q, r: [0, 0, PI / 2 - 0.25] }, 8);
+            for (let k = 0; k < 7; k++) sph(0.12, M(0x2f7a3a, 0.8), -0.9 + k * 0.3, 0.55 + (k % 3) * 0.35, ((k * 37) % 3 - 1) * 0.25, { p: q, s: [1.6, 0.35, 1.0] });
+            rock(q, 0.9, 0.2, 3.0);
+            geckoAt(q, -0.2, 0.9, 0.0, 0.3, 4.6, 0x5f7f3c, 0xb02a1e, (e) => { blk(0x151515)(e); for (let k = 0; k < 4; k++) sph(0.014, M(0xb02a1e, 0.7), -0.02 + k * 0.045, 0.06, ((k * 53) % 3 - 1) * 0.02, { p: e, s: [1.8, 0.5, 1.8] }); const t = e.userData.tail; if (t) t.scale.set(1, 1.6, 1.6); });
+          }, "巨人守宮 Darth Maul · Giant Gecko", 1.9);
+          K.obs(gx, SZ - 0.5, 1.3, 0.55); }
+        K.obs(0, SZ - 0.32, HL - 0.2, 0.45);
+        // 展示島（中央）：兩面都看得到的低矮玻璃缸，放更多品系
+        { const ix = -HL * 0.1, q = grp(ix, 0, -0.1);
+          box(7.2, 0.9, 0.9, M(0x2a1a12, 0.65), 0, 0.45, 0, { p: q, k: 1 }); box(7.4, 0.06, 1.1, M(0x7a4a2a, 0.4, 0.1), 0, 0.93, 0, { p: q, k: 1 });
+          const defs = [["豹紋 · 蜜桃 Mack Snow", 0xe9e0d0, 0x3a3a3a, 0xd9bb88], ["豹紋 · 彩虹 Rainbow", 0xf0a050, 0x8a3a10, 0xd9bb88], ["肥尾 · 無紋 Patternless", 0x9a7a52, 0xf0e8d8, 0x6a4a30], ["豹紋 · 紅眼 Red Stripe", 0xe07a3a, 0xa03a18, 0xd9bb88], ["肥尾 · 橘紋 Striped", 0xc8924a, 0xfff2d0, 0x6a4a30], ["豹紋 · 超級雪 Super Snow", 0xf4f4f0, 0x2a2a2a, 0xd9bb88]];
+          defs.forEach((d, i) => { const dx = -3.05 + i * 1.22;
+            box(1.1, 0.04, 0.8, M(d[3], 0.95), dx, 0.98, 0, { p: q }); box(1.1, 0.5, 0.8, GL(0xdff2ff, 0.18), dx, 1.23, 0, { p: q }); box(1.14, 0.03, 0.84, M(0x14100c, 0.5), dx, 1.49, 0, { p: q });
+            K.cur = q; sph(0.1, M(0x8c8c92, 0.9), dx - 0.25, 1.03, 0, { p: q, s: [1.4, 0.8, 1.2] }); beast.gecko(K, dx + 0.05, 1.0, 0.0, 0.8 + i * 1.4, 1.7, d[1], d[2]); if (i === 2 || i === 4) { const t = q.children[q.children.length - 1].userData.tail; if (t) t.scale.set(1, 2.2, 2.2); } K.cur = null;
+            pln(1.0, 0.1, K.label(d[0], 512, 64, { bg: "#0f0d0a", fg: "#ffd48a", fs: 28 }), dx, 0.72, 0.46, 0, { p: q, glow: 0.4 }); pln(1.0, 0.1, K.label(d[0], 512, 64, { bg: "#0f0d0a", fg: "#ffd48a", fs: 28 }), dx, 0.72, -0.46, PI, { p: q, glow: 0.4 }); });
+          K.obs(ix, -0.1, 3.8, 0.62); }
+        // 酒吧（西端）：吧台 + 酒瓶牆 + 吧椅 + 小圓桌、霓虹招牌
+        { const bx = -HL + 5.2, q = grp(bx, 0, -HD2 + 1.55);
+          box(8.2, 1.0, 0.7, M(0x1c120d, 0.6), 0, 0.5, 0, { p: q, k: 1 }); box(8.4, 0.06, 0.9, M(0x7a4a2a, 0.4, 0.1), 0, 1.03, 0.05, { p: q, k: 1 }); cyl(0.02, 0.02, 8.2, M(0xd8b24a, 0.3, 0.9), 0, 0.3, 0.4, { r: [0, 0, PI / 2], p: q }, 8);
+          const bc = [0x2e7d4a, 0x8a4a1a, 0x9a1f2a, 0x3a6aa8, 0xc8a030];
+          for (let k = 0; k < 18; k++) { const c0 = bc[k % 5], bq = grp(-3.6 + k * 0.42, 1.06, -0.05, 0, q); cyl(0.04, 0.04, 0.2, M(c0, 0.25, 0.1), 0, 0.1, 0, { p: bq }, 12); cyl(0.018, 0.04, 0.07, M(c0, 0.25, 0.1), 0, 0.235, 0, { p: bq }, 12); cyl(0.018, 0.018, 0.06, M(c0, 0.25, 0.1), 0, 0.3, 0, { p: bq }, 8); }
+          for (let k = 0; k < 7; k++) cyl(0.035, 0.028, 0.1, GL(0xfff2d0, 0.35), -3.0 + k * 1.0, 1.11, 0.3, { p: q }, 12);
+          for (let k = 0; k < 5; k++) { cyl(0.025, 0.025, 0.28, M(0xd8d8e0, 0.2, 0.9), -1.5 + k * 0.7, 1.2, 0.1, { p: q }, 8); box(0.02, 0.13, 0.03, M([0xc8232c, 0x2e7d4a, 0xc8a030][k % 3], 0.4), -1.45 + k * 0.7, 1.3, 0.06, { p: q }); }
+          for (let k = 0; k < 7; k++) { const st = grp(-3.3 + k * 1.1, 0, 0.9, 0, q); cyl(0.19, 0.19, 0.05, M(0x7a2a2a, 0.5), 0, 0.72, 0, { p: st, k: 1 }, 16); cyl(0.02, 0.02, 0.7, M(0xb8bcc8, 0.3, 0.8), 0, 0.36, 0, { p: st }, 6); cyl(0.16, 0.16, 0.02, M(0xb8bcc8, 0.3, 0.8), 0, 0.01, 0, { p: st }, 14); }
+          K.obs(bx, -HD2 + 1.55, 4.3, 0.5);
+          // 酒瓶牆（北牆內側）
+          const sh = grp(bx, 0, -HD2 + 0.2); for (const y of [1.0, 1.4, 1.8]) box(8.2, 0.04, 0.22, M(0x5a3a22, 0.6), 0, y, 0, { p: sh }); for (let r = 0; r < 3; r++) for (let k = 0; k < 16; k++) { const c0 = bc[(k + r) % 5]; cyl(0.035, 0.035, 0.2, M(c0, 0.25, 0.1), -3.8 + k * 0.5, 1.12 + r * 0.4, 0, { p: sh }, 10); }
+          const ns = tx(640, 200, (c, w, h) => { c.fillStyle = "#0b0b0d"; rr(c, 6, 6, w - 12, h - 12, 24); c.fill(); c.strokeStyle = "#ff6ec7"; c.lineWidth = 6; rr(c, 14, 14, w - 28, h - 28, 20); c.stroke(); c.shadowColor = "#7cff6b"; c.shadowBlur = 28; c.fillStyle = "#b9ff9a"; c.font = "800 84px 'Arial Black', Arial"; c.textAlign = "center"; c.fillText("B A R", w / 2, 132); });
+          pln(1.6, 0.5, ns, bx, 2.0, -HD2 + 0.12, 0, { glow: 1.2 });
+          for (let k = 0; k < 3; k++) { const t = grp(-HL + 4.2 + k * 2.6, 0, 0.9); cyl(0.4, 0.4, 0.05, M(0x7a4a2a, 0.5), 0, 0.72, 0, { p: t, k: 1 }, 18); cyl(0.04, 0.04, 0.7, M(0x2a2a30, 0.5), 0, 0.36, 0, { p: t }, 8); cyl(0.3, 0.3, 0.02, M(0x2a2a30, 0.5), 0, 0.01, 0, { p: t }, 14); for (const a of [0, 2.1, 4.2]) { cyl(0.17, 0.17, 0.05, M(0x3a3a46, 0.5), Math.cos(a) * 0.7, 0.5, Math.sin(a) * 0.7, { p: t, k: 1 }, 14); cyl(0.02, 0.02, 0.5, M(0x15151a, 0.5), Math.cos(a) * 0.7, 0.25, Math.sin(a) * 0.7, { p: t }, 6); } K.obs(-HL + 4.2 + k * 2.6, 0.9, 0.95, 0.95); } }
+        /* ----- 任意門：BB 小隔間後牆 ↔ 館內西端 ----- */
+        const pinkM = M(0xf08ab4, 0.5), frameM = M(0x8a6a50, 0.6), goldM = M(0xe8c15a, 0.3, 0.8);
+        const doorMesh = (parent, label) => { const q = new THREE.Group(); parent.add(q);
+          for (const dx of [-0.58, 0.58]) { const m = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.3, 0.2), frameM); m.position.set(dx, 1.15, 0); q.add(m); } { const m = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.1, 0.2), frameM); m.position.set(0, 2.3, 0); q.add(m); }
+          { const m = new THREE.Mesh(new THREE.BoxGeometry(1.06, 2.2, 0.07), pinkM); m.position.set(0, 1.1, 0); q.add(m); }
+          for (const dz of [0.07, -0.07]) { const m = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 8), goldM); m.position.set(0.38, 1.05, dz); q.add(m); }
+          const lt = tx(384, 112, (c, w, h) => { c.fillStyle = "#fff6e8"; c.fillRect(0, 0, w, h); c.strokeStyle = "#f08ab4"; c.lineWidth = 8; c.strokeRect(5, 5, w - 10, h - 10); c.fillStyle = "#b03a74"; c.font = "800 38px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.fillText("任意門", w / 2, 46); c.font = "700 30px 'Noto Sans TC', sans-serif"; c.fillText(label, w / 2, 90); });
+          for (const sz of [1, -1]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(1.26, 0.37), new THREE.MeshBasicMaterial({ map: lt })); m.position.set(0, 2.6, 0.11 * sz); m.rotation.y = sz > 0 ? 0 : PI; q.add(m); } return q; };
+        const jump = (x, z) => () => { const T = ctx.teleport; if (T) T(x, z, 0); };
+        const mkAny = (id, wx, wz, rotY, label, standX, standZ, toX, toZ) => {
+          const g = new THREE.Group(); g.position.set(wx, 0, wz); g.rotation.y = rotY; root.add(g); doorMesh(g, label);
+          const go = jump(toX, toZ), act = { id, x: standX, z: standZ, r: 1.6, lvl: 0, html: `<kbd>Enter</kbd> 穿過 <b>任意門</b> → ${label.replace("→ ", "")} <small>　點門也可以</small>`, fn: go }; interact.push(act);
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.4, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(0, 1.2, 0); hit.userData = { station: sBB, kind: "act", act: go, stand: { x: standX, z: standZ } }; g.add(hit); pickables.push(hit);
+          cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); const j = pickables.indexOf(hit); if (j >= 0) pickables.splice(j, 1); }); return g; };
+        { const rwb = rowOf[sBB], dw = L2W(sBB, 1.4, -6.08), sd = L2W(sBB, 1.4, -5.3), rot = rwb.rot ? PI : 0, lnd = L2W(sBB, 1.2, -4.6), land = { x: cx - HL + 1.6, z: cz };   // 後牆的門朝房內（+z）
+          mkAny("any-bb", dw.x, dw.z, rot, "→ 爬蟲館", sd.x, sd.z, land.x, land.z);
+          { const ex = cx - HL + 0.1, g = mkAny("any-rep", ex, cz, PI / 2, "→ 回 BB", land.x - 0.3, land.z, lnd.x, lnd.z); K.obs(-HL + 0.1, 0, 0.15, 0.62, 3); } }
+      }
+    } catch (e) { console.error("爬蟲館載入失敗：", e); }
+
     const tick = (dt, t) => { for (const f of anim) f(dt, t); };
     hooks.push(tick);
     R = { root, hooks, tick, tex, rooms, scene, cleanup };

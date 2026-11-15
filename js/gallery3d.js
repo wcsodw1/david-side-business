@@ -365,6 +365,7 @@
     const HX = 11.8, HXE = 17.5, HZ = 5.0;                         // 場館：西半長 / 東半長（含休息區）/ 半寬
     const NC = Math.max(1, Math.ceil((slotN + 1) / 2));            // 欄數：辦公室在北排第 0 欄，其餘專案先填北排再填南排
     const COURT_CX = OFFICE_X + (NC - 1) * SPACING + 21.5, WORLD_W = COURT_CX + HXE + 3.7;
+    const REP = { x0: COURT_CX - HX + 1, x1: WORLD_W - 3, z0: 9.9, z1: 15.1 };   // 爬蟲館（船上加寬的南側甲板），只能靠任意門進出
     const rowOf = []; rowOf[0] = { sx: OFFICE_X, zoff: -ROW_DZ, rot: 0 };
     P.forEach((p, i) => { if (slots[i] < 0) return; const j = slots[i], north = j < NC - 1, c = north ? j + 1 : j - (NC - 1); rowOf[i + 1] = { sx: OFFICE_X + c * SPACING, zoff: north ? -ROW_DZ : ROW_DZ, rot: north ? 0 : 1 }; });
     const L2W = (s, lx, lz) => { const r = rowOf[s]; return r.rot ? { x: r.sx - lx, z: r.zoff - lz } : { x: r.sx + lx, z: r.zoff + lz }; };   // 房間座標 → 世界座標（南排旋轉 180°）
@@ -1523,7 +1524,7 @@
         const homeDoor = mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
         { const hz = HOMEZ - 0.41; homeDoor.rotation.y = 0; homeDoor.position.set(HOMEX, UY, hz + 0.41 * 0 ); homeDoor.position.x = HOMEX + 0.41 * 0; homeDoor.position.z = hz; }   // 門扇推開貼在房間內側牆邊，門框保持暢通（家的出口不被任意門卡住）
         mkDoor(HALLX, HALLZ, 0, "→ 回家"); addObs(HALLX, HALLZ, 0.62, 0.15, undefined, 3);
-        const jumpHall = () => { if (S && S.teleport) S.teleport(COURT_CX - HX + 1.8, 0.0); };
+        const jumpHall = () => { if (S && S.teleport) S.teleport(COURT_CX - HX + 1.8, 0.0, 0); };
         { const act = { id: "anydoor-home", x: HOMEX, z: HOMEZ, r: 1.5, lvl: 1, html: "<kbd>Enter</kbd> 穿過 <b>任意門</b> → 匹克球館 <small>　點門也可以</small>", fn: jumpHall }; interact.push(act);
           const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(HOMEX - 0.1, UY + 1.1, HOMEZ); hit.userData = { station: 0, kind: "act", act: jumpHall, stand: { x: HOMEX - 0.5, z: HOMEZ } }; scene.add(hit); pickables.push(hit); }
         const doors = [{ x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 1] }];
@@ -2079,7 +2080,7 @@
     };
     resize(); window.addEventListener("resize", resize);
 
-    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, rowOf, L2W, addObs, mkTex, aniso, interact, pickables, STAIRS, officeZ: -ROW_DZ - 1.0, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
+    const ctx = { THREE, scene, camera, root, P, H, pos, stationsX, rowOf, L2W, addObs, mkTex, aniso, interact, pickables, STAIRS, officeZ: -ROW_DZ - 1.0, anchor, boardAnchor, enterPts, exitPts, doorX, roomAt, hooks: tickHooks, buildAvatar: (o) => buildAvatar(THREE, o), openBoard, getInside: () => inside, SPACING, DECK_HD, seatPose, getMe: () => ({ x: pos.x, z: pos.z, y: py + jy, f: facing, sp: speedNow, sit: sitA, sw: swimT > 0.5 ? 1 : 0 }), swimPose, POOL, getSwim: () => swimT, obstacles, HOUSE, ENTRY, getSunHeight: () => sunH, getHour: () => hourNow, lamps: lampPts, lampMat, sPB, rep: REP, teleport: (x, z, l) => S && S.teleport && S.teleport(x, z, l || 0), hallX0: COURT_CX - HX, COURT_CX, HX, WORLD_W, seaY: -14, roofs, getInsideMuseum: () => insM, getInsideHome: () => insH, getInside: () => inside, UY, STAIR, getLevel: () => lvl };
     const toScreen = (v) => { const p = v.clone().project(camera); const r = cv.getBoundingClientRect(); return { x: (p.x * 0.5 + 0.5) * r.width + r.left, y: (-p.y * 0.5 + 0.5) * r.height + r.top, behind: p.z > 1 }; };
     ctx.toScreen = toScreen;
 
@@ -2190,7 +2191,7 @@
             if (m === pl) pos.x = L; else if (m === pr) pos.x = R; else if (m === pt) pos.z = T; else pos.z = B;
           }
         }
-        pos.x = clamp(pos.x, -10.4, WORLD_W - 1.2); pos.z = clamp(pos.z, -(DECK_HD - 0.5), DECK_HD - 0.5);
+        if (pos.z > DECK_HD - 0.2 && pos.x > REP.x0 - 0.5 && pos.x < REP.x1 + 0.5) { pos.x = clamp(pos.x, REP.x0 + 0.4, REP.x1 - 0.4); pos.z = clamp(pos.z, REP.z0 + 0.4, REP.z1 - 0.4); } else { pos.x = clamp(pos.x, -10.4, WORLD_W - 1.2); pos.z = clamp(pos.z, -(DECK_HD - 0.5), DECK_HD - 0.5); }
         if (pos.x < -0.2) { const ex = (-pos.x - 1) / 10.4, lim = 7.2 * Math.sqrt(Math.max(0, 1 - ex * ex)); pos.z = clamp(pos.z, -lim, lim); }   // 船尾弧形欄杆
       }
       if (sp) facing += angDiff(facing, Math.atan2(lmx, lmz)) * Math.min(1, dt * 10);
