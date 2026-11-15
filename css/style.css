@@ -1220,8 +1220,9 @@ body.locked .santa-fab { display: none; }
 .ai-cmptabbed .ai-cmpcol .ai-m { margin: 0; max-width: none; }
 .ai-cmptabbed .ai-cmpcol .ai-b { font-size: 1em; max-width: none; width: 100%; box-sizing: border-box; }
 
-/* 房仲 David 在門口講解（訪客視角）：畫面下方的對話條 */
-.agent-say { position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%); z-index: 45; width: min(640px, calc(100vw - 28px)); box-sizing: border-box; padding: 14px 20px 14px 22px; border-radius: 20px; background: rgba(20,17,43,.88); color: #f4f0ff; border: 1px solid rgba(255,233,184,.45); font: 500 16px/1.7 var(--font); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); pointer-events: none; box-shadow: 0 14px 40px rgba(0,0,0,.4); }
-.agent-say[hidden] { display: none; }
-.agent-say > b:first-child { display: block; margin-bottom: 2px; font: 700 12.5px var(--font); letter-spacing: .22em; color: #ffe9b8; }
+/* 房仲 David 講話（訪客視角）：走近他時，文字在畫面正中間清楚浮現；走遠就收回 */
+.agent-say { position: fixed; left: 50%; top: 50%; z-index: 45; width: min(560px, calc(100vw - 32px)); box-sizing: border-box; padding: 26px 34px 28px; border-radius: 28px; text-align: center; background: rgba(20,17,43,.9); color: #f4f0ff; border: 1px solid rgba(255,233,184,.5); font: 600 22px/1.75 var(--font); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); pointer-events: none; box-shadow: 0 24px 70px rgba(0,0,0,.5);
+  opacity: 0; transform: translate(-50%, -46%) scale(.9); visibility: hidden; transition: opacity .3s ease, transform .35s cubic-bezier(.2,.8,.2,1), visibility 0s linear .35s; }
+.agent-say.show { opacity: 1; transform: translate(-50%, -50%) scale(1); visibility: visible; transition: opacity .3s ease, transform .35s cubic-bezier(.2,.8,.2,1), visibility 0s; }
+.agent-say > b:first-child { display: block; margin-bottom: 8px; font: 700 13px var(--font); letter-spacing: .3em; color: #ffe9b8; }
 .agent-say b { color: #ffe9b8; }

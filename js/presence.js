@@ -69,7 +69,7 @@
 
     // 連線管理：可能同時有好幾條連線（重連時），全部都收、全部都送，避免「A 以為連上、B 以為沒連上」的平行宇宙
     const offTxt = () => (isGuestPair ? (other === "agent" ? "房仲 David 在門口，走近聽他介紹" : "訪客還沒進來") : `${NAME[other].replace(" ✿", "")} 睡覺中 💤`);
-    const say = document.createElement("div"); say.className = "agent-say"; say.hidden = true; document.body.appendChild(say); Pz.say = say;
+    const say = document.createElement("div"); say.className = "agent-say"; document.body.appendChild(say); Pz.say = say;
     const conns = new Set(); Pz.conns = conns;
     const anyOpen = () => [...conns].some((c) => c.open);
     const drop = () => { rm.on = false; Pz.remote = null; conns.forEach((c) => { try { c.close(); } catch (_) {} }); conns.clear(); setPill(offTxt()); Pz.status = "對方離線"; };
@@ -118,7 +118,7 @@
       vis = lerp(vis, on ? 1 : 0, Math.min(1, dt * 5));
       if (on) {
         rm.x += 0; const k = Math.min(1, dt * 9);
-        av.root.visible = true; say.hidden = true; av.root.rotation.set(0, av.root.rotation.y, 0); W.position.set(0, 0, 0); W.rotation.set(0, 0, 0);
+        av.root.visible = true; say.classList.remove("show"); av.root.rotation.set(0, av.root.rotation.y, 0); W.position.set(0, 0, 0); W.rotation.set(0, 0, 0);
         const px = av.root.position.x, pz = av.root.position.z;
         av.root.position.set(lerp(px || rm.x, rm.x, k), lerp(av.root.position.y, rm.y || 0, k), lerp(pz || rm.z, rm.z, k));
         av.root.rotation.y += angDiff(av.root.rotation.y, rm.f) * Math.min(1, dt * 10);
@@ -132,11 +132,13 @@
           av.root.visible = true; W.position.set(0, 0, 0); W.rotation.set(0, 0, 0); av.root.rotation.order = "XYZ"; av.root.position.set(AGENT_SPOT.x, AGENT_SPOT.y, AGENT_SPOT.z);
           const m = ctx.getMe(), face = Math.atan2(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z), near = Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 5;
           av.root.rotation.y += angDiff(av.root.rotation.y, near ? face : AGENT_SPOT.f) * Math.min(1, dt * 4); av.root.rotation.z = 0; av.root.rotation.x = 0;
-          av.update(dt, 0, t); if (av.armR) av.armR.sh.rotation.x = near ? -0.5 + Math.sin(t * 2.2) * 0.12 : 0;   // 介紹時手微微抬起
+          av.update(dt, 0, t); if (av.armR) av.armR.sh.rotation.x = Pz.talking ? -0.5 + Math.sin(t * 2.2) * 0.12 : 0;   // 介紹時手微微抬起
           tag.visible = true; tag.position.set(AGENT_SPOT.x, AGENT_SPOT.y + 2.0, AGENT_SPOT.z);
-          const hit = TOUR.find(([f]) => f(m.x, m.z)); const txt = (near && Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 3.2) || performance.now() < (Pz.greetUntil || 0) ? GREETING : hit ? hit[1] : "";
-          if (txt) { if (say.__t !== txt) { say.__t = txt; say.innerHTML = `<b>David（房仲）</b>${txt}`; } say.hidden = false; } else say.hidden = true;
-        } else { av.root.visible = false; tag.visible = false; say.hidden = true; }
+          // 房客走近 David 才講話（約 4 公尺內）；走遠（超過 5 公尺）就收回
+          const dist = Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z); Pz.talking = Pz.talking ? dist < 5.2 : dist < 4.2;
+          if (say.__t !== GREETING) { say.__t = GREETING; say.innerHTML = `<b>David（房仲）</b>${GREETING}`; }
+          say.hidden = false; say.classList.toggle("show", Pz.talking);
+        } else { av.root.visible = false; tag.visible = false; say.classList.remove("show"); }
       } else {
         const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, -Math.PI / 2, 0); av.root.rotation.order = "XYZ"; av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
         av.update(dt, 0, t); av.torso.rotation.x = Math.sin(t * 1.4) * 0.02; av.head.rotation.set(0, 0.3, 0);
