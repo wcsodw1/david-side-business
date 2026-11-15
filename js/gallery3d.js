@@ -1706,7 +1706,7 @@
 
     /* ----- 人物 ----- */
     const GUEST = window.PERSONA === "guest";   // 訪客：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
-    const av = GUEST ? buildAvatar(THREE, { blazer: 0x5d7fa3, shirt: 0x5d7fa3, pants: 0x3d4a5c, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x2a2420 }) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (!GUEST && window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
+    const av = GUEST ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (GUEST && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];

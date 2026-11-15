@@ -15,6 +15,7 @@
   // 穿搭（參考使用者的照片）：David = 黑色短袖 T、淺色長褲、白色球鞋、銀色項鍊、黑框眼鏡；ARIES = 深灰寬鬆 T、深色寬褲、白球鞋
   const OPTS = {
     david: { blazer: 0x5f6a3c, shirt: 0x5f6a3c, pants: 0x5f6a3c, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
+    guest: { blazer: 0x5a4636, shirt: 0x5a4636, pants: 0x34415a, shoe: 0xf2f2f2, skin: 0xf1d2ba, hair: 0x1a1210 },
     aeris: { blazer: 0xeab9c6, shirt: 0xeab9c6, pants: 0xeab9c6, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x1c1210 },
   };
   const api = (window.Faces = { apply, opts: (who) => OPTS[who] });
@@ -30,6 +31,15 @@
       brows: { y: 0.215, inner: 0.15, outer: 0.64, thick: 0.055, arch: 0.006, slope: -0.01, color: "#15110f", n: 520 },
       mouth: { w: 0.22, up: 0.044, lo: 0.074, sad: 0.006 },
       nose: { w: 0.125, tipY: -0.2, shade: 0.2 }, stubble: 0.16, freckles: 0, blush: 0.05,
+    },
+    guest: {   // 訪客（女生）：參考照片 —— 瘦長臉、單眼皮細長眼、直瀏海、淡唇
+      skin: "#f1d2ba", skinShade: "#d9ad94", hair: "#1a1210", hairHi: "#4a3a32", lip: "#c98b80", iris: "#2a1a12",
+      W: 0.094, H: 0.12, D: 0.101, taper: 0.17, sq: 0, long: 0.04, chin: 0.005, brow: 0.003, browY: 0.285, socket: 0.002, eyeX: 0.38, eyeY: 0.04,
+      noseH: 0.009, noseW: 0.78, cheek: 0.005, lip3d: 0.006, mouthY: -0.5,
+      eye: { hw: 0.17, hh: 0.052, iris: 0.07, tilt: 0.0, crease: 0.15, lash: 0.55, liner: 0.35 },
+      brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.03, arch: 0.008, slope: 0.0, color: "#241812", n: 200 },
+      mouth: { w: 0.15, up: 0.034, lo: 0.07, sad: 0.002 },
+      nose: { w: 0.09, tipY: -0.19, shade: 0.12 }, stubble: 0, freckles: 0, blush: 0.12,
     },
     aeris: {
       skin: "#f6dac8", skinShade: "#e0b4a0", hair: "#1c1210", hairHi: "#52403a", lip: "#dc8478", iris: "#24150e",
@@ -225,6 +235,23 @@
     return grp;
   }
 
+  // 訪客（女生）：深色直瀏海、低髻、米色棒球帽（紫色刺繡）
+  function guestHair(THREE, s) {
+    const grp = new THREE.Group(), hm = new THREE.MeshStandardMaterial({ color: 0x120c0a, roughness: 0.85, metalness: 0, side: THREE.DoubleSide });
+    const shell = (phi0, phi1, th0, th1, k) => { const m = new THREE.Mesh(new THREE.SphereGeometry(1, 40, 14, phi0, phi1 - phi0, th0, th1 - th0), hm); m.scale.set(s.W * k, s.H * k, s.D * k); m.position.y = 0.085; m.castShadow = true; grp.add(m); return m; };
+    shell(PI / 2 - 1.05, PI / 2 + 1.05, 0.7, 1.43, 1.09);          // 直瀏海：額頭一整排，遮到眉毛
+    shell(PI * 0.78, PI * 2.22, 0.5, 2.0, 1.07);                     // 側邊與後腦的頭髮（蓋住耳朵上緣）
+    const bun = new THREE.Mesh(new THREE.SphereGeometry(0.05, 18, 14), hm); bun.position.set(0, 0.075, -s.D * 1.1 - 0.03); bun.scale.set(1, 0.9, 0.9); grp.add(bun);   // 低髻
+    for (const [x, y, z, r] of [[-0.075, 0.03, -0.075, 0.5], [0.07, 0.025, -0.08, -0.4]]) { const st = new THREE.Mesh(new THREE.CapsuleGeometry(0.008, 0.07, 4, 8), hm); st.position.set(x, y, z); st.rotation.z = r; grp.add(st); }   // 垂下的碎髮
+    // 棒球帽
+    const capM = new THREE.MeshStandardMaterial({ color: 0xa8957a, roughness: 0.9 });
+    const crown = new THREE.Mesh(new THREE.SphereGeometry(1, 36, 18, 0, PI * 2, 0, PI / 2), capM); crown.scale.set(s.W * 1.1, s.H * 0.9, s.D * 1.12); crown.position.set(0, 0.122, -0.004); crown.rotation.x = -0.12; crown.castShadow = true; grp.add(crown);
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.108, 0.108, 0.006, 30, 1, false, -PI / 2, PI), capM); brim.position.set(0, 0.137, s.D * 0.78); brim.rotation.x = 0.16; brim.scale.set(0.9, 1, 1.05); brim.castShadow = true; grp.add(brim);
+    const ec = document.createElement("canvas"); ec.width = 256; ec.height = 96; const eg = ec.getContext("2d"); eg.strokeStyle = "#7a3fd1"; eg.lineWidth = 7; eg.lineCap = "round"; eg.beginPath(); eg.moveTo(30, 40); for (let x = 30; x < 226; x += 14) eg.lineTo(x + 7, 30 + (x % 28 ? 22 : 8)); eg.stroke(); eg.beginPath(); eg.moveTo(40, 74); eg.quadraticCurveTo(128, 56, 220, 76); eg.stroke();
+    const emb = new THREE.Mesh(new THREE.PlaneGeometry(0.07, 0.026), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(ec), transparent: true })); emb.position.set(0, 0.185, s.D * 1.12 * 0.86); emb.rotation.x = -0.42; grp.add(emb);   // 帽子上的紫色刺繡
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.013, 0.004), new THREE.MeshStandardMaterial({ color: 0x8a8a84, roughness: 0.8 })); strap.position.set(0, 0.14, -s.D * 1.12 - 0.012); grp.add(strap);   // 帽子後面的調節帶
+    return grp;
+  }
   function aerisHair(THREE, s) {
     const grp = new THREE.Group(), tex = strandTexture(THREE, s.hair, s.hairHi, { sheen: 0.14, part: 0.25 - 0.06 / (2 * PI) });
     const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.45, metalness: 0.04, side: THREE.DoubleSide, envMapIntensity: 0.6 });
@@ -290,8 +317,9 @@
     const skinM = new THREE.MeshStandardMaterial({ color: new THREE.Color(shade(s.skin, -14)), roughness: 0.6 });
     for (const sx of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 10), skinM); ear.position.set(sx * (s.W - 0.002), 0.075, -0.004); ear.scale.set(0.5, 1.15, 0.85); head.add(ear); }
     seed = 23;
-    const hair = who === "david" ? davidHair(THREE, s) : aerisHair(THREE, s); head.add(hair);
+    const hair = who === "david" ? davidHair(THREE, s) : who === "guest" ? guestHair(THREE, s) : aerisHair(THREE, s); head.add(hair);
     const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.25, metalness: 0.9 });
+    if (who === "guest") for (const sx of [-1, 1]) { const gold = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.25, metalness: 0.9 }); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0017, 8, 24), gold); ring.position.set(sx * (s.W + 0.003), 0.055, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小金圈耳環
     if (who === "aeris") for (const sx of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0016, 8, 28), silver); ring.position.set(sx * (s.W + 0.004), 0.028, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小耳環
     if (who === "david") {   // 黑框眼鏡
       const rr = (w, h, r) => { const sh = new THREE.Shape(), x = -w / 2, y = -h / 2; sh.moveTo(x + r, y); sh.lineTo(x + w - r, y); sh.quadraticCurveTo(x + w, y, x + w, y + r); sh.lineTo(x + w, y + h - r); sh.quadraticCurveTo(x + w, y + h, x + w - r, y + h); sh.lineTo(x + r, y + h); sh.quadraticCurveTo(x, y + h, x, y + h - r); sh.lineTo(x, y + r); sh.quadraticCurveTo(x, y, x + r, y); return sh; };
@@ -311,7 +339,7 @@
     if (who === "aeris" && av.torso) for (const [rad, y, tilt] of [[0.064, 0.6, 0.22], [0.05, 0.575, 0.5]]) { const ch = new THREE.Mesh(new THREE.TorusGeometry(rad, 0.0016, 6, 48), silver); ch.position.set(0, y, 0.01); ch.rotation.x = PI / 2 + tilt; av.torso.add(ch); }   // 細銀項鍊（兩條）
     // 亞麻睡衣：David 橄欖綠、ARIES 粉色；長袖、翻領、木釦、寬褲
     try {
-      const base = who === "david" ? "#5f6a3c" : "#eab9c6", trimC = who === "david" ? 0x5a6537 : 0xf8ecd8;
+      const base = who === "david" ? "#5f6a3c" : who === "guest" ? "#53402f" : "#eab9c6", trimC = who === "david" ? 0x5a6537 : 0xf8ecd8, GU = who === "guest";
       const cv = document.createElement("canvas"); cv.width = 128; cv.height = 128; const g = cv.getContext("2d");
       g.fillStyle = base; g.fillRect(0, 0, 128, 128);
       for (let k = 0; k < 900; k++) { g.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,.10)" : "rgba(0,0,0,.09)"; if (k % 2) g.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 10, 1); else g.fillRect(Math.random() * 128, Math.random() * 128, 1, 1 + Math.random() * 10); }   // 亞麻織紋
@@ -320,7 +348,7 @@
       const linen = (m, rx, ry) => { if (!m || !m.isMeshStandardMaterial) return; const tt = tex.clone(); tt.needsUpdate = true; tt.repeat.set(rx, ry); m.map = tt; m.color.set(0xffffff); m.roughness = 0.95; m.needsUpdate = true; };
       const top = av.torso.children.find((m) => m.isMesh && m.geometry && m.geometry.type === "LatheGeometry");
       if (top) linen(top.material, 4, 3);                                                   // 上衣 + 袖子共用同一材質
-      linen(av.legL.hip.children[1] && av.legL.hip.children[1].material, 3, 3);              // 褲子
+      if (!GU) linen(av.legL.hip.children[1] && av.legL.hip.children[1].material, 3, 3);              // 褲子
       // 袖子 / 褲管改成長版寬鬆：前臂用上衣材質、褲管加粗
       const clothMat = top && top.material;
       for (const arm of [av.armL, av.armR]) { arm.el.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry" && m.geometry.parameters.height > 0.2) { m.material = clothMat; m.scale.set(1.12, 1, 1.12); } }); arm.sh.children.forEach((m) => { if (m.isMesh) m.scale.multiplyScalar(1.06); }); }
@@ -328,14 +356,18 @@
       const trim = new THREE.MeshStandardMaterial({ color: trimC, roughness: 0.7 });
       const wood = new THREE.MeshStandardMaterial({ color: 0xc89a62, roughness: 0.6 });
       // 翻領（兩片，向外斜）
-      for (const sx of [-1, 1]) { const lp = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.12, 0.012), trim); lp.position.set(sx * 0.052, 0.5, 0.135); lp.rotation.z = -sx * 0.5; lp.rotation.y = -sx * 0.35; lp.rotation.x = -0.12; av.torso.add(lp); }
+      if (!GU) for (const sx of [-1, 1]) { const lp = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.12, 0.012), trim); lp.position.set(sx * 0.052, 0.5, 0.135); lp.rotation.z = -sx * 0.5; lp.rotation.y = -sx * 0.35; lp.rotation.x = -0.12; av.torso.add(lp); }
       // 木釦（David 4 顆、ARIES 2 顆）
-      const nB = who === "david" ? 4 : 2;
+      const nB = GU ? 0 : who === "david" ? 4 : 2;
       for (let i = 0; i < nB; i++) { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.0085, 0.0085, 0.006, 12), wood); b.rotation.x = PI / 2; b.position.set(0, 0.4 - i * 0.1, 0.14); av.torso.add(b); }
       if (who === "aeris") { for (const sx of [-1, 1]) { const pl = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.3, 0.004), trim); pl.position.set(sx * 0.02, 0.33, 0.141); av.torso.add(pl); } }   // 前襟奶油色滾邊
       // 袖口翻摺
       for (const arm of [av.armL, av.armR]) { const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.045, 18), clothMat); cuff.position.set(0, -0.285, 0); arm.el.add(cuff); }
     } catch (e) { console.warn("睡衣失敗", e); }
+    if (who === "guest" && av.torso) av.torso.children.forEach((m) => { if (m.isMesh && m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });   // 圓領毛衣：不要 V 領的襯衫三角
+    if (who === "guest" && av.torso) {   // 斜背的亮綠色背包帶
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.62, 0.006), new THREE.MeshStandardMaterial({ color: 0x9fd13b, roughness: 0.6 })); st.position.set(0.03, 0.36, 0.142); st.rotation.z = -0.62; av.torso.add(st);
+    }
     // （睡衣是長袖，不把前臂改成皮膚）
     av.faceDone = true; av.hairGroup = hair;
     return av;
