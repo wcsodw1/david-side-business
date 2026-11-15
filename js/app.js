@@ -89,12 +89,7 @@
 
   /* ---------- Mega menu ---------- */
   function buildMega() {
-    $("#megaGrid").innerHTML = `
-      <a class="mega-item" role="menuitem" href="#/office">
-        <span class="mega-dot" style="background:#ffe9b8">▦</span>
-        <span class="mega-text"><span class="mega-name">辦公室 Office</span>
-        <span class="mega-meta"><i class="pill-dot" style="background:#6be3a4"></i>儀表板 · 總覽</span></span>
-      </a>` + P.map((p, i) => `
+    $("#megaGrid").innerHTML = P.map((p, i) => `
       <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}">
         <span class="mega-dot" style="background:${accent(i)}">${initial(p)}</span>
         <span class="mega-text">
