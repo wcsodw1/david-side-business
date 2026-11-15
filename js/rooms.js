@@ -572,7 +572,6 @@
           const hit = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.4, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(0, 1.2, 0); hit.userData = { station: sBB, kind: "act", act: go, stand: { x: standX, z: standZ } }; g.add(hit); pickables.push(hit);
           cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); const j = pickables.indexOf(hit); if (j >= 0) pickables.splice(j, 1); }); return g; };
         { const rwb = rowOf[sBB], dw = L2W(sBB, 1.4, -6.08), sd = L2W(sBB, 1.4, -5.3), rot = rwb.rot ? PI : 0, lnd = L2W(sBB, 1.2, -4.6), land = { x: cx - HL + 1.6, z: cz };   // 後牆的門朝房內（+z）
-          mkAny("any-bb", dw.x, dw.z, rot, "→ 爬蟲館", sd.x, sd.z, land.x, land.z);
           { const ex = cx - HL + 0.1, g = mkAny("any-rep", ex, cz, PI / 2, "→ 回 BB", land.x - 0.3, land.z, lnd.x, lnd.z); K.obs(-HL + 0.1, 0, 0.15, 0.62, 3); } }
       }
     } catch (e) { console.error("爬蟲館載入失敗：", e); }
