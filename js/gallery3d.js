@@ -1166,7 +1166,7 @@
       }
 
       // ===== David 的家：兩層樓（一樓 David、二樓 Aeris）=====
-      const plasterH = M(0xf3ece0, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
+      const plasterH = M(0xfafaf8, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
       const shellBox = (w, h, d, x, z, mat, grp, low, y0 = 0) => { const g0 = new THREE.BoxGeometry(w, h, d); g0.translate(0, h / 2, 0); const m = new THREE.Mesh(g0, mat); m.position.set(x, y0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); shells.push({ m, grp, low }); return m; };
       const X0 = HOUSE.x0, X1 = HOUSE.x1, Z0 = HOUSE.z0, Z1 = HOUSE.z1, ZC = (Z0 + Z1) / 2, DW0 = -3.2, DW1 = -1.6, FH = UY - 0.22, WT = 2.8, TOP = UY + WT;   // FH：一樓牆高；UY：二樓地板面；TOP：二樓牆頂
       const ft = floorTex.clone(); ft.needsUpdate = true; ft.repeat.set(1.4, 1);
