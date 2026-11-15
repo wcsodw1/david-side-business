@@ -15,7 +15,7 @@
   const AISO_BASE = "http://localhost:18082/v1", AISO_TUNNEL = "ssh -f -N -L 18082:127.0.0.1:18082 AISO1-key";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const sessions = {};
-  let cfg = { provider: "openai", key: "", model: "", baseUrl: "", aisoBase: "", aisoSize: "small", think: false, temp: "", maxTok: "" };
+  let cfg = { provider: "openai", key: "", model: "", baseUrl: "", aisoBase: "", aisoModel: "", think: false, temp: "", maxTok: "" };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || "{}")); } catch (_) {}
   // 沒填雲端金鑰時，預設直接用 AISO1 本地模型（打開就能聊，不用設定）
   if ((cfg.provider === "openai" || cfg.provider === "anthropic") && !cfg.key) cfg.provider = "aiso1";
@@ -24,13 +24,15 @@
   const isLocal = () => cfg.provider === "custom" || cfg.provider === "aiso1";   // OpenAI 相容端點（串流輸出）
   const needKey = () => !isLocal();   // 自訂端點 / AISO1 可以不用金鑰
   // 用 Mac 上的「AISO1 辦公室 AI.command」開網站時（http://localhost），走同源的 /aiso1 轉送（做法同 AISO Platform 的 launcher），不會被瀏覽器擋
-  // AISO1 同時開兩個模型：小（Gemma 26B Q4，快，AISO1:8080）/ 大（Gemma 31B Q4，較準較慢，AISO1:8081）；標題列的按鈕切換
-  const isBig = () => cfg.provider === "aiso1" && cfg.aisoSize === "big";
-  const baseOf = () => (cfg.provider === "aiso1" ? (cfg.aisoBase || "").trim() || (aiso.proxy ? location.origin + (isBig() ? "/aiso1big/v1" : "/aiso1/v1") : isBig() ? "http://localhost:18081/v1" : aiso.direct || AISO_BASE) : cfg.baseUrl.trim()).replace(/\/+$/, "");
+  const baseOf = () => (cfg.provider === "aiso1" ? (cfg.aisoBase || "").trim() || (aiso.proxy ? location.origin + "/aiso1/v1" : aiso.direct || AISO_BASE) : cfg.baseUrl.trim()).replace(/\/+$/, "");
+  // AISO1 是 llama.cpp router（~/llama-models.ini）：每段對話自己選模型（存在對話裡），請求帶 model 就會自動載入（最多同時 2 個）
+  const MODEL_NAMES = { "gemma26-q4": "Gemma 4 26B Q4", "qwen38-27b-q4": "Qwen3.8 27B Q4", "qwen36-35b-q4": "Qwen3.6 35B Q4" };
+  const mName = (id) => MODEL_NAMES[id] || id;
+  const aisoModelOf = (s) => { const L = aiso.models || [], ok = (id) => id && (!L.length || L.some((m) => m.id === id)); return ok(s && s.model) ? s.model : ok(cfg.aisoModel) ? cfg.aisoModel : (L.find((m) => m.loaded) || L[0] || {}).id || aiso.name || ""; };
   const AISO_DIRECT = ["http://localhost:18080/v1", "http://localhost:18082/v1"];   // 線上版直接連：先試看圖版（啟動器開的 18080 通道），再試文字版 18082
   const ready = () => (needKey() ? !!cfg.key : !!baseOf());
   const provName = () => ({ openai: "OpenAI", anthropic: "Claude", custom: "自訂", aiso1: "AISO1 本地" }[cfg.provider]);
-  const aiso = { ok: null, name: "", wait: false, proxy: false, direct: "", vision: null };   // 連線狀態、偵測到的模型名稱、是否卡在等瀏覽器允許
+  const aiso = { ok: null, name: "", wait: false, proxy: false, direct: "", vision: null, models: [] };   // 連線狀態、偵測到的模型名稱、是否卡在等瀏覽器允許
   // Chrome「區域網路存取」：公開網站（github.io）連本機 localhost 要宣告目標是 loopback，Chrome 才會跳出允許詢問
   const LNA = () => (cfg.provider === "aiso1" && /^http:\/\/(localhost|127\.0\.0\.1)/.test(baseOf()) && location.protocol === "https:" ? { targetAddressSpace: "loopback" } : {});
   const LAUNCH_HELP = "最穩的方式：在 Mac 上雙擊 Side Business 資料夾裡的「AISO1 辦公室 AI.command」，它會自動開通道並打開本機版辦公室（http://localhost:5180），AI 直接連 AISO1。";
@@ -41,12 +43,12 @@
       try { const h = await fetch("/aiso1/health", { signal: AbortSignal.timeout ? AbortSignal.timeout(4000) : undefined }); aiso.proxy = h.status === 200 || h.status === 502; } catch (_) { aiso.proxy = false; }
     }
     const T = (ms) => (AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
-    if (!cfg.aisoBase && !aiso.proxy && !isBig()) {   // 沒有啟動器：挑一個連得到的（看圖版優先）
+    if (!cfg.aisoBase && !aiso.proxy) {   // 沒有啟動器：挑一個連得到的（看圖版優先）
       for (const b of AISO_DIRECT) { try { const r = await fetch(b + "/models", { ...LNA(), signal: T(b === AISO_DIRECT[0] ? 5000 : 15000) }); if (r.ok) { aiso.direct = b; break; } } catch (_) {} }
     }
-    try { const r = await fetch(baseOf() + "/models", { ...LNA(), signal: T(15000) }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
+    try { const r = await fetch(baseOf() + "/models", { ...LNA(), signal: T(15000) }); const j = await r.json(); const id = (j.data && j.data[0] && j.data[0].id) || ""; aiso.models = (j.data || []).map((m) => ({ id: m.id, loaded: !m.status || m.status.value === "loaded", vision: m.architecture ? (m.architecture.input_modalities || []).includes("image") : null })); aiso.ok = r.ok; aiso.name = id.split("/").pop().replace(/\.gguf$/i, ""); }
     catch (e) { aiso.ok = false; aiso.wait = e && e.name === "TimeoutError"; }
-    aiso.vision = null;
+    aiso.vision = null; if (aiso.models.length && aiso.models.every((m) => m.vision !== null)) aiso.vision = aiso.models.every((m) => m.vision);   // router：清單裡就寫了能不能看圖
     if (aiso.ok) { try { const pr = await (await fetch(baseOf().replace(/\/v1$/, "") + "/props", { ...LNA(), signal: T(5000) })).json(); if (pr && pr.modalities) aiso.vision = !!pr.modalities.vision; } catch (_) {} }
     return aiso;
   };
@@ -62,9 +64,9 @@
   const session = (pid) => {
     if (sessions[pid]) return sessions[pid];
     const s = (sessions[pid] = { pid, msgs: [], pending: false, ctl: null, subs: new Set(), ready: null });
-    s.ready = idbGet("chat:" + pid).then((v) => { if (v && Array.isArray(v.msgs) && !s.msgs.length) s.msgs = v.msgs; s.notify(); });
+    s.ready = idbGet("chat:" + pid).then((v) => { if (v && Array.isArray(v.msgs) && !s.msgs.length) s.msgs = v.msgs; if (v && v.model && !s.model) s.model = v.model; s.notify(); });
     s.notify = () => s.subs.forEach((f) => f());
-    s.save = () => idbSet("chat:" + pid, { msgs: s.msgs.slice(-60) });
+    s.save = () => idbSet("chat:" + pid, { msgs: s.msgs.slice(-60), model: s.model || "" });
     return s;
   };
 
@@ -228,7 +230,7 @@
       const push = () => onDelta && onDelta({ text: tidy(text), think, actions });
       // 最多 4 輪：模型呼叫工具 → 這裡執行（直接改藝廊資料）→ 把結果交回模型 → 模型回報做了什麼
       for (let round = 0; round < 8; round++) {
-        const body = { messages, stream: true }; if (modelOf()) body.model = modelOf();
+        const body = { messages, stream: true }; const mdlId = cfg.provider === "aiso1" && !cfg.model.trim() ? aisoModelOf(s) : modelOf(); if (mdlId) body.model = mdlId;
         body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
         if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
         if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
@@ -340,7 +342,7 @@
   function mount(el, p) {
     const s = session(p.id); let draft = [];
     el.innerHTML = `<div class="ai">
-      <div class="ai-bar"><span class="ai-title"></span><span class="ai-sp"></span><button type="button" data-size hidden title="切換 AISO1 上的大 / 小模型"></button><button type="button" data-new>新對話</button><button type="button" data-cfg aria-label="設定">⚙</button></div>
+      <div class="ai-bar"><span class="ai-title"></span><span class="ai-sp"></span><select data-mdl hidden aria-label="這段對話用的模型" title="這段對話用哪個模型（沒載入的會自動載入，約 5–10 秒）"></select><button type="button" data-new>新對話</button><button type="button" data-cfg aria-label="設定">⚙</button></div>
       <div class="ai-cfg" hidden>
         <label>服務商<select data-prov><option value="openai">OpenAI（文字 + 圖片回應）</option><option value="anthropic">Anthropic Claude（文字回應，看得懂圖）</option><option value="custom">自訂端點（OpenAI 相容，例如公司內網模型）</option><option value="aiso1">AISO1 本地模型（llama.cpp · Gemma，免金鑰）</option></select></label>
         <label data-base-row hidden>端點網址（到 /v1 為止）<input data-base placeholder="http://主機:埠/v1" autocomplete="off"></label>
@@ -365,9 +367,10 @@
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
     const title = () => {
       const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" + (aiso.vision === true ? " · 可看圖" : aiso.vision === false ? " · 不能看圖" : "") : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
-      const mdl = modelOf() || (cfg.provider === "aiso1" && aiso.name) || "預設模型";
+      const mdl = modelOf() || (cfg.provider === "aiso1" && mName(aisoModelOf(s))) || "預設模型";
       q(".ai-title").textContent = `AI · ${provName()} · ${mdl}${st}`; q(".ai-title").classList.toggle("ai-off", cfg.provider === "aiso1" && aiso.ok === false);
-      const sz = q("[data-size]"); if (sz) { sz.hidden = cfg.provider !== "aiso1" || !!(cfg.aisoBase || "").trim(); sz.textContent = isBig() ? "大模型 · 準 ⇄" : "小模型 · 快 ⇄"; }
+      const sel = q("[data-mdl]"), L = aiso.models || []; if (sel) { sel.hidden = cfg.provider !== "aiso1" || !!cfg.model.trim() || L.length < 2; const cur = aisoModelOf(s);
+        if (!sel.hidden) { sel.innerHTML = L.map((m) => `<option value="${esc(m.id)}">${esc(mName(m.id))}${m.loaded ? "" : "（需載入）"}</option>`).join(""); sel.value = cur; } }
       const hs = q("[data-aiso-st]"); if (hs) hs.textContent = cfg.provider !== "aiso1" ? "" : aiso.ok ? `　目前：已連線（${aiso.name}）` : aiso.ok === false ? "　目前：連不到" : "";
     };
     const checkAiso = () => { if (cfg.provider !== "aiso1") return; aiso.ok = null; title(); pingAiso().then(() => { if (el.isConnected) { title(); paint(); } }); };
@@ -398,7 +401,7 @@
     const area = q(".ai"); area.addEventListener("dragover", (e) => { e.preventDefault(); }); area.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
     q("[data-new]").addEventListener("click", () => { if (p.onNew) { p.onNew(); return; } if (s.pending && s.ctl) s.ctl.abort(); s.msgs = []; s.pending = false; s.save(); s.notify(); });   // 有對話清單時：開新的一段，舊的留著
     q("[data-cfg]").addEventListener("click", () => { cfgBox.hidden = !cfgBox.hidden; });
-    q("[data-size]").addEventListener("click", () => { cfg.aisoSize = isBig() ? "small" : "big"; saveCfg(); checkAiso(); });
+    q("[data-mdl]").addEventListener("change", (e) => { s.model = e.target.value; cfg.aisoModel = s.model; saveCfg(); s.save(); title(); });   // 這段對話換模型；之後開的新對話也預設用它
     const baseRow = q("[data-base-row]"), base = q("[data-base]");
     const showRows = (pv) => {   // 依服務商顯示需要的欄位
       const loc = pv === "custom" || pv === "aiso1";
@@ -436,7 +439,7 @@
     const slots = async () => {   // AISO1 正在算幾個 / 總共幾個
       const box = el.querySelector("[data-slots]"); if (!box || !el.isConnected) { clearInterval(timer); return; }
       if (cfg.provider !== "aiso1" || Date.now() < slotsCool) { if (cfg.provider !== "aiso1") box.textContent = ""; return; }
-      try { const r = await fetch(baseOf().replace(/\/v1$/, "") + "/slots", { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined }); const j = await r.json();
+      try { const r = await fetch(baseOf().replace(/\/v1$/, "") + "/slots" + ((aiso.models || []).length > 1 ? "?model=" + encodeURIComponent(aisoModelOf(null)) : ""), { ...LNA(), signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined }); const j = await r.json();
         if (Array.isArray(j)) { const busy = j.filter((x) => x.is_processing).length, waiting = Object.values(sessions).filter((x) => x.pending).length - busy;
           box.innerHTML = `AISO1 並行 <b>${busy}</b> / ${j.length} 個 slot 運算中${waiting > 0 ? `　·　${waiting} 個排隊` : ""}`; box.classList.toggle("busy", busy > 0); } }
       catch (_) { box.textContent = ""; slotsCool = Date.now() + 20000; }   // 連不到就先停 20 秒，不要一直刷錯誤

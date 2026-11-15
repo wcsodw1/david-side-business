@@ -1103,3 +1103,6 @@ body.locked .santa-fab { display: none; }
 
 /* 館長按電鈴的提示 */
 .dir-toast { position: fixed; left: 50%; top: 72px; transform: translateX(-50%); z-index: 45; padding: 10px 20px; border-radius: 99px; background: rgba(20,17,43,.86); color: #ffe9b8; border: 1px solid rgba(255,233,184,.5); font-size: 14px; font-weight: 600; animation: startHint 6s ease forwards; pointer-events: none; }
+/* AI 總管：這段對話用的模型（AISO1 router） */
+.ai-bar select[data-mdl] { flex: none; max-width: 46vw; padding: 4px 8px; border-radius: 8px; border: 1.5px solid #cfc8b6; font: 600 12px var(--font); color: #3a3150; background: transparent; cursor: pointer; }
+.office-ai .ai-bar select[data-mdl] { height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--hm-ink); color: var(--hm-ink); font: 600 13px var(--font); }
