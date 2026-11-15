@@ -378,7 +378,7 @@
         <p class="g-keys">按住左鍵：往指標方向走　單擊：走過去　右鍵拖曳：轉視角　<kbd>WASD</kbd> 走路　<kbd>Space</kbd> 跳　雙擊方向鍵：跑　<kbd>Enter</kbd> 互動　<kbd>Esc</kbd> 退出</p>
       </div>
       <div class="g-camctl">
-        <button type="button" id="gRotL" aria-label="向左轉視角">⟲</button>
+        <button type="button" id="gRotL" aria-label="向左轉視角 / 第一人稱向左轉頭">⟲</button>
         <button type="button" id="gRotR" aria-label="向右轉視角">⟳</button>
         <button type="button" id="gAuto" aria-pressed="false">360° 環繞</button>
         <button type="button" class="g-jump" id="gJump" aria-label="跳">⤒</button>
@@ -1827,6 +1827,12 @@
       return false;
     };
     const onKey = (e) => {
+      if (fpv && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {   // 第一人稱：← → 轉頭（A / D 仍是左右平移）
+        const k = e.code === "ArrowLeft" ? "q" : "e";
+        if (e.type === "keyup") keys[k] = 0;
+        else if (e.type === "keydown" && !typing(e) && !e.metaKey && !e.ctrlKey && !e.altKey && !blocked()) { keys[k] = 1; e.preventDefault(); }
+        return;
+      }
       if (e.type === "keydown" && !e.repeat && (e.code === "ArrowLeft" || e.code === "KeyA") && !e.__dsbHandled && !typing(e) && !e.metaKey && !e.ctrlKey && !e.altKey && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) {
         const n = performance.now(), second = n - lastDown < 350; lastDown = n;
         if (second && dblBackExit()) { lastDown = 0; keys.l = 0; dbl.l = 0; e.preventDefault(); e.__dsbHandled = true; return; }
@@ -1962,7 +1968,9 @@
     root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { const k = b.dataset.d, n = performance.now(); touch[k] = 1; cancelRoute(); if (n - (lastTap["t" + k] || 0) < 320) { if (k === "l" && dblBackExit()) { touch.l = 0; lastTap["t" + k] = 0; return; } dbl[k] = 1; } lastTap["t" + k] = n; }, () => { touch[b.dataset.d] = 0; dbl[b.dataset.d] = 0; }));
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
     const fpvBtn = root.querySelector("#gFpv");
-    const setFpv = (on) => { fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : 36; camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
+    const keysEl = root.querySelector(".g-keys"), keysHTML = keysEl.innerHTML;
+    const FPV_HINT = '第一人稱：<kbd>Q</kbd> <kbd>←</kbd> 向左轉頭　<kbd>E</kbd> <kbd>→</kbd> 向右轉頭　拖曳滑鼠：轉頭 / 抬頭低頭　<kbd>W</kbd> 前進　<kbd>S</kbd> 後退　<kbd>A</kbd> <kbd>D</kbd> 左右平移　<kbd>V</kbd> 回到原視角';
+    const setFpv = (on) => { keysEl.innerHTML = on ? FPV_HINT : keysHTML; fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : 36; camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
     fpvBtn.addEventListener("click", () => setFpv(!fpv));
     S_fpvKey = (e) => { if (e.code === "KeyV" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e) && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) setFpv(!fpv); };
     window.addEventListener("keydown", S_fpvKey);
@@ -2051,8 +2059,8 @@
         stuckT += dt;
         if (stuckT > 0.8) { if (Math.hypot(pos.x - stuckX, pos.z - stuckZ) < 0.1) cancelRoute(); stuckT = 0; stuckX = pos.x; stuckZ = pos.z; }
       } else { stuckT = 0; stuckX = pos.x; stuckZ = pos.z; }
-      const rot = (keys.e - keys.q) + rotHold;
-      if (rot) { yaw += rot * 1.6 * dt; stopAuto(); }
+      const rot = fpv ? (keys.q - keys.e) - rotHold : (keys.e - keys.q) + rotHold;   // 第一人稱：Q / ← / ⟲ = 向左轉頭，E / → / ⟳ = 向右轉頭
+      if (rot) { yaw += rot * (fpv ? 1.9 : 1.6) * dt; stopAuto(); }
       if (auto) yaw += 0.16 * dt;
 
       const ix = (keys.r | touch.r) - (keys.l | touch.l), iz = (keys.u | touch.u) - (keys.d | touch.d);
