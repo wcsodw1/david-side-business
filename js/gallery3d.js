@@ -1772,7 +1772,7 @@
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
 
 
-    if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>訪客</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
+    if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>' + (window.GUEST_NAME || "訪客") + '</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
     else if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
     const infoEl = root.querySelector("#gInfo"); let lastInfoS = 0, dwell = 0, dwellS = -1;
