@@ -1167,7 +1167,7 @@
       }
 
       // ===== David 的家：兩層樓（一樓 David、二樓 Aeris）=====
-      const plasterH = M(window.GUESTLIKE ? 0xc6cad0 : 0xd9c8a6, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
+      const plasterH = M(window.GUESTLIKE ? 0xaeb3ba : 0xd9c8a6, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
       const shellBox = (w, h, d, x, z, mat, grp, low, y0 = 0) => { const g0 = new THREE.BoxGeometry(w, h, d); g0.translate(0, h / 2, 0); const m = new THREE.Mesh(g0, mat); m.position.set(x, y0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); shells.push({ m, grp, low }); return m; };
       const X0 = HOUSE.x0, X1 = HOUSE.x1, Z0 = HOUSE.z0, Z1 = HOUSE.z1, ZC = (Z0 + Z1) / 2, DW0 = -3.2, DW1 = -1.6, FH = UY - 0.22, WT = 2.8, TOP = UY + WT;   // FH：一樓牆高；UY：二樓地板面；TOP：二樓牆頂
       const ft = floorTex.clone(); ft.needsUpdate = true; ft.repeat.set(1.4, 1);
@@ -1276,7 +1276,7 @@
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
         // 臥室 / 浴室 / 走道的燈：人走進那個房間就亮起來（夜晚也一樣明亮），人離開就慢慢熄掉
-        akari.rooms = [[3.0, -3.1, 3.6, 13, (x, z) => x < 6.3 && z > -5.6 && z < -0.55], [4.6, -6.8, 3.2, 8, (x, z) => x > 2.8 && x < 6.3 && z < -5.6], [3.0, -0.1, 2.4, 9, (x, z) => x < 6.3 && z >= -0.55]].map(([rx, rz, base, dist, test]) => { const l = new THREE.PointLight(0xfff1d6, 0, dist); l.position.set(rx, UY + 2.4, rz); scene.add(l); return { l, base, test, k: 0 }; });
+        akari.rooms = [[3.0, -3.1, 1.7, 13, (x, z) => x < 6.3 && z > -5.6 && z < -0.55], [4.6, -6.8, 1.5, 8, (x, z) => x > 2.8 && x < 6.3 && z < -5.6], [3.0, -0.1, 1.2, 9, (x, z) => x < 6.3 && z >= -0.55]].map(([rx, rz, base, dist, test]) => { const l = new THREE.PointLight(0xfff1d6, 0, dist); l.position.set(rx, UY + 2.4, rz); scene.add(l); return { l, base, test, k: 0 }; });
         if (window.GUESTLIKE) { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
       }
       { const _bc = scene.children.length, _ob = obstacles.length; bed(5.2, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) { const m = scene.children[k]; m.position.x = 6.22 - (6.22 - (10.4 - m.position.x)) * 1.25; m.scale.x *= 1.25; } obstacles[_ob].minX -= 0.53; }   // 左右鏡像（床頭靠東牆）+ 床長加長 25%   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
