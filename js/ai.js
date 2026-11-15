@@ -15,6 +15,7 @@
   const AISO_BASE = "http://localhost:18082/v1", AISO_TUNNEL = "ssh -f -N -L 18082:127.0.0.1:18082 AISO1-key";
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const sessions = {};
+  const cmpSel = {};   // 比較模式各題目前看的是第幾個模型的回答
   let cfg = { provider: "openai", key: "", model: "", baseUrl: "", aisoBase: "", aisoModel: "", think: false, temp: "", maxTok: "" };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || "{}")); } catch (_) {}
   // 沒填雲端金鑰時，預設直接用 AISO1 本地模型（打開就能聊，不用設定）
@@ -383,6 +384,8 @@
         <input type="file" accept="image/*" multiple hidden></form>
     </div>`;
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
+    const pickCmp = (e) => { const b = e.target.closest && e.target.closest("[data-ct]"); if (!b) return; const g = b.closest(".ai-cmpgrid"), k = +b.dataset.ct; if (!g || b.classList.contains("on")) return; cmpSel[g.dataset.ck] = k; g.querySelectorAll("[data-ct]").forEach((x) => x.classList.toggle("on", x === b)); g.querySelectorAll("[data-cc]").forEach((x) => (x.hidden = +x.dataset.cc !== k)); };
+    msgs.addEventListener("mouseover", pickCmp); msgs.addEventListener("click", pickCmp); msgs.addEventListener("focusin", pickCmp);
     const title = () => {
       const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" + (aiso.vision === true ? " · 可看圖" : aiso.vision === false ? " · 不能看圖" : "") : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
       const mdl = modelOf() || (cfg.provider === "aiso1" && (s.model === CMP ? `${(aiso.models || []).length} 個模型比較` : mName(aisoModelOf(s)))) || "預設模型";
@@ -397,7 +400,9 @@
       const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型。<br><b>${esc(LAUNCH_HELP)}</b><br><br>在線上網站直接連的話：<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
       const one = (m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}${m.cmp ? " ai-cmp" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${x.read ? " read" : ""}${m.undone && !x.read ? " undone" : ""}">${x.fail ? "✗" : x.read ? "⌕" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`;
-      let html = ""; for (let i = 0; i < s.msgs.length; i++) { const m = s.msgs[i]; if (!m.cmp) { html += one(m); continue; } let g = ""; while (i < s.msgs.length && s.msgs[i].cmp) g += one(s.msgs[i++]); i--; html += `<div class="ai-cmpgrid">${g}</div>`; }
+      let html = ""; for (let i = 0; i < s.msgs.length; i++) { const m = s.msgs[i]; if (!m.cmp) { html += one(m); continue; } const grp = []; while (i < s.msgs.length && s.msgs[i].cmp) grp.push(s.msgs[i++]); i--;   // 比較模式：同一題的幾個模型回答，上方一排分頁，滑鼠移過去（或點）就切換看哪一個
+        const ck = String(grp[0].at), cs = Math.min(cmpSel[ck] ?? 0, grp.length - 1);
+        html += `<div class="ai-cmpgrid ai-cmptabbed" data-ck="${ck}"><div class="ai-cmptabs" role="tablist">${grp.map((m, k) => `<button type="button" role="tab" data-ct="${k}" class="${k === cs ? "on" : ""}${m.live ? " live" : ""}">${esc(mName(m.model))}</button>`).join("")}</div>${grp.map((m, k) => `<div class="ai-cmpcol" data-cc="${k}"${k === cs ? "" : " hidden"}>${one(m)}</div>`).join("")}</div>`; }
       msgs.innerHTML = (s.msgs.length ? html : empty) + (s.pending && !(last && (last.live || last.cmp)) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出"; sendBtn.classList.toggle("stop", !!s.pending);
       const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);

@@ -1208,3 +1208,14 @@ body.locked .santa-fab { display: none; }
 @media (max-width: 640px) { .robot-chat .dh-pane { left: 8px; right: 8px; bottom: 8px; } }
 .dh-row.dh-flash { animation: dhFlash 2.4s ease-out; }
 @keyframes dhFlash { 0% { background: #fde3cf; box-shadow: 0 0 0 3px rgba(227,101,29,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(227,101,29,0); } }
+
+/* AI 總管：比較模式 —— 上方一排模型分頁，滑鼠移過去就切換看哪個模型的回答（不再三欄並排） */
+.ai-cmpgrid.ai-cmptabbed { display: block; margin: 8px 0 18px; }
+.ai-cmptabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--hm-line, #d9ccb6); }
+.ai-cmptabs button { position: relative; padding: 9px 20px; border-radius: 999px; border: 1px solid var(--hm-line, #d9ccb6); background: transparent; color: var(--hm-ink-2, #6b5a4a); font: 600 14.5px var(--font); letter-spacing: .04em; cursor: pointer; transition: background .18s, color .18s, border-color .18s; }
+.ai-cmptabs button:hover { border-color: var(--hm-orange, #e3651d); color: var(--hm-ink, #2a1f17); }
+.ai-cmptabs button.on { background: var(--hm-ink, #2a1f17); border-color: var(--hm-ink, #2a1f17); color: var(--hm-paper, #f7f2e8); }
+.ai-cmptabs button.live::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 9px; border-radius: 50%; background: var(--hm-orange, #e3651d); animation: vsPulse 1s ease-in-out infinite; vertical-align: 1px; }
+.ai-cmptabbed .ai-cmpcol[hidden] { display: none; }
+.ai-cmptabbed .ai-cmpcol .ai-m { margin: 0; max-width: none; }
+.ai-cmptabbed .ai-cmpcol .ai-b { font-size: 1em; max-width: none; width: 100%; box-sizing: border-box; }
