@@ -36,6 +36,7 @@
 
   // 藝廊可改用 YouTube 影片當背景音樂：在 data/projects.js 的 SITE.galleryMusicYouTube 貼上影片或播放清單網址（留空 = 用內建合成的波薩諾瓦）
   const ytParse = (raw) => {
+    if (Array.isArray(raw)) { const ids = raw.map((u) => (ytParse(u) || {}).id).filter(Boolean); return ids.length ? { id: ids[0], ids } : null; }   // 多首：依序自動播放、播完循環
     const t = String(raw || "").trim(); if (!t) return null;
     const list = (/[?&]list=([\w-]+)/.exec(t) || [])[1], id = (/(?:[?&]v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/.exec(t) || (/^[\w-]{11}$/.test(t) ? [0, t] : []))[1];
     return id || list ? { id, list } : null;
@@ -180,9 +181,9 @@
       const make = () => {
         try {
           const pv = { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1, loop: 1 };
-          if (Y.cfg.list) pv.list = Y.cfg.list; if (Y.cfg.id && !Y.cfg.list) pv.playlist = Y.cfg.id;
+          if (Y.cfg.list) pv.list = Y.cfg.list; if (Y.cfg.ids && Y.cfg.ids.length > 1) pv.playlist = Y.cfg.ids.slice(1).join(","); else if (Y.cfg.id && !Y.cfg.list) pv.playlist = Y.cfg.id;
           Y.player = new window.YT.Player(Y.dom, { width: 200, height: 113, videoId: Y.cfg.id || undefined, playerVars: pv,
-            events: { onReady: () => { Y.ready = true; try { Y.player.setVolume(0); } catch (_) {} }, onError: fail, onStateChange: (e) => { if (e.data === 0 && !Y.cfg.list) { try { Y.player.playVideo(); } catch (_) {} } } } });
+            events: { onReady: () => { Y.ready = true; try { Y.player.setVolume(0); } catch (_) {} }, onError: () => { if (Y.cfg.ids && Y.cfg.ids.length > 1) { try { Y.player.nextVideo(); } catch (_) { fail(); } } else fail(); }, onStateChange: (e) => { if (e.data === 0 && !Y.cfg.list && !(Y.cfg.ids && Y.cfg.ids.length > 1)) { try { Y.player.playVideo(); } catch (_) {} } } } });
         } catch (_) { fail(); }
       };
       if (window.YT && window.YT.Player) make();
