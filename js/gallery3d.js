@@ -1385,7 +1385,7 @@
           for (const z of [-7.2, -6.5, -5.8, -3.9, -1.2]) U(new THREE.BoxGeometry(0.55, 0.82, 0.07), cw, cx, 0.43, z);
           addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
         // 冷氣：客廳在南牆門口那一側（與海報牆對面）、臥室在北牆高處
-        for (const [x, zz, s] of [[8.2, Z1 - 0.14, -1], [3.95, Z0 + 0.14, 1]]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 2.45, zz); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 2.36, zz + s * 0.11); }
+        for (const [x, zz, s] of [[8.2, Z1 - 0.14, -1], [3.95, Z0 + 0.14, 1]]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 1.95, zz); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 1.86, zz + s * 0.11); }
       }
 
       // 毛毛蟲沙發：圍著圓地毯東側的一整條弧形沙發 —— 8 節毛茸茸的綠色身體（每一節都能坐）+ 笑笑的頭（眼睛、腮紅、觸角）
