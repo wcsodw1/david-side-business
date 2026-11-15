@@ -51,7 +51,7 @@
       last = now; pane.innerHTML = html(P); pane.scrollTop = keep;
       pane.querySelectorAll(".dh-row").forEach((r) => { const a = r.querySelector(".dh-name"), id = a && decodeURIComponent((a.getAttribute("href") || "").replace("#/p/", "")); if (id && hot[id] > t0) r.classList.add("dh-flash"); });
     };
-    const show = (v) => { if (v === open) return; open = v; pane.classList.toggle("open", v); btn.classList.toggle("on", v || pinned); btn.setAttribute("aria-expanded", String(v)); if (v) { btn.querySelector("i").hidden = true; draw(false); } };
+    const show = (v) => { if (v === open) return; open = v; pane.classList.toggle("open", v); btn.classList.toggle("on", v || pinned); btn.setAttribute("aria-expanded", String(v)); if (v) { btn.querySelector("i").hidden = true; pane.style.top = Math.max(60, hdr.offsetTop + hdr.offsetHeight + 8) + "px"; draw(false); } };
     const later = () => { clearTimeout(closeT); closeT = setTimeout(() => { if (!pinned) show(false); }, 280); };
     const now = () => { clearTimeout(closeT); show(true); };
     const hoverOK = matchMedia("(hover: hover)").matches;

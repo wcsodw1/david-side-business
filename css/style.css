@@ -1198,10 +1198,13 @@ body.locked .santa-fab { display: none; }
 .robot-chat .rc-dash[aria-pressed="true"]::after { content: "📌"; font-size: 11px; margin-left: 6px; }
 .robot-chat .rc-dash i { position: absolute; right: 4px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--hm-orange); box-shadow: 0 0 0 2px var(--hm-paper); }
 .robot-chat .office-ai { position: relative; }
-.robot-chat .dh-pane { position: absolute; z-index: 30; right: 20px; top: 66px; width: min(580px, calc(100% - 40px)); max-height: calc(100% - 90px); overflow-y: auto; background: #fffdf8; border: 1px solid var(--hm-line); border-radius: 22px; box-shadow: 0 30px 70px -18px rgba(42,31,23,.55), 0 4px 14px rgba(42,31,23,.14);
-  transform-origin: 100% 0; transform: perspective(900px) translate(8px, -6px) rotateY(-24deg) scale(.86); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .34s cubic-bezier(.2,.8,.2,1), opacity .22s ease, visibility 0s linear .34s; }
-.robot-chat .dh-pane.open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; transition: transform .34s cubic-bezier(.2,.8,.2,1), opacity .22s ease, visibility 0s; }
+.robot-chat .dh-pane { position: absolute; z-index: 30; left: 14px; right: 14px; bottom: 14px; top: 70px; overflow-y: auto; background: #fffdf8; border: 1px solid var(--hm-line); border-radius: 22px; box-shadow: 0 30px 70px -18px rgba(42,31,23,.55), 0 4px 14px rgba(42,31,23,.14);
+  transform-origin: 100% 0; transform: scale(.18, .12); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .2s ease, visibility 0s linear .38s; }   /* 收起時縮回右上角的按鈕 */
+.robot-chat .dh-pane.open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; transition: transform .38s cubic-bezier(.2,.8,.2,1), opacity .2s ease, visibility 0s; }   /* 展開 = 完全蓋住 AI 對話區 */
+.robot-chat:not(.rc-full) .dh-pane { left: 34px; right: 34px; bottom: 30px; }
+.robot-chat.rc-full .dh-pane { left: max(28px, calc((100vw - 1180px) / 2)); right: max(28px, calc((100vw - 1180px) / 2)); bottom: 22px; }   /* 跟 AI 對話區同寬 */
+.robot-chat .dh-pane .dh { max-width: 1100px; margin: 0 auto; padding: 28px 34px 36px; }
 .robot-chat .dh { padding: 22px 24px 28px; }
-@media (max-width: 640px) { .robot-chat .dh-pane { right: 10px; left: 10px; width: auto; top: 62px; } }
+@media (max-width: 640px) { .robot-chat .dh-pane { left: 8px; right: 8px; bottom: 8px; } }
 .dh-row.dh-flash { animation: dhFlash 2.4s ease-out; }
 @keyframes dhFlash { 0% { background: #fde3cf; box-shadow: 0 0 0 3px rgba(227,101,29,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(227,101,29,0); } }
