@@ -1234,7 +1234,7 @@
       mk(new THREE.BoxGeometry(1.8, 0.5, 0.45), bedF, 7.7, 0.25, -0.6); { const tv = mk(new THREE.BoxGeometry(1.5, 0.85, 0.06), M(0x0c0c12, 0.2, 0.4), 7.7, 1.2, -0.55); } addObs(7.7, -0.6, 0.95, 0.3, 0, 0.5);
       // 廚房 / 餐廳（東半邊）
       mk(new THREE.BoxGeometry(3.0, 0.9, 0.7), M(0xe8e4dc, 0.6), 10.1, 0.45, Z1 - 0.45); mk(new THREE.BoxGeometry(3.1, 0.05, 0.75), M(0x5a5560, 0.4, 0.2), 10.1, 0.93, Z1 - 0.45); addObs(10.1, Z1 - 0.45, 1.55, 0.4, 0);
-      mk(new THREE.BoxGeometry(0.9, 2.0, 0.75), M(0xdadde4, 0.4, 0.5), 11.45, 1.0, Z1 - 0.5); addObs(11.45, Z1 - 0.5, 0.5, 0.42, 0);   // 冰箱
+      // （一樓冰箱已移除）
       mk(new THREE.CylinderGeometry(0.75, 0.75, 0.06, 20), wood, 8.6, 0.74, -3.5); mk(new THREE.CylinderGeometry(0.07, 0.1, 0.72, 10), dk, 8.6, 0.37, -3.5); addObs(8.6, -3.5, 0.8, 0.8, 0, 0.8);
       for (const [dx, dz] of [[-1.0, 0], [1.0, 0], [0, -1.0], [0, 1.0]]) { mk(new THREE.BoxGeometry(0.42, 0.06, 0.42), terra, 8.6 + dx, 0.46, -3.5 + dz); mk(new THREE.BoxGeometry(0.4, 0.36, 0.05), terra, 8.6 + dx * 1.12, 0.66, -3.5 + dz * 1.12); }
       // 餐桌上的早餐（桌面高度 0.77）：兩人份的盤子、荷包蛋、吐司、杯子，中間是麵包籃、果汁、水果
