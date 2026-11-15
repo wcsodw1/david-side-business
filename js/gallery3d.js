@@ -382,6 +382,7 @@
         <button type="button" id="gRotR" aria-label="向右轉視角">⟳</button>
         <button type="button" id="gAuto" aria-pressed="false">360° 環繞</button>
         <button type="button" class="g-jump" id="gJump" aria-label="跳">⤒</button>
+        <button type="button" id="gFpv" aria-pressed="false">第一人稱</button>
         <button type="button" id="gReset">重置視角</button>
       </div>
       <div class="g-board-ov" id="gBoardOv" hidden></div>
@@ -1738,6 +1739,8 @@
     const camT = new THREE.Vector3(pos.x, 0.9, pos.z), bias = { x: 0, z: 0 };
     const lastTap = {}, dbl = { l: 0, r: 0, u: 0, d: 0 };
     let lastDown = 0;
+    let S_fpvKey = null;
+    let fpv = false, fpPitch = 0;   // 第一人稱：鏡頭在眼睛位置，往 yaw 方向看（拖曳轉頭，V 鍵或按鈕切換）
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
     let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;
@@ -1915,6 +1918,7 @@
       if (ptrs.size === 2) { const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) dist = clamp(dist * (pinch / d), 4.5, 40); pinch = d; yaw -= dx * 0.003; return; }
       if (!mouse || mouse.id !== e.pointerId) return;
       mouse.moved += Math.abs(dx) + Math.abs(dy); mouse.x = e.clientX; mouse.y = e.clientY;
+      if (fpv) { mouse.mode = "look"; yaw -= dx * 0.005; fpPitch = clamp(fpPitch - dy * 0.004, -1.1, 1.1); cv.style.cursor = "grabbing"; return; }
       if (mouse.mode === "orbit") { yaw -= dx * 0.006; elev = clamp(elev + dy * 0.004, 16 * Math.PI / 180, 84 * Math.PI / 180); cv.style.cursor = "grabbing"; return; }
       if (!mouse.pickU && (mouse.moved > 6 || performance.now() - mouse.t0 > 160)) mouse.mode = "steer";
       if (mouse.mode === "steer") { const g = groundAt(e); if (g) mouse.steer = g; }
@@ -1957,6 +1961,11 @@
     holdBtn(root.querySelector("#gRotR"), () => (rotHold = 1), () => (rotHold = 0));
     root.querySelectorAll("#gDpad button").forEach((b) => holdBtn(b, () => { const k = b.dataset.d, n = performance.now(); touch[k] = 1; cancelRoute(); if (n - (lastTap["t" + k] || 0) < 320) { if (k === "l" && dblBackExit()) { touch.l = 0; lastTap["t" + k] = 0; return; } dbl[k] = 1; } lastTap["t" + k] = n; }, () => { touch[b.dataset.d] = 0; dbl[b.dataset.d] = 0; }));
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
+    const fpvBtn = root.querySelector("#gFpv");
+    const setFpv = (on) => { fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : 36; camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
+    fpvBtn.addEventListener("click", () => setFpv(!fpv));
+    S_fpvKey = (e) => { if (e.code === "KeyV" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e) && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) setFpv(!fpv); };
+    window.addEventListener("keydown", S_fpvKey);
     root.querySelector("#gReset").addEventListener("click", () => { yaw = view0.yaw; elev = view0.elev; dist = view0.dist; stopAuto(); });
 
     const refreshBangs = () => bangs.forEach((b) => { if (b) b.visible = false; });   // 驚嘆號已拿掉（未讀邏輯保留在 NEWS 裡）
@@ -2127,7 +2136,12 @@
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5)); camT.y = lerp(camT.y, 0.9 + py, Math.min(1, dt * 4));
       const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * 1, hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
       camera.position.set(camT.x + Math.sin(yaw) * hd, camT.y + vd, camT.z + Math.cos(yaw) * hd);
-      camera.lookAt(camT);
+      if (fpv) {
+        const eyeY = lerp(py + jy, POOL.surface - 0.02, swimT) + (sitting >= 0 ? 1.2 : 1.6), cp = Math.cos(fpPitch), dx = -Math.sin(yaw), dz = -Math.cos(yaw);
+        av.root.visible = false;
+        camera.position.set(pos.x + dx * 0.12, eyeY, pos.z + dz * 0.12);
+        camera.lookAt(camera.position.x + dx * cp, eyeY + Math.sin(fpPitch), camera.position.z + dz * cp);
+      } else camera.lookAt(camT);
       sky.position.copy(camera.position); clouds.position.copy(camera.position);
       clouds.rotation.y += dt * 0.004; hourTick += dt; if (hourTick > 0.25) { hourTick = 0; applyTime(clockHour()); }
       waveTex.offset.x += dt * 0.3; waveTex.offset.y += dt * 0.002;   // 船往東開，海面往船尾（西）流 glTex.offset.y -= dt * 0.012;
@@ -2202,7 +2216,7 @@
     if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
-      root, cv, renderer, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
+      root, cv, renderer, fpvKey: S_fpvKey, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
       
     };
     api.active = true; api.debug = S; document.body.classList.add("gl3d");
@@ -2212,7 +2226,7 @@
   function unmount() {
     if (!S) return;
     S.raf();
-    window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
+    if (S.fpvKey) window.removeEventListener("keydown", S.fpvKey); window.removeEventListener("keydown", S.onKey); window.removeEventListener("keyup", S.onKey);
     window.removeEventListener("blur", S.clearKeys); document.removeEventListener("visibilitychange", S.clearKeys); window.removeEventListener("resize", S.resize);
     window.removeEventListener("news:change", S.refreshBangs); window.removeEventListener("store:change", S.onStore);
     if (window.Director) window.Director.unmount(); if (window.Lights) window.Lights.unmount(); if (window.Doors) window.Doors.unmount(); if (window.Music) window.Music.unmount(); if (window.Ship) window.Ship.unmount(); if (window.Animals) window.Animals.unmount(); if (window.Rooms) window.Rooms.unmount(); if (window.Robot) window.Robot.unmount(); if (window.Presence) window.Presence.unmount(); if (window.Aeris) window.Aeris.unmount(); document.body.classList.remove("board-open", "dir-typing");
