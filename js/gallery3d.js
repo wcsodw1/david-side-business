@@ -1522,12 +1522,12 @@
         const HOMEX = X0 - 0.7, HOMEZ = -0.15, HALLX = COURT_CX - HX + 1.4, HALLZ = -HZ + 0.3;
         mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
         mkDoor(HALLX, HALLZ, 0, "→ 回家"); addObs(HALLX, HALLZ, 0.62, 0.15, undefined, 3);
-        const doors = [{ x: HOMEX - 0.35, z: HOMEZ, t: 0, armed: true, to: [COURT_CX - HX + 1.8, 0.0] }, { x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 0] }];
+        const doors = [{ x: HOMEX - 0.45, z: HOMEZ, t: 0, armed: true, to: [COURT_CX - HX + 1.8, 0.0] }, { x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 0] }];
         tickHooks.push((dt) => { if (window.GUESTLIKE || typeof sitting !== "undefined" && sitting >= 0) return;
-          for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.5;
+          for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.75;
             if (!near) { d.armed = true; d.t = 0; continue; }
             if (!d.armed) continue; d.t += dt;
-            if (d.t > 0.5) { d.t = 0; for (const o of doors) o.armed = false; if (S && S.teleport) S.teleport(d.to[0], d.to[1], 0); } } }); }
+            if (d.t > 0.1) { d.t = 0; for (const o of doors) o.armed = false; if (S && S.teleport) S.teleport(d.to[0], d.to[1], 0); } } }); }
       // ===== 公園（房子外面，一路到美術館入口）=====
       const tree = (x, z, s = 1) => {
         mk(new THREE.CylinderGeometry(0.12 * s, 0.17 * s, 1.6 * s, 8), M(0x6a4a2e, 0.9), x, 0.8 * s, z);
