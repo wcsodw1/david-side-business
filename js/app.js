@@ -455,8 +455,8 @@
     if (window.News && window.PERSONA !== "guest") window.News.mount(P, {});
     render();
   }
-  function lock(keepAccts) {
-    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); if (!keepAccts) { sessionStorage.removeItem("dsb-accts"); localStorage.removeItem("dsb-accts"); } } catch (_) {}   // 鎖定 = 一併忘記這台瀏覽器記住的帳號
+  function lock() {
+    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); } catch (_) {}
     location.hash = "";
     if (window.News) window.News.unmount();
     app.hidden = true; nav.hidden = true; app.innerHTML = "";
@@ -473,7 +473,7 @@
     if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha)) {
       window.PERSONA = hv === PASS_HASH ? "david" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
       try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.PERSONA === "guest" ? GUEST_HASH : PASS_HASH); } catch (_) {}
-      saveAcct(window.PERSONA, HASHES[window.PERSONA], $("#remember").checked);
+      { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } }
       enter();
     } else {
       $("#gateError").textContent = "密碼不正確，請再試一次";
@@ -482,28 +482,14 @@
     }
   });
   /* ---------- 切換帳號 ---------- */
-  // 這台瀏覽器登入過的帳號雜湊（只存雜湊，同 KEY 的「記住我」）；切換時不用再輸入密碼，並用「帶時間戳的網址」重新載入，確保一定是最新版網站
-  const ACCT_KEY = "dsb-accts", NAMES = { david: "David", aeris: "ARIES", guest: "訪客" };
-  const readAccts = () => { const o = {}; for (const st of [localStorage, sessionStorage]) { try { Object.assign(o, JSON.parse(st.getItem(ACCT_KEY) || "{}")); } catch (_) {} } return o; };
-  const saveAcct = (who, hash, remember) => { try { const st = remember ? localStorage : sessionStorage, o = JSON.parse(st.getItem(ACCT_KEY) || "{}"); o[who] = hash; st.setItem(ACCT_KEY, JSON.stringify(o)); } catch (_) {} };
-  const HASHES = { david: PASS_HASH, aeris: AERIS_HASH, guest: GUEST_HASH };
-  const acctMenu = $("#acctMenu"), switchBtn = $("#switchBtn");
-  const closeAcct = () => { acctMenu.hidden = true; switchBtn.setAttribute("aria-expanded", "false"); };
-  const freshReload = () => { location.replace(location.pathname + "?r=" + Date.now() + location.hash); };   // 新網址 → 不吃快取
-  const switchTo = (who) => {
-    const known = readAccts()[who];
-    if (!known) { closeAcct(); lock(true); $("#gateError").textContent = "請輸入「" + NAMES[who] + "」的密碼"; return; }
-    let inLocal = false; try { inLocal = !!localStorage.getItem(KEY); } catch (_) {}
-    try { sessionStorage.setItem(KEY, known); if (inLocal) localStorage.setItem(KEY, known); sessionStorage.removeItem(OFFICE_KEY); } catch (_) {}
-    freshReload();
-  };
-  const drawAcct = () => {
-    const accts = readAccts();
-    acctMenu.innerHTML = ["david", "aeris", "guest"].map((w) => `<button type="button" data-w="${w}" ${window.PERSONA === w ? 'aria-current="true"' : ""}><span>${NAMES[w]}${window.PERSONA === w ? " ✓" : ""}</span><small>${accts[w] ? "切換" : "需要密碼"}</small></button>`).join("");
-    acctMenu.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { if (b.dataset.w === window.PERSONA) { closeAcct(); return; } switchTo(b.dataset.w); }));
-  };
-  switchBtn.addEventListener("click", (e) => { e.stopPropagation(); if (acctMenu.hidden) { drawAcct(); acctMenu.hidden = false; switchBtn.setAttribute("aria-expanded", "true"); } else closeAcct(); });
-  document.addEventListener("click", (e) => { if (!acctMenu.hidden && !acctMenu.contains(e.target)) closeAcct(); });
+  // 按「切換帳號」→ 直接回到密碼區（輸入 David / ARIES / guest 任一密碼）；登入成功後用帶時間戳的網址重新載入，確保一定是最新版網站
+  const SW_KEY = "dsb-switching", HASHES = { david: PASS_HASH, aeris: AERIS_HASH, guest: GUEST_HASH };
+  const freshReload = () => { location.replace(location.pathname + "?r=" + Date.now() + location.hash); };
+  $("#switchBtn").addEventListener("click", () => {
+    try { sessionStorage.setItem(SW_KEY, "1"); } catch (_) {}
+    lock();
+    $("#gateError").textContent = "請輸入要切換的帳號密碼";
+  });
   $("#lockBtn").addEventListener("click", () => lock());
   window.addEventListener("hashchange", () => { if (!document.body.classList.contains("locked")) render(); });
   // AI 總管直接改了白板資料（狀態 / Next Step / 時程表…）→ 重畫目前頁面，看板與甘特圖立刻反映（3D 藝廊自己會聽 store:change）
@@ -511,5 +497,5 @@
 
   let ok = false;
   try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH) window.PERSONA = "guest"; } catch (_) {}
-  if (ok) { try { saveAcct(window.PERSONA, HASHES[window.PERSONA], !!localStorage.getItem(KEY)); } catch (_) {} enter(); } else setTimeout(() => $("#pw").focus(), 50);
+  if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();
