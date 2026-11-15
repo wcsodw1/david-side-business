@@ -1368,7 +1368,7 @@
         const st = new THREE.CanvasTexture(sk); if (THREE.sRGBEncoding) st.encoding = THREE.sRGBEncoding;
         const skyM = new THREE.MeshBasicMaterial({ map: st, toneMapped: false });
         { const dayC = new THREE.Color(0xffffff), nightC = new THREE.Color(0x141c3a), tmp = new THREE.Color();   // 窗外的天空隨時間變亮 / 變暗（夜晚是深藍色）
-          tickHooks.push(() => { tmp.copy(dayC).lerp(nightC, Math.min(1, skyU.night.value)); skyM.color.copy(tmp); }); }
+          tickHooks.push(() => { tmp.copy(dayC).lerp(nightC, Math.min(1, skyU.night.value)); skyM.color.copy(tmp); if (GUEST) skyM.color.setRGB(0, 0, 0); }); }
         { const w = 6.8, cz = -3.9, X = X1 - 0.075;                                         // 客廳（東牆）
           const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(X, UY + 1.6, cz); q.rotation.y = -PI / 2; scene.add(q);
           const bar = (sw, sh, sd, z, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(sd, sh, sw), gold); b.position.set(X - 0.02, UY + y, z); scene.add(b); };
@@ -1700,7 +1700,8 @@
     }
 
     /* ----- 人物 ----- */
-    const av = window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
+    const GUEST = window.PERSONA === "guest";   // 訪客：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
+    const av = GUEST ? buildAvatar(THREE, { blazer: 0x5d7fa3, shirt: 0x5d7fa3, pants: 0x3d4a5c, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x2a2420 }) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (!GUEST && window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
@@ -1731,7 +1732,7 @@
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
     const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 4.5;           // 起床後站在自己那一側的床邊
-    const pos = spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
+    const pos = GUEST ? { x: 8.8, z: -3.6 } : spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -1745,14 +1746,15 @@
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
     let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;
-    let wake = spawn < 0 ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
-    if (wake) { lvl = 1; py = UY; lvlS = 1; }   // 開場在二樓
+    let wake = spawn < 0 && !GUEST ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
+    if (wake || GUEST) { lvl = 1; py = UY; lvlS = 1; }   // 開場在二樓
     camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
 
 
-    if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
+    if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>訪客</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
+    else if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
     const infoEl = root.querySelector("#gInfo"); let lastInfoS = 0, dwell = 0, dwellS = -1;
     const dOut = (s) => (s === sPB ? { x: COURT_CX - HX - 1.0, z: 0 } : L2W(s, DOOR_DX, ROOM_Z1 + 0.9));          // 門外一步的位置
@@ -2123,6 +2125,7 @@
       if (inWater !== wasSwim) { wasSwim = inWater; if (window.Music) window.Music.sfx("splash", pos.x, pos.z, 1.3); }
       swimT = lerp(swimT, inWater ? 1 : 0, Math.min(1, dt * 5));
       if (swimT < 0.01 && !wake) { av.root.rotation.order = "XYZ"; av.root.rotation.x = 0; av.root.rotation.z = 0; }   // 修正：開場動畫之後角色身體殘留的歪斜（倒著走）
+      if (GUEST) { pos.x = clamp(pos.x, HOUSE.x0 - 0.35, HOUSE.x1 - 0.4); pos.z = clamp(pos.z, HOUSE.z0 + 0.4, HOUSE.z1 - 0.4); py = UY; lvl = 1; }   // 訪客不能離開二樓房間
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
         wake.t += dt; const T = wake.t, bx = 4.4, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
@@ -2214,7 +2217,7 @@
         const T = shells._tr; T.o.copy(camera.position); T.h.set(pos.x, py + jy + 1.0, pos.z); T.d.subVectors(T.h, T.o); const dist = T.d.length(); T.d.normalize(); T.ray.set(T.o, T.d);
         for (const s of shells) { let want = 1; if (insH > 0.5 && s.m.visible) { s.m.updateWorldMatrix(true, false); T.box.setFromObject(s.m); const hit = T.ray.intersectBox(T.box, T.hit); if (hit && T.o.distanceTo(hit) < dist - 0.15) want = 0.3; } s.op += (want - s.op) * Math.min(1, dt * 8); s.m.material.opacity = s.op; s.m.material.depthWrite = s.op > 0.9; }
       }
-      for (const r of roofs) { const k = r.grp === "M" ? insM : r.grp === "H2" ? insH * (1 - lvlS) : insH; r.mat.opacity = 1 - k; r.mat.depthWrite = k < 0.02; r.m.visible = k < 0.97; }   // H2：二樓地板（人在一樓時消失，才看得到一樓）
+      for (const r of roofs) { const k = r.grp === "M" ? insM : r.grp === "H2" ? insH * (1 - lvlS) : insH; r.mat.opacity = 1 - k; r.mat.depthWrite = k < 0.02; r.m.visible = k < 0.97 && !r.m._gh; }   // H2：二樓地板（人在一樓時消失，才看得到一樓）
       for (const w of shells) {
         if (w.grp === "U") w.m.scale.y = lerp(1, lerp(0.01, w.low, lvlS), Math.max(insH, lvlS));     // 二樓牆：人在二樓（含屋外樓梯上）一律是同樣高度的矮牆，在一樓時收起來
         else { const k = w.grp === "M" ? insM : insH; w.m.scale.y = lerp(1, w.low, k); }
@@ -2222,16 +2225,21 @@
       renderer.render(scene, camera);
     };
     raf = requestAnimationFrame(tick);
-    if (window.Director) window.Director.mount(ctx);
-    if (window.Aeris) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (GUEST) {   // 訪客：屋外一律看不到 —— 把不在二樓房間範圍內的東西全部藏起來，背景純黑
+      scene.background = new THREE.Color(0x000000); scene.updateMatrixWorld(true);
+      const bb = new THREE.Box3(), gx0 = HOUSE.x0 - 1.0, gx1 = HOUSE.x1 + 0.5, gz0 = HOUSE.z0 - 0.5, gz1 = HOUSE.z1 + 0.5;
+      for (const o of scene.children) { if (o.isLight || o === av.root || o === sun || o === sun.target) continue; bb.setFromObject(o); if (bb.isEmpty()) continue; if (!(bb.min.x >= gx0 && bb.max.x <= gx1 && bb.min.z >= gz0 && bb.max.z <= gz1 && bb.max.y > UY - 0.1)) o.visible = false, o._gh = true; }
+    }
+    if (window.Director && !GUEST) window.Director.mount(ctx);
+    if (window.Aeris && !GUEST) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
     if (window.Lights) try { window.Lights.mount(ctx); } catch (err) { console.error("燈光載入失敗：", err); }
     if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
-    if (window.Ship) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
-    if (window.Robot) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
-    if (window.Rooms) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
-    if (window.Animals) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
-    if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
+    if (window.Ship && !GUEST) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
+    if (window.Robot && !GUEST) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
+    if (window.Rooms && !GUEST) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
+    if (window.Animals && !GUEST) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
+    if (window.Presence && !GUEST) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
       root, cv, renderer, fpvKey: S_fpvKey, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
