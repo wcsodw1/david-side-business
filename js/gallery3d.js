@@ -1301,7 +1301,7 @@
       }
       const rugP = new THREE.Mesh(new THREE.CircleGeometry(1.5, 32), new THREE.MeshStandardMaterial({ color: 0xf2c4d4, roughness: 1 })); rugP.rotation.x = -PI / 2; rugP.position.set(8.2, UY + 0.012, -2.8); rugP.receiveShadow = true; scene.add(rugP);
       U(new THREE.CylinderGeometry(0.26, 0.19, 0.4, 14), M(0xffffff, 0.7), 11.2, 0.2, -0.7); for (let k = 0; k < 7; k++) { const a = k * 2.2; U(new THREE.SphereGeometry(0.18, 10, 8), M(0x4fae7a, 0.85), 11.2 + Math.cos(a) * 0.12, 0.55 + k * 0.07, -0.7 + Math.sin(a) * 0.12, false); }
-      U(new THREE.CylinderGeometry(0.03, 0.03, 1.6, 8), dk, 9.6, 0.8, -0.6); U(new THREE.SphereGeometry(0.16, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffe0ec, emissive: 0xffa8c8, emissiveIntensity: 1.6 }), 9.6, 1.7, -0.6, false);
+      // （二樓落地燈已移除）
       U(new THREE.SphereGeometry(0.35, 14, 10), M(0xf7e0c8, 0.9), 5.6, 0.35, -4.6); U(new THREE.SphereGeometry(0.22, 12, 9), M(0xf7e0c8, 0.9), 5.6, 0.8, -4.6);    // 玩偶
 
       /* ---- 二樓新格局：客廳（樓梯上來）+ 主臥室（含套房浴室）---- */
