@@ -1166,7 +1166,7 @@
       }
 
       // ===== David 的家：兩層樓（一樓 David、二樓 Aeris）=====
-      const plasterH = M(0xece3d2, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
+      const plasterH = M(window.PERSONA === "guest" ? 0xc6cad0 : 0xece3d2, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
       const shellBox = (w, h, d, x, z, mat, grp, low, y0 = 0) => { const g0 = new THREE.BoxGeometry(w, h, d); g0.translate(0, h / 2, 0); const m = new THREE.Mesh(g0, mat); m.position.set(x, y0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); shells.push({ m, grp, low }); return m; };
       const X0 = HOUSE.x0, X1 = HOUSE.x1, Z0 = HOUSE.z0, Z1 = HOUSE.z1, ZC = (Z0 + Z1) / 2, DW0 = -3.2, DW1 = -1.6, FH = UY - 0.22, WT = 2.8, TOP = UY + WT;   // FH：一樓牆高；UY：二樓地板面；TOP：二樓牆頂
       const ft = floorTex.clone(); ft.needsUpdate = true; ft.repeat.set(1.4, 1);
@@ -1185,7 +1185,7 @@
       const paneM = new THREE.MeshStandardMaterial({ color: 0xbfe0ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.45, emissive: 0x4a6a90, emissiveIntensity: 0.3 });
       for (const [z, y] of [[-6.0, 1.5], [-0.7, 1.5]]) { mk(new THREE.BoxGeometry(0.05, 1.2, 1.4), paneM, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 1.3, 0.08), bronze, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 0.08, 1.5), bronze, X1 + 0.09, y, z, false); }
       // 二樓地板（中間留樓梯口）：四塊，頂面 = UY
-      const slabM = new THREE.MeshStandardMaterial({ color: 0xeadfc8, roughness: 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
+      const slabM = new THREE.MeshStandardMaterial({ color: window.PERSONA === "guest" ? 0x9b978d : 0xeadfc8, roughness: window.PERSONA === "guest" ? 0.35 : 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
       const slab = (x0, x1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.22, z1 - z0), slabM); m.position.set((x0 + x1) / 2, UY - 0.11, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat: slabM, grp: "H2" }); };
       slab(X0 - 0.7, X1, Z0, Z1);   // 二樓往西多出 0.7 公尺（臥室 / 走道）；樓梯在屋外（南側），二樓地板是完整一塊
 
