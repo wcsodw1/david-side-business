@@ -1740,6 +1740,7 @@
     const lastTap = {}, dbl = { l: 0, r: 0, u: 0, d: 0 };
     let lastDown = 0;
     let S_fpvKey = null;
+    const fpTilt = { u: 0, d: 0 }, fpTap = {};
     let fpv = false, fpPitch = 0;   // 第一人稱：鏡頭在眼睛位置，往 yaw 方向看（拖曳轉頭，V 鍵或按鈕切換）
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
@@ -1827,6 +1828,14 @@
       return false;
     };
     const onKey = (e) => {
+      if (fpv && (e.code === "ArrowUp" || e.code === "ArrowDown")) {   // 第一人稱：連按兩下 ↑ / ↓（第二下按住）= 抬頭 / 低頭；單按仍是前進 / 後退
+        const k = e.code === "ArrowUp" ? "u" : "d";
+        if (e.type === "keyup") { if (fpTilt[k]) { fpTilt[k] = 0; keys[k] = 0; dbl[k] = 0; return; } }
+        else if (e.type === "keydown" && !typing(e) && !e.metaKey && !e.ctrlKey && !e.altKey && !blocked()) {
+          if (fpTilt[k]) { e.preventDefault(); return; }
+          if (!e.repeat) { const n = performance.now(); if (n - (fpTap[k] || 0) < 320) { fpTilt[k] = 1; fpTap[k] = 0; keys[k] = 0; dbl[k] = 0; e.preventDefault(); return; } fpTap[k] = n; }
+        }
+      }
       if (fpv && (e.code === "ArrowLeft" || e.code === "ArrowRight")) {   // 第一人稱：← → 轉頭（A / D 仍是左右平移）
         const k = e.code === "ArrowLeft" ? "q" : "e";
         if (e.type === "keyup") keys[k] = 0;
@@ -1969,7 +1978,7 @@
     autoBtn.addEventListener("click", () => { auto = !auto; autoBtn.setAttribute("aria-pressed", String(auto)); });
     const fpvBtn = root.querySelector("#gFpv");
     const keysEl = root.querySelector(".g-keys"), keysHTML = keysEl.innerHTML;
-    const FPV_HINT = '第一人稱：<kbd>Q</kbd> <kbd>←</kbd> 向左轉頭　<kbd>E</kbd> <kbd>→</kbd> 向右轉頭　拖曳滑鼠：轉頭 / 抬頭低頭　<kbd>W</kbd> 前進　<kbd>S</kbd> 後退　<kbd>A</kbd> <kbd>D</kbd> 左右平移　<kbd>V</kbd> 回到原視角';
+    const FPV_HINT = '第一人稱：<kbd>Q</kbd> <kbd>←</kbd> 向左轉頭　<kbd>E</kbd> <kbd>→</kbd> 向右轉頭　拖曳滑鼠：轉頭 / 抬頭低頭　<kbd>↑</kbd><kbd>↓</kbd> 連按兩下（第二下按住）：抬頭 / 低頭　<kbd>W</kbd> <kbd>S</kbd> 或單按 <kbd>↑</kbd><kbd>↓</kbd>：前進 / 後退　<kbd>A</kbd> <kbd>D</kbd> 左右平移　<kbd>V</kbd> 回到原視角';
     const setFpv = (on) => { keysEl.innerHTML = on ? FPV_HINT : keysHTML; fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : 36; camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
     fpvBtn.addEventListener("click", () => setFpv(!fpv));
     S_fpvKey = (e) => { if (e.code === "KeyV" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e) && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) setFpv(!fpv); };
@@ -2061,6 +2070,7 @@
       } else { stuckT = 0; stuckX = pos.x; stuckZ = pos.z; }
       const rot = fpv ? (keys.q - keys.e) - rotHold : (keys.e - keys.q) + rotHold;   // 第一人稱：Q / ← / ⟲ = 向左轉頭，E / → / ⟳ = 向右轉頭
       if (rot) { yaw += rot * (fpv ? 1.9 : 1.6) * dt; stopAuto(); }
+      if (fpv && (fpTilt.u || fpTilt.d)) fpPitch = clamp(fpPitch + (fpTilt.u - fpTilt.d) * 1.3 * dt, -1.1, 1.1);
       if (auto) yaw += 0.16 * dt;
 
       const ix = (keys.r | touch.r) - (keys.l | touch.l), iz = (keys.u | touch.u) - (keys.d | touch.d);
