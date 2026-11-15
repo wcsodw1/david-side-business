@@ -1275,6 +1275,8 @@
         const lp = new THREE.PointLight(0xffd9a0, 2.2, 10); lp.position.set(LX, LY, LZ); lp.userData.base = 2.2; akari.light = lp; akari.mat = shade.material; lp.intensity = 0; shade.material.emissiveIntensity = 0.06; scene.add(lp);
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
+        // 臥室 / 浴室 / 走道的燈：人走進那個房間就亮起來（夜晚也一樣明亮），人離開就慢慢熄掉
+        akari.rooms = [[3.0, -3.1, 3.6, 13, (x, z) => x < 6.3 && z > -5.6 && z < -0.55], [4.6, -6.8, 3.2, 8, (x, z) => x > 2.8 && x < 6.3 && z < -5.6], [3.0, -0.1, 2.4, 9, (x, z) => x < 6.3 && z >= -0.55]].map(([rx, rz, base, dist, test]) => { const l = new THREE.PointLight(0xfff1d6, 0, dist); l.position.set(rx, UY + 2.4, rz); scene.add(l); return { l, base, test, k: 0 }; });
         if (window.PERSONA === "guest") { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
       }
       { const _bc = scene.children.length, _ob = obstacles.length; bed(5.2, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) { const m = scene.children[k]; m.position.x = 6.22 - (6.22 - (10.4 - m.position.x)) * 1.25; m.scale.x *= 1.25; } obstacles[_ob].minX -= 0.53; }   // 左右鏡像（床頭靠東牆）+ 床長加長 25%   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
@@ -2251,6 +2253,7 @@
         boardMats[s].emissiveIntensity = lerp(boardMats[s].emissiveIntensity, on && inside >= 0 ? 0.25 : 0.1, k);
         pools[s].material.opacity = lerp(pools[s].material.opacity, on ? 0.34 : 0.14, k);
       }
+      if (akari.rooms) for (const r of akari.rooms) { r.k += ((lvl === 1 && r.test(pos.x, pos.z) ? 1 : 0) - r.k) * Math.min(1, dt * 4); r.l.intensity = r.base * r.k; }   // 人在哪個房間，那個房間的燈就亮
       if (akari.light) { akari.k += ((lvl === 1 ? 1 : 0) - akari.k) * Math.min(1, dt * 4); akari.light.intensity = akari.light.userData.base * akari.k; akari.mat.emissiveIntensity = 0.06 + 1.3 * akari.k; if (akari.halo) akari.halo.material.opacity = 0.75 * akari.k; }
       { const nk = skyU.night.value; for (const l of roomLights) l.intensity = l.userData.base * (0.1 + 0.9 * nk); }
       bangs.forEach((b, s) => { if (b && b.visible) { const k = 1 + Math.sin(time * 5 + s) * 0.12, sc = camera.position.distanceTo(b.position) * 0.05 * k; b.scale.set(sc, sc, 1); b.position.y = (s === 0 ? 3.3 : 2.9) + Math.sin(time * 2.4 + s) * 0.08; } });
