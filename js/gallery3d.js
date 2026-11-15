@@ -1277,7 +1277,7 @@
         if (window.PERSONA === "guest") { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
       }
       { const _bc = scene.children.length, _ob = obstacles.length; bed(5.2, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) { const m = scene.children[k]; m.position.x = 6.22 - (6.22 - (10.4 - m.position.x)) * 1.25; m.scale.x *= 1.25; } obstacles[_ob].minX -= 0.53; }   // 左右鏡像（床頭靠東牆）+ 床長加長 25%   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
-      for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 6.0, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 6.0, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
+      for (const [bz2, lc] of [[-5.1, 0xffe9b8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 6.0, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 6.0, 0.62, bz2, false); }   // 床頭櫃 + 小燈（只留北側一個，南側那個已移除）
       const SHOW_BEDROOM_EXTRAS = false;   // 臥室的衣櫃 / 書桌 / 鏡子 / 椅子先移除（要放回來改成 true）
       if (SHOW_BEDROOM_EXTRAS) {U(new THREE.BoxGeometry(0.55, 2.0, 1.4), M(0xc89a62, 0.6), 5.18, 1.0, -4.4); for (const dz of [-0.35, 0.35]) U(new THREE.BoxGeometry(0.02, 1.9, 0.66), M(0xb88650, 0.6), 4.9, 1.0, -4.4 + dz); addObs(5.18, -4.4, 0.3, 0.72, 1);   // 木頭推拉門衣櫃（靠隔間牆）
       }
