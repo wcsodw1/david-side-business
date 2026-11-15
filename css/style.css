@@ -1233,3 +1233,7 @@ body.locked .santa-fab { display: none; }
 .luka-bar span { flex: 1; min-width: 160px; font-size: 12px; opacity: .7; } .luka-bar a { color: #ffd48a; text-decoration: none; font-weight: 700; font-size: 13px; }
 .luka-x { border: 0; background: #ef4b3f; color: #fff; width: 30px; height: 30px; border-radius: 8px; font-size: 14px; cursor: pointer; }
 .luka-card iframe { flex: 1; width: 100%; border: 0; background: #fff6e6; }
+
+.any-list { display: flex; flex-direction: column; gap: 10px; }
+.any-btn { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 12px 16px; border-radius: 12px; border: 2px solid #c9a36a; background: #2f3328; color: #f4f0e0; font: inherit; cursor: pointer; text-align: left; }
+.any-btn b { font-size: 18px; } .any-btn small { font-size: 12px; opacity: .65; } .any-btn:hover, .any-btn:focus-visible { background: #3d4233; border-color: #ffd48a; }

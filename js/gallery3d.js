@@ -1524,8 +1524,18 @@
         const homeDoor = mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
         { const hz = HOMEZ - 0.41; homeDoor.rotation.y = 0; homeDoor.position.set(HOMEX, UY, hz + 0.41 * 0 ); homeDoor.position.x = HOMEX + 0.41 * 0; homeDoor.position.z = hz; }   // 門扇推開貼在房間內側牆邊，門框保持暢通（家的出口不被任意門卡住）
         mkDoor(HALLX, HALLZ, 0, "→ 回家"); addObs(HALLX, HALLZ, 0.62, 0.15, undefined, 3);
-        const jumpHall = () => { if (S && S.teleport) S.teleport(COURT_CX - HX + 1.8, 0.0, 0); };
-        { const act = { id: "anydoor-home", x: HOMEX, z: HOMEZ, r: 1.5, lvl: 1, html: "<kbd>Enter</kbd> 穿過 <b>任意門</b> → 匹克球館 <small>　點門也可以</small>", fn: jumpHall }; interact.push(act);
+        const goTo = (x, z) => { if (S && S.teleport) S.teleport(x, z, 0); };
+        const jumpHall = () => {   // 任意門：選擇目的地
+          if (document.querySelector(".any-ov")) return; const ov = document.createElement("div"); ov.className = "menu-ov any-ov"; document.body.classList.add("robot-open");
+          const dests = [["🏛️ 美術館入口", "進去逛藝廊", ENTRY - 2.4, 0.0], ["🏓 匹克球館", "打球、休息區", COURT_CX - HX + 1.8, 0.0], ["🦎 爬蟲館", "BUGS & BAR：酒吧、守宮", REP.x0 + 1.6, (REP.z0 + REP.z1) / 2]];
+          ov.innerHTML = `<div class="mo-card"><button type="button" class="mo-x" aria-label="關閉">✕</button><h3>🚪 任意門</h3><p>要去哪裡？</p><div class="any-list">${dests.map((d, i) => `<button type="button" class="any-btn" data-i="${i}"><b>${d[0]}</b><small>${d[1]}</small></button>`).join("")}</div></div>`;
+          document.body.appendChild(ov);
+          const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } else if (/^[1-3]$/.test(e.key)) { e.preventDefault(); e.stopPropagation(); pick(+e.key - 1); } };
+          const close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
+          const pick = (i) => { close(); goTo(dests[i][2], dests[i][3]); };
+          window.addEventListener("keydown", kd, true);
+          ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".mo-x")) return close(); const b = e.target.closest(".any-btn"); if (b) pick(+b.dataset.i); }); };
+        { const act = { id: "anydoor-home", x: HOMEX, z: HOMEZ, r: 1.5, lvl: 1, html: "<kbd>Enter</kbd> 穿過 <b>任意門</b> → 選擇目的地 <small>　點門也可以</small>", fn: jumpHall }; interact.push(act);
           const hit = new THREE.Mesh(new THREE.BoxGeometry(0.9, 2.2, 0.9), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(HOMEX - 0.1, UY + 1.1, HOMEZ); hit.userData = { station: 0, kind: "act", act: jumpHall, stand: { x: HOMEX - 0.5, z: HOMEZ } }; scene.add(hit); pickables.push(hit); }
         const doors = [{ x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 1] }];
         tickHooks.push((dt) => { if (window.GUESTLIKE || typeof sitting !== "undefined" && sitting >= 0) return;
@@ -2210,7 +2220,7 @@
       if (GUEST) { pos.x = clamp(pos.x, HOUSE.x0 - 0.35, HOUSE.x1 - 0.4); pos.z = clamp(pos.z, HOUSE.z0 + 0.4, HOUSE.z1 - 0.4); py = UY; lvl = 1; }   // 訪客不能離開二樓房間
       av.root.position.set(pos.x, lerp(py + jy, POOL.surface - 0.02, swimT), pos.z); av.root.rotation.y = facing; av.update(dt, speedNow, time); swimPose(av, swimT, time, speedNow > 0.3);
       if (wake) {   // 開場動畫（任何按鍵或點擊都可以跳過）
-        wake.t += dt; const T = wake.t, bx = 4.4, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
+        wake.t += dt; const T = wake.t, bx = 4.05, by = UY + 0.74, ex = standX, lieQ = (wake.lieQ = wake.lieQ || new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0)).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)))), standQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, Math.PI / 2, 0));
         if (T < 2.2) { av.root.position.set(bx, by, bedZ); av.root.quaternion.copy(lieQ); av.torso.rotation.x = Math.sin(T * 1.6) * 0.02; }              // 躺著（輕輕呼吸）
         else if (T < 3.2) { const u = (T - 2.2) / 1.0, e = u * u * (3 - 2 * u); av.root.position.set(lerp(bx, ex, e), lerp(by, py, Math.pow(e, 1.5)), lerp(bedZ, standZ, e)); av.root.quaternion.copy(lieQ).slerp(standQ, e); }   // 起身
         else {
