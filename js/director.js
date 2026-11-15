@@ -67,7 +67,7 @@
     const SCLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH" };
     const psCard = (p) => `<span class="ps-chip ${p.wbStatus ? "ps-" + (SCLS[p.wbStatus] || "TODO") : "ps-none"}">${esc(p.wbStatus || "未設定")}</span>
       <p><b>目前</b>${p.wbNote ? esc(p.wbNote) : "<i>尚無更新</i>"}${p.wbNoteAt ? ` <small>${esc(String(p.wbNoteAt).replace(/-/g, "."))}</small>` : ""}</p>
-      <p><b>Next</b>${p.next ? esc(p.next) : "<i>尚未設定</i>"}</p><p><b>目標</b>${p.goal ? esc(p.goal) : "<i>尚未設定</i>"}</p>`;
+      <p><b>Next</b>${p.next ? esc(p.next) : "<i>尚未設定</i>"}</p>${window.PERSONA === "aeris" ? "" : `<p><b>目標</b>${p.goal ? esc(p.goal) : "<i>尚未設定</i>"}</p>`}`;
     const render = (view) => {
       const cur = projectNow();
       bubble.innerHTML = `<div class="dir-name">館長</div><div class="dir-msg">${view.msg}</div>
@@ -122,7 +122,7 @@
       const snoozed = (snooze[p.id] || 0) > Date.now();
       const d = window.Store.daysSinceUpdate(p);
       if (snoozed) return finish(p, report);
-      if (!p.goal) return goalStep(p, report + "<br><br>");
+      if (!p.goal && window.PERSONA !== "aeris") return goalStep(p, report + "<br><br>");
       if (!p.next) return nextStep(p, report + "<br><br>");
       if (d == null || d >= 7) return staleStep(p, d == null ? "好多" : d, report + "<br><br>");
       return nextDoneStep(p, report + "<br><br>");

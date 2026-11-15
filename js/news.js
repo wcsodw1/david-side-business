@@ -117,7 +117,7 @@
         <h3><a href="#/p/${esc(p.id)}" data-go data-pid="${esc(p.id)}">${esc(p.name)}</a> ${st}</h3>
         <p class="body">${note ? esc(note) : `<span class="dimtxt">還沒有狀態更新</span>`}</p>
         <p class="pj-row"><b>Next</b>${p.next ? esc(p.next) : `<span class="dimtxt">尚未設定</span>`}</p>
-        <p class="pj-row"><b>目標</b>${p.goal ? esc(p.goal) : `<span class="dimtxt">尚未設定</span>`}</p>
+        ${window.PERSONA === "aeris" ? "" : `<p class="pj-row"><b>目標</b>${p.goal ? esc(p.goal) : `<span class="dimtxt">尚未設定</span>`}</p>`}
         ${hasNew ? `<button type="button" class="seen-btn" data-pid="${esc(p.id)}">✓ 看過了</button>` : ""}
       </article>`;
     };

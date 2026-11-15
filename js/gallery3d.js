@@ -191,7 +191,7 @@
       const fit2 = (t, mw) => { t = String(t || ""); while (g.measureText(t).width > mw && t.length > 3) t = t.slice(0, -2) + "…"; return t; };
       const lu = (p.updates || [])[0], ms = p.milestones || [], done = ms.filter((m) => m.done).length;
       g.fillStyle = "#fff"; g.font = "600 34px 'Noto Sans TC', -apple-system, sans-serif"; g.fillText(fit2(`${p.wbStatus ? p.wbStatus + "　" : ""}${p.wbNote || (lu ? lu.title : "尚無狀態")}`, W - 80), 40, artH - 58);
-      g.fillStyle = "#ffd9a0"; g.font = "500 30px 'Noto Sans TC', sans-serif"; g.fillText(fit2(`${p.goal ? "目標：" + p.goal : "尚未設定目標"}${p.next ? "　→　Next：" + p.next : ""}`, W - 80), 40, artH - 18);
+      g.fillStyle = "#ffd9a0"; g.font = "500 30px 'Noto Sans TC', sans-serif"; g.fillText(fit2(`${window.PERSONA === "aeris" ? "" : p.goal ? "目標：" + p.goal : "尚未設定目標"}${p.next ? "　→　Next：" + p.next : ""}`, W - 80), 40, artH - 18);
     }
     // 說明欄
     g.fillStyle = "#f4ecd8"; g.fillRect(0, artH, W, Hh - artH);
@@ -1823,7 +1823,7 @@
       const p = P[s - 1], stt = H.st(p), ms = p.milestones || [], done = ms.filter((m) => m.done).length, lu = (p.updates || [])[0];
       infoEl.innerHTML = `<div class="gi-head"><b>${H.esc(p.name)}</b><span>${H.esc(p.zh || "")}</span></div>
         <div class="gi-meta">${p.wbStatus ? `<b>${H.esc(p.wbStatus)}</b>` : "狀態未設定"}${p.wbNote ? ` · ${H.esc(p.wbNote)}` : ""}</div>
-        <p class="gi-goal">${p.goal ? "目標：" + H.esc(p.goal) : "尚未設定目標"}</p>
+        ${window.PERSONA === "aeris" ? "" : `<p class="gi-goal">${p.goal ? "目標：" + H.esc(p.goal) : "尚未設定目標"}</p>`}
         <p class="gi-last">${p.next ? "Next：" + H.esc(p.next) : "Next Step 尚未設定"}</p>
         <div class="gi-dwell"><span>停在門前 1 秒自動進入　或按 Enter</span><div><i id="gDwellBar"></i></div></div>`;
       infoEl.hidden = false;

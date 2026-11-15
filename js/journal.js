@@ -24,7 +24,7 @@
       <h2>${esc(p.name)} <small>${esc(p.zh || "")}</small></h2>
       <div class="wb-tabs">${["board", "plan", "ai"].map((t) => `<button type="button" data-tab="${t}" class="${(tabOf[p.id] || "board") === t ? "on" : ""}">${{ board: "白板", plan: "時程", ai: "AI" }[t]}</button>`).join("")}</div>
       <div data-pane="board" ${(tabOf[p.id] || "board") === "board" ? "" : "hidden"}>
-      ${field("goal", "1　專案目標", p.goal, "要做到什麼程度？", "尚未設定")}
+      ${window.PERSONA === "aeris" ? "" : field("goal", "1　專案目標", p.goal, "要做到什麼程度？", "尚未設定")}
 
       <h3>2　目前狀態</h3>
       <div class="chips st-chips">${STATUSES.map((t) => `<button type="button" class="chip st-${t.replace(" ", "-")} ${p.wbStatus === t ? "on" : ""}" data-st="${t}">${t}</button>`).join("")}</div>
