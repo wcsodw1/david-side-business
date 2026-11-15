@@ -1452,7 +1452,7 @@
           const cr = mkTex(THREE, decalCanvas(1024, 120, (g, w, h) => { g.fillStyle = "#f4f1ea"; g.fillRect(0, 0, w, h); g.strokeStyle = "#2a2218"; g.lineWidth = 4; g.strokeRect(3, 3, w - 6, h - 6); g.fillStyle = "#2a2218"; g.textAlign = "center"; g.font = "600 34px 'Noto Sans TC', sans-serif"; g.fillText("Photos: ggbye1127 · OXO · SHAQ Photo — CC BY 4.0 — via Wikimedia Commons (resized)", w / 2, 50); g.font = "500 28px 'Noto Sans TC', sans-serif"; g.fillText("海報照片：ggbye1127、OXO、SHAQ Photo（CC BY 4.0，來源 Wikimedia Commons，已縮小尺寸）", w / 2, 92); }), aniso);
           const cp = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.4), new THREE.MeshStandardMaterial({ map: cr, roughness: 0.7 })); cp.position.set(9.0, UY + 0.5, NZ + 0.01); scene.add(cp);
         }
-        poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
+        // poster(EX, 1.5, -7.2, -Math.PI / 2, 1);                                                                                      // 東牆
       }
 
       { const floor2 = scene.children.slice(_f2a).filter((o) => o.isMesh || o.isGroup || o.isSprite); let hid = false;
