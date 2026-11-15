@@ -1540,7 +1540,7 @@
       const flowers = (x, z, w, d) => { mk(new THREE.BoxGeometry(w, 0.18, d), M(0x4a3524, 1), x, 0.09, z, false); for (let k = 0; k < 18; k++) mk(new THREE.SphereGeometry(0.075, 8, 6), M([0xff6b8a, 0xffd25a, 0xfff1f4, 0xb48cff][k % 4], 0.7), x + (rnd() - 0.5) * (w - 0.2), 0.26, z + (rnd() - 0.5) * (d - 0.2), false); };
       flowers(15.6, 1.9, 2.6, 0.9); flowers(21.0, 1.9, 2.4, 0.9); flowers(7.0, 5.0, 2.8, 1.0);
       const bench = (x, z, rot = 0) => { const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g); const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.5), wood); b.position.y = 0.45; b.castShadow = true; g.add(b); const bk = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.45, 0.05), wood); bk.position.set(0, 0.75, -0.22); g.add(bk); for (const dx of [-0.75, 0.75]) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.45, 0.4), dk); l.position.set(dx, 0.22, 0); g.add(l); } addObs(x, z, rot ? 0.35 : 1.0, rot ? 1.0 : 0.35, undefined, 0.55); };
-      bench(14.4, 1.2); bench(20.8, 2.8); bench(14.0, 6.9); bench(23.4, 2.2);
+      bench(14.4, 1.2); bench(20.8, 2.8); bench(23.4, 2.2);
       { // 路燈只放在走道（石板小徑）兩側，左右交錯、約每 4.6 公尺一盞，不亂放
         const lamp = (x, z) => { mk(new THREE.CylinderGeometry(0.04, 0.05, 2.3, 8), M(0x15121f, 0.5, 0.5), x, 1.15, z); mk(new THREE.BoxGeometry(0.34, 0.05, 0.34), M(0x15121f, 0.5, 0.5), x, 2.32, z, false); const lm = lampMat.clone(); mk(new THREE.SphereGeometry(0.15, 14, 10), lm, x, 2.22, z, false); lampPts.push({ x, y: 2.22, z, mat: lm }); };
         let acc = 2.2, side = 1;
@@ -1577,9 +1577,6 @@
         addObs(sx, sz, 1.8, 0.7);
         const lx = 18.4; mk(new THREE.BoxGeometry(0.1, 1.9, 0.9), M(0x2f6a9a, 0.5), lx - 0.7, 0.95, sz - 0.3); mk(new THREE.BoxGeometry(0.6, 0.08, 0.7), M(0xf2c14e, 0.6), lx - 0.7, 1.9, sz - 0.3); const sl = mk(new THREE.BoxGeometry(2.4, 0.06, 0.7), M(0xe8b030, 0.35, 0.3), lx + 0.45, 1.0, sz - 0.3); sl.rotation.z = -0.62; addObs(lx + 0.2, sz - 0.3, 1.5, 0.55);
         const sd = mk(new THREE.BoxGeometry(2.4, 0.2, 2.0), M(0xe8d29a, 1), 21.0, 0.1, -6.2); addObs(21.0, -6.2, 1.25, 1.05, undefined, 0.25); for (const [dx, dz] of [[-1.25, 0], [1.25, 0]]) mk(new THREE.BoxGeometry(0.1, 0.3, 2.1), wood, 21.0 + dx, 0.15, -6.2 + dz * 0); }
-      // 涼亭
-      { const GX = 14.0, GZ = 4.6; for (const [dx, dz] of [[-1.3, -1.3], [1.3, -1.3], [-1.3, 1.3], [1.3, 1.3]]) mk(new THREE.CylinderGeometry(0.08, 0.08, 2.5, 8), M(0xf2ece0, 0.6), GX + dx, 1.25, GZ + dz);
-        mk(new THREE.CylinderGeometry(0.1, 2.2, 0.9, 6), M(0xa3492f, 0.7), GX, 2.95, GZ); mk(new THREE.BoxGeometry(2.8, 0.1, 2.8), M(0xd9c9a8, 0.8), GX, 0.06, GZ, false); addObs(GX, GZ, 1.2, 1.2); }
       // 路標：往美術館
       const signT = mkTex(THREE, decalCanvas(512, 160, (c, w, h) => { c.fillStyle = "#3a2e24"; c.fillRect(0, 0, w, h); c.strokeStyle = "#e8c98a"; c.lineWidth = 5; c.strokeRect(6, 6, w - 12, h - 12); c.textAlign = "center"; c.fillStyle = "#e8c98a"; c.font = "800 52px Georgia, serif"; c.fillText("Gallery  →", w / 2, 78); c.font = "500 34px 'Noto Sans TC', sans-serif"; c.fillText("美術館 往這走", w / 2, 128); }), aniso);
       mk(new THREE.CylinderGeometry(0.05, 0.06, 1.7, 8), M(0x5a4028, 0.8), 14.2, 0.85, -3.3);
