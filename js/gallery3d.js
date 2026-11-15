@@ -1274,6 +1274,7 @@
         const lp = new THREE.PointLight(0xffd9a0, 2.2, 10); lp.position.set(LX, LY, LZ); lp.userData.base = 2.2; akari.light = lp; akari.mat = shade.material; lp.intensity = 0; shade.material.emissiveIntensity = 0.06; scene.add(lp);
         { const gc = document.createElement("canvas"); gc.width = gc.height = 128; const gg = gc.getContext("2d"), gr = gg.createRadialGradient(64, 64, 0, 64, 64, 64); gr.addColorStop(0, "rgba(255,226,160,.9)"); gr.addColorStop(0.35, "rgba(255,206,130,.35)"); gr.addColorStop(1, "rgba(255,200,120,0)"); gg.fillStyle = gr; gg.fillRect(0, 0, 128, 128);
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
+        if (window.PERSONA === "guest") { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
       }
       { const _bc = scene.children.length, _ob = obstacles.length; bed(5.2, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) { const m = scene.children[k]; m.position.x = 6.22 - (6.22 - (10.4 - m.position.x)) * 1.25; m.scale.x *= 1.25; } obstacles[_ob].minX -= 0.53; }   // 左右鏡像（床頭靠東牆）+ 床長加長 25%   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8], [-2.1, 0xffd8e8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 6.0, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 6.0, 0.62, bz2, false); }   // 兩邊床頭櫃 + 小燈
@@ -1387,7 +1388,13 @@
           addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
         // 天花板：只在第一人稱、人在二樓室內時出現（俯視 / 環繞視角不擋視線）；這時牆也升到完整高度，和天花板接起來
         { const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1 + 0.7 - X0 + 0.14, Z1 - Z0 + 0.14), M(0xf6f2ea, 0.95)); cm.rotation.x = Math.PI / 2; cm.position.set((X0 - 0.7 + X1) / 2, UY + WT - 0.01, ZC); cm.visible = false; scene.add(cm);
-          tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; }); }
+          let dl = null;
+          if (window.PERSONA === "guest") {   // 客人視角：天花板上很多小小的圓形白燈（嵌燈）
+            dl = new THREE.Group(); const dg = new THREE.CylinderGeometry(0.075, 0.075, 0.02, 20), dm = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const d = new THREE.Mesh(dg, dm); d.position.set(x, UY + WT - 0.025, z); dl.add(d); }
+            dl.visible = false; scene.add(dl);
+          }
+          tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; if (dl) dl.visible = cm.visible; }); }
         // 冷氣：客廳在南牆門口那一側（與海報牆對面）、臥室在北牆高處
         for (const [x, zz, s] of [[8.2, Z1 - 0.14, -1], [3.95, Z0 + 0.14, 1]]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 1.95, zz); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 1.86, zz + s * 0.11); }
       }
