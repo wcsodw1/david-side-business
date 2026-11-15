@@ -1368,7 +1368,7 @@
         const st = new THREE.CanvasTexture(sk); if (THREE.sRGBEncoding) st.encoding = THREE.sRGBEncoding;
         const skyM = new THREE.MeshBasicMaterial({ map: st, toneMapped: false });
         { const dayC = new THREE.Color(0xffffff), nightC = new THREE.Color(0x141c3a), tmp = new THREE.Color();   // 窗外的天空隨時間變亮 / 變暗（夜晚是深藍色）
-          tickHooks.push(() => { tmp.copy(dayC).lerp(nightC, Math.min(1, skyU.night.value)); skyM.color.copy(tmp); if (GUEST) skyM.color.setRGB(0, 0, 0); }); }
+          tickHooks.push(() => { tmp.copy(dayC).lerp(nightC, Math.min(1, skyU.night.value)); skyM.color.copy(tmp); }); }
         { const w = 6.8, cz = -3.9, X = X1 - 0.075;                                         // 客廳（東牆）
           const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(X, UY + 1.6, cz); q.rotation.y = -PI / 2; scene.add(q);
           const bar = (sw, sh, sd, z, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(sd, sh, sw), gold); b.position.set(X - 0.02, UY + y, z); scene.add(b); };
@@ -1439,6 +1439,7 @@
         let posterN = 0;
         const PHOTOS = (window.SITE && window.SITE.posterPhotos) || [];   // 要放真正的照片：把圖片放進 img/posters/，並把檔名依序寫進 data/projects.js 的 SITE.posterPhotos
         const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
+          if (window.PERSONA === "guest") return;   // 客人視角沒有明星海報
           const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso); const photo = pw >= 0.6 && posterN < PHOTOS.length ? PHOTOS[posterN++] : null;   // 每張大海報用不同的照片（小的那張保留程式畫的風格）
           const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
           const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
