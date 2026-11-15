@@ -1380,7 +1380,8 @@
           bar(w + 0.1, 0.07, cx, cy - h / 2, true); bar(w + 0.1, 0.07, cx, cy + h / 2, true); for (let k = 0; k <= 2; k++) bar(0.05, h, cx - w / 2 + (w * k) / 2, cy, false);
           const cur = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.0, 0.14), M(0x8a5a2a, 0.9)); cur.position.set(cx - w / 2 - 0.12, UY + cy, Z + 0.09); scene.add(cur); }
         // 嵌入式矮櫃（窗下，三個開放格）
-        { const cx = 11.62, z0 = -7.2, z1 = -1.2, cw = M(0xfbfaf6, 0.85), inn = M(0xe6e6e2, 0.9);
+        const SHOW_WINDOW_CABINET = false;   // 窗下矮櫃先移除（要放回來改成 true）
+        if (SHOW_WINDOW_CABINET) { const cx = 11.62, z0 = -7.2, z1 = -1.2, cw = M(0xfbfaf6, 0.85), inn = M(0xe6e6e2, 0.9);
           U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.85, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.03, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.04, 0.8, z1 - z0), inn, cx + 0.255, 0.44, (z0 + z1) / 2);
           for (const z of [-7.2, -6.5, -5.8, -3.9, -1.2]) U(new THREE.BoxGeometry(0.55, 0.82, 0.07), cw, cx, 0.43, z);
           addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
