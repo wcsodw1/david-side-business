@@ -33,6 +33,7 @@
     document.body.appendChild(box); document.body.classList.add("robot-open"); fab.classList.add("is-open");
     (window.AIChat.mountConv || window.AIChat.mount)(box.querySelector("[data-m]"), { id: "__office", name: "辦公室", office: true, projects: window.PROJECTS || [] });
     box.querySelector("[data-x]").addEventListener("click", close);
+    if (window.Dash) window.Dash.attach(box, () => window.PROJECTS || []);   // 儀表板融合進 AI 視窗
     const fsBtn = box.querySelector("[data-fs]"), setFs = (on) => { box.classList.toggle("rc-full", on); fsBtn.textContent = on ? "⤡" : "⤢"; fsBtn.title = on ? "縮小（F / Esc）" : "全螢幕（F）"; try { localStorage.setItem("dsb-robot-full", on ? "1" : ""); } catch (_) {} const m = box.querySelector(".ai-msgs"); if (m) m.scrollTop = m.scrollHeight; };
     fsBtn.addEventListener("click", () => setFs(!box.classList.contains("rc-full")));
     box.addEventListener("keydown", (e) => { if ((e.key === "f" || e.key === "F") && !/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); setFs(!box.classList.contains("rc-full")); } });

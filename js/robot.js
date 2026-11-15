@@ -72,6 +72,7 @@
       document.body.appendChild(box); R.box = box; document.body.classList.add("robot-open");
       (window.AIChat.mountConv || window.AIChat.mount)(box.querySelector("[data-m]"), { id: "__office", name: "辦公室", office: true, projects: ctx.P });
       box.querySelector("[data-x]").addEventListener("click", close);
+      if (window.Dash) window.Dash.attach(box, () => ctx.P || []);   // 儀表板融合進 AI 視窗
       // 全螢幕：再按一次（或 Esc）回到小視窗；記住上次的選擇
       const fsBtn = box.querySelector("[data-fs]"), setFs = (on) => { box.classList.toggle("rc-full", on); fsBtn.textContent = on ? "⤡" : "⤢"; fsBtn.title = on ? "縮小（F / Esc）" : "全螢幕（F）"; fsBtn.setAttribute("aria-label", on ? "縮小" : "全螢幕"); try { localStorage.setItem("dsb-robot-full", on ? "1" : ""); } catch (_) {} const m = box.querySelector(".ai-msgs"); if (m) m.scrollTop = m.scrollHeight; };
       fsBtn.addEventListener("click", () => setFs(!box.classList.contains("rc-full")));

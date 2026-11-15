@@ -1189,3 +1189,25 @@ body.locked .santa-fab { display: none; }
 .ai-cmpgrid .ai-m { margin: 0; max-width: none; }
 .ai-cmpgrid .ai-b { max-width: none; width: 100%; box-sizing: border-box; font-size: .94em; }
 .ai-cmpgrid .ai-meta { font-weight: 700; }
+
+/* ============================================================
+   AI 總管 × 儀表板 融合：標題列右上的「▦ 儀表板」；全螢幕時左邊對話、右邊即時儀表板
+   ============================================================ */
+.robot-chat .rc-dash { position: relative; width: auto !important; height: 36px !important; padding: 0 16px !important; border-radius: 999px !important; font: 600 14px var(--font) !important; letter-spacing: .06em; white-space: nowrap; }
+.robot-chat .rc-dash.on { background: var(--hm-ink) !important; color: var(--hm-paper) !important; border-color: var(--hm-ink) !important; }
+.robot-chat .rc-dash i { position: absolute; right: 4px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--hm-orange); box-shadow: 0 0 0 2px var(--hm-paper); }
+.robot-chat .rc-body { display: block; min-width: 0; }
+.robot-chat .dh-pane { display: none; overflow-y: auto; min-width: 0; background: #fffdf8; border: 1px solid var(--hm-line); border-radius: 22px; }
+.robot-chat .rc-body.dash-on .dh-pane { display: block; max-height: min(66vh, 640px); }
+.robot-chat:not(.rc-full) .rc-body.dash-on > [data-m] { display: none; }        /* 小視窗：對話 ⇄ 儀表板 切換 */
+.robot-chat.rc-full .rc-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.robot-chat.rc-full .rc-body > [data-m] { flex: 1; min-height: 0; }
+@media (min-width: 1100px) {
+  .robot-chat.rc-full .rc-body.dash-on { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(380px, .95fr); gap: 22px; }
+  .robot-chat.rc-full .rc-body.dash-on > [data-m] { display: flex; flex-direction: column; min-height: 0; }
+  .robot-chat.rc-full .rc-body.dash-on .dh-pane { max-height: none; height: 100%; }
+}
+@media (max-width: 1099px) { .robot-chat.rc-full .rc-body.dash-on > [data-m] { display: none; } .robot-chat.rc-full .rc-body.dash-on .dh-pane { flex: 1; max-height: none; } }
+.robot-chat .dh { padding: 22px 24px 28px; }
+.dh-row.dh-flash { animation: dhFlash 2.4s ease-out; }
+@keyframes dhFlash { 0% { background: #fde3cf; box-shadow: 0 0 0 3px rgba(227,101,29,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(227,101,29,0); } }

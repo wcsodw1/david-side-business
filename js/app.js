@@ -235,16 +235,6 @@
           <a class="kb-name" href="#/p/${esc(p.id)}">${esc(p.name)}</a>${showChip ? chip(eff(p)) : ""}
           <span class="kb-now ${txt ? "" : "none"}" title="${esc(txt)}">${esc(txt || "（還沒有更新）")}</span>${isNew ? `<em class="kb-new">NEW</em>` : ""}${when ? `<time class="kb-t">${esc(String(when).slice(5).replace("-", "."))}</time>` : ""}
           <span class="kb-pg" title="完成度 ${p.progress ?? 0}%"><i style="width:${p.progress ?? 0}%"></i><b>${p.progress ?? 0}%</b></span>
-          <span class="kb-upd">
-            <button type="button" class="kb-btn" aria-label="更新 ${esc(p.name)}">✎ 更新</button>
-            <form class="kb-form" autocomplete="off">
-              <b>${esc(p.name)}</b>
-              <span class="kb-line"><select name="st" aria-label="狀態"><option value="">狀態不變（${esc(eff(p) === "ON PROCESS" ? "ON-PROCESS" : eff(p))}）</option>${OPTS.map((o) => `<option value="${o}">${o === "ON PROCESS" ? "ON-PROCESS" : o}</option>`).join("")}</select></span>
-              <input name="note" maxlength="140" placeholder="一句話更新目前狀態…" aria-label="目前狀態">
-              <input name="next" maxlength="140" placeholder="Next Step" value="${esc(p.next || "")}" aria-label="Next Step">
-              <button type="submit">送出更新</button>
-            </form>
-          </span>
         </li>`; };
       const sect = (title, dot, list, showChip) => `
         <section class="kb-sec">
