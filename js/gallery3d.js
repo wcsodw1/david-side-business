@@ -1370,11 +1370,10 @@
           for (let i = 0; i < 128; i += 16) { g2.fillStyle = i % 32 ? "rgba(120,170,200,.38)" : "rgba(255,255,255,.55)"; g2.fillRect(i, 0, 8, 128); }
           const ct = new THREE.CanvasTexture(cv2); ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(3, 1); if (THREE.sRGBEncoding) ct.encoding = THREE.sRGBEncoding;
           const cm2 = new THREE.MeshStandardMaterial({ map: ct, roughness: 0.8, transparent: true, opacity: 0.84, side: THREE.DoubleSide }), chrome = M(0xc9cdd3, 0.2, 0.9);
-          const XW = 5.4, XE = 6.3, ZN2 = -7.9, ZS2 = -6.9, CH = 1.95, CY = 0.1;
-          const pa = U(new THREE.PlaneGeometry(ZS2 - ZN2, CH), cm2, XW, CY + CH / 2, (ZN2 + ZS2) / 2); pa.rotation.y = PI / 2;                           // 固定的一片：窗戶 → 轉角
-          const gb2 = new THREE.PlaneGeometry(XE - XW, CH); gb2.translate(-(XE - XW) / 2, 0, 0); const pb = U(gb2, cm2, XE, CY + CH / 2, ZS2); pb.scale.x = 0.36;   // 活動的一片：轉角 → 東牆（平常拉開）
-          U(new THREE.CylinderGeometry(0.012, 0.012, ZS2 - ZN2, 8), chrome, XW, CY + CH + 0.04, (ZN2 + ZS2) / 2).rotation.x = PI / 2;
-          U(new THREE.CylinderGeometry(0.012, 0.012, XE - XW, 8), chrome, (XW + XE) / 2, CY + CH + 0.04, ZS2).rotation.z = PI / 2;
+          const XW = 5.4, XE = 6.3, ZN2 = -7.9, ZS2 = -5.68, CH = 1.95, CY = 0.1, CL = ZS2 - ZN2;
+          // 一整片直直的浴簾：從北牆（窗戶那側）沿著 x = 5.4 一路拉到南牆，不轉彎；平常拉到窗戶那端（留出入口），人走進淋浴區（東側）會自動拉上
+          const gb2 = new THREE.PlaneGeometry(CL, CH); gb2.translate(-CL / 2, 0, 0); const pb = U(gb2, cm2, XW, CY + CH / 2, ZN2); pb.rotation.y = PI / 2; pb.scale.x = 0.36;
+          U(new THREE.CylinderGeometry(0.012, 0.012, CL, 8), chrome, XW, CY + CH + 0.04, (ZN2 + ZS2) / 2).rotation.x = PI / 2;
           // 水滴（Points）+ 蒸氣（Sprite）
           const NP = 90, pp = new Float32Array(NP * 3), pv = new Float32Array(NP), hx = 6.02, hz = -7.4, hy = UY + 1.8, fl = UY + 0.03;
           const rs = (i, top) => { pp[i * 3] = hx + (Math.random() - 0.5) * 0.42; pp[i * 3 + 2] = hz + (Math.random() - 0.5) * 0.42; pp[i * 3 + 1] = top ? hy - Math.random() * 0.05 : fl + Math.random() * (hy - fl); pv[i] = 2.4 + Math.random() * 1.2; };
@@ -1384,7 +1383,7 @@
           const sc2 = document.createElement("canvas"); sc2.width = sc2.height = 64; const sg2 = sc2.getContext("2d"), gr2 = sg2.createRadialGradient(32, 32, 0, 32, 32, 32); gr2.addColorStop(0, "rgba(255,255,255,.8)"); gr2.addColorStop(1, "rgba(255,255,255,0)"); sg2.fillStyle = gr2; sg2.fillRect(0, 0, 64, 64);
           const stT = new THREE.CanvasTexture(sc2), steam = []; for (let i = 0; i < 7; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: stT, transparent: true, opacity: 0, depthWrite: false })); s.userData = { ph: i / 7 }; scene.add(s); steam.push(s); }
           tickHooks.push((dt, tt) => {
-            const inside = py > UY * 0.5 && pos.x > XW + 0.08 && pos.x < XE - 0.05 && pos.z > ZN2 && pos.z < ZS2 - 0.05;
+            const inside = py > UY * 0.5 && pos.x > XW + 0.08 && pos.x < XE - 0.05 && pos.z > ZN2 && pos.z < -6.5;
             shower.k += ((inside ? 1 : 0) - shower.k) * Math.min(1, dt * 3);
             pb.scale.x = lerp(0.36, 1, Math.min(1, shower.k * 1.6));
             pmat.opacity = shower.k * 0.85; pts.visible = shower.k > 0.02;
