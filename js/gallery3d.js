@@ -1384,6 +1384,9 @@
           U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.85, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.03, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.04, 0.8, z1 - z0), inn, cx + 0.255, 0.44, (z0 + z1) / 2);
           for (const z of [-7.2, -6.5, -5.8, -3.9, -1.2]) U(new THREE.BoxGeometry(0.55, 0.82, 0.07), cw, cx, 0.43, z);
           addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
+        // 天花板：只在第一人稱、人在二樓室內時出現（俯視 / 環繞視角不擋視線）；這時牆也升到完整高度，和天花板接起來
+        { const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1 + 0.7 - X0 + 0.14, Z1 - Z0 + 0.14), M(0xf6f2ea, 0.95)); cm.rotation.x = Math.PI / 2; cm.position.set((X0 - 0.7 + X1) / 2, UY + WT - 0.01, ZC); cm.visible = false; scene.add(cm);
+          tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; }); }
         // 冷氣：客廳在南牆門口那一側（與海報牆對面）、臥室在北牆高處
         for (const [x, zz, s] of [[8.2, Z1 - 0.14, -1], [3.95, Z0 + 0.14, 1]]) { U(new THREE.BoxGeometry(0.95, 0.28, 0.2), M(0xf4f4f1, 0.5), x, 1.95, zz); U(new THREE.BoxGeometry(0.8, 0.02, 0.01), M(0x9a9a98, 0.5), x, 1.86, zz + s * 0.11); }
       }
@@ -2215,11 +2218,11 @@
       { // 擋在鏡頭和人之間的牆：微微透明，才看得到人
         if (!shells._tr) { shells._tr = { box: new THREE.Box3(), ray: new THREE.Ray(), o: new THREE.Vector3(), d: new THREE.Vector3(), h: new THREE.Vector3(), hit: new THREE.Vector3() }; for (const s of shells) { s.m.material = s.m.material.clone(); s.m.material.transparent = true; s.op = 1; } }
         const T = shells._tr; T.o.copy(camera.position); T.h.set(pos.x, py + jy + 1.0, pos.z); T.d.subVectors(T.h, T.o); const dist = T.d.length(); T.d.normalize(); T.ray.set(T.o, T.d);
-        for (const s of shells) { let want = 1; if (insH > 0.5 && s.m.visible) { s.m.updateWorldMatrix(true, false); T.box.setFromObject(s.m); const hit = T.ray.intersectBox(T.box, T.hit); if (hit && T.o.distanceTo(hit) < dist - 0.15) want = 0.3; } s.op += (want - s.op) * Math.min(1, dt * 8); s.m.material.opacity = s.op; s.m.material.depthWrite = s.op > 0.9; }
+        for (const s of shells) { let want = 1; if (insH > 0.5 && !fpv && s.m.visible) { s.m.updateWorldMatrix(true, false); T.box.setFromObject(s.m); const hit = T.ray.intersectBox(T.box, T.hit); if (hit && T.o.distanceTo(hit) < dist - 0.15) want = 0.3; } s.op += (want - s.op) * Math.min(1, dt * 8); s.m.material.opacity = s.op; s.m.material.depthWrite = s.op > 0.9; }
       }
       for (const r of roofs) { const k = r.grp === "M" ? insM : r.grp === "H2" ? insH * (1 - lvlS) : insH; r.mat.opacity = 1 - k; r.mat.depthWrite = k < 0.02; r.m.visible = k < 0.97 && !r.m._gh; }   // H2：二樓地板（人在一樓時消失，才看得到一樓）
       for (const w of shells) {
-        if (w.grp === "U") w.m.scale.y = lerp(1, lerp(0.01, w.low, lvlS), Math.max(insH, lvlS));     // 二樓牆：人在二樓（含屋外樓梯上）一律是同樣高度的矮牆，在一樓時收起來
+        if (w.grp === "U") w.m.scale.y = (fpv && lvlS > 0.5 && insH > 0.5) ? 1 : lerp(1, lerp(0.01, w.low, lvlS), Math.max(insH, lvlS));     // 二樓牆：人在二樓（含屋外樓梯上）一律是同樣高度的矮牆，在一樓時收起來
         else { const k = w.grp === "M" ? insM : insH; w.m.scale.y = lerp(1, w.low, k); }
       }
       renderer.render(scene, camera);
