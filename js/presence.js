@@ -14,6 +14,7 @@
   const NAME = { david: "David", aeris: "ARIES ✿", guest: "訪客", agent: "David（房仲）" };
   const PAIR = { david: "aeris", aeris: "david", guest: "agent", agent: "guest" };   // 兩組：David ⇄ ARIES、房仲 David ⇄ 訪客（同一個二樓空間）
   const AGENT_SPOT = { x: 10.7, z: -0.55, y: 3.3, f: Math.PI };   // 房仲平常站的位置：二樓大門口（南牆最右邊那扇門內側），面向客廳
+  const GREETING = "歡迎參觀！<br>這間是 <b>寬敞主臥房 · 大客廳 · 衛浴</b><br>適合喜歡舒服大空間，又可區分客廳及私人空間的房客 🙂";   // 房客進房間時 David 的開場介紹
   const TOUR = [   // 訪客走到哪，房仲就介紹哪一區（房仲不在線時由「站在門口的 David」講解）
     [(x, z) => x > 5.4 && x < 6.3 && z < -6.5, "這裡是<b>淋浴間</b>：蓮蓬頭在這，走進去浴簾會自動拉上、開始出水，再走出來就停。"],
     [(x, z) => x > 2.8 && x < 6.3 && z < -5.6, "這是主臥室的<b>套房浴室</b>：馬桶、洗手台加圓鏡，窗邊是淋浴間，浴室門會自動開關。"],
@@ -79,7 +80,7 @@
       const gone = () => { conns.delete(c); setTimeout(() => { if (Pz && rm.on && !anyOpen()) drop(); }, 4000); };   // 4 秒內沒有任何連線恢復，才當作下線
       c.on("close", gone); c.on("error", gone);
     };
-    Pz.me = me;
+    Pz.me = me; Pz.greetUntil = performance.now() + 10000;   // 進房間的前 10 秒 David 一定先打招呼
     loadPeer().then(() => {
       if (!Pz) return;
       const peer = new window.Peer(ID[me], { debug: 0, config: { iceServers: [      // 跨網路（手機 4G/5G、公司網路）需要中繼，否則兩邊註冊了但連不起來
@@ -133,7 +134,7 @@
           av.root.rotation.y += angDiff(av.root.rotation.y, near ? face : AGENT_SPOT.f) * Math.min(1, dt * 4); av.root.rotation.z = 0; av.root.rotation.x = 0;
           av.update(dt, 0, t); if (av.armR) av.armR.sh.rotation.x = near ? -0.5 + Math.sin(t * 2.2) * 0.12 : 0;   // 介紹時手微微抬起
           tag.visible = true; tag.position.set(AGENT_SPOT.x, AGENT_SPOT.y + 2.0, AGENT_SPOT.z);
-          const hit = TOUR.find(([f]) => f(m.x, m.z)); const txt = near && Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 3.2 ? "歡迎參觀！我是 <b>David</b>，這間房子由我來介紹。往裡面走，走到哪我就講到哪。" : hit ? hit[1] : "";
+          const hit = TOUR.find(([f]) => f(m.x, m.z)); const txt = (near && Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 3.2) || performance.now() < (Pz.greetUntil || 0) ? GREETING : hit ? hit[1] : "";
           if (txt) { if (say.__t !== txt) { say.__t = txt; say.innerHTML = `<b>David（房仲）</b>${txt}`; } say.hidden = false; } else say.hidden = true;
         } else { av.root.visible = false; tag.visible = false; say.hidden = true; }
       } else {
