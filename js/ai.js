@@ -219,8 +219,10 @@
       const headers = { "content-type": "application/json" }; if (cfg.key) headers.authorization = "Bearer " + cfg.key;
       const tidy = (t) => String(t || "").replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^\s+/, "");
       const stats = (tm, us, model) => { const name = String(model || "").split("/").pop().replace(/\.gguf$/i, ""), n = tm ? tm.predicted_n : us && us.completion_tokens;
-        return [name, n ? n + " tokens" : "", tm && tm.predicted_per_second ? tm.predicted_per_second.toFixed(1) + " tok/s" : "", tm && tm.prompt_n ? "讀入 " + tm.prompt_n + " tokens" : ""].filter(Boolean).join(" · "); };
-      let text = "", think = "", tm = null, us = null, model = "", undo = null; const actions = [];
+        // TTFT = 按下送出到第一個字（含思考 / 工具呼叫）出現，瀏覽器端實測；TPOT = 每個輸出 token 平均幾 ms（伺服器 timings）
+        const sec = (ms) => (ms >= 10000 ? (ms / 1000).toFixed(0) : (ms / 1000).toFixed(1)) + " s", tpot = tm && tm.predicted_n > 1 && tm.predicted_ms ? tm.predicted_ms / tm.predicted_n : 0;
+        return [name, n ? n + " tokens" : "", tm && tm.predicted_per_second ? tm.predicted_per_second.toFixed(1) + " tok/s" : "", tFirst ? "TTFT " + sec(tFirst - t0) : "", tpot ? "TPOT " + Math.round(tpot) + " ms" : "", tm && tm.prompt_n ? "讀入 " + tm.prompt_n + " tokens" : "", "總共 " + sec(performance.now() - t0)].filter(Boolean).join(" · "); };
+      let text = "", think = "", tm = null, us = null, model = "", undo = null, tFirst = 0; const actions = [], t0 = performance.now();
       const push = () => onDelta && onDelta({ text: tidy(text), think, actions });
       // 最多 4 輪：模型呼叫工具 → 這裡執行（直接改藝廊資料）→ 把結果交回模型 → 模型回報做了什麼
       for (let round = 0; round < 8; round++) {
@@ -236,7 +238,7 @@
         const calls = []; let rtext = "";
         if (!/event-stream/.test(r.headers.get("content-type") || "") || !r.body) {   // 端點不支援串流：當成一般回應
           const j = await r.json().catch(() => ({})), ch = (j.choices && j.choices[0] && j.choices[0].message) || {};
-          rtext = ch.content || ""; think += ch.reasoning_content || ""; tm = j.timings || tm; us = j.usage || us; model = j.model || model;
+          if (!tFirst) tFirst = performance.now(); rtext = ch.content || ""; think += ch.reasoning_content || ""; tm = j.timings || tm; us = j.usage || us; model = j.model || model;
           (ch.tool_calls || []).forEach((c) => calls.push({ id: c.id, name: c.function.name, args: c.function.arguments || "" }));
           text += (text && rtext ? "\n\n" : "") + rtext; push();
         } else {
@@ -251,6 +253,7 @@
               if (j.error) throw new Error(j.error.message || String(j.error));
               const dl = (j.choices && j.choices[0] && j.choices[0].delta) || {};
               if (dl.content) rtext += dl.content; if (dl.reasoning_content) think += dl.reasoning_content;
+              if (!tFirst && (dl.content || dl.reasoning_content || dl.tool_calls)) tFirst = performance.now();
               for (const tc of dl.tool_calls || []) { const k = tc.index ?? calls.length; const c = (calls[k] = calls[k] || { id: "", name: "", args: "" }); if (tc.id) c.id = tc.id; if (tc.function) { if (tc.function.name) c.name += tc.function.name; if (tc.function.arguments) c.args += tc.function.arguments; } }
               if (j.timings) tm = j.timings; if (j.usage) us = j.usage; if (j.model) model = j.model;
               if (onDelta) onDelta({ text: tidy(text + (rtext ? lead + rtext : "")), think, actions });
