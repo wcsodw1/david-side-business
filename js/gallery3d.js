@@ -1390,8 +1390,8 @@
         { const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1 + 0.7 - X0 + 0.14, Z1 - Z0 + 0.14), M(0xf6f2ea, 0.95)); cm.rotation.x = Math.PI / 2; cm.position.set((X0 - 0.7 + X1) / 2, UY + WT - 0.01, ZC); cm.visible = false; scene.add(cm);
           let dl = null;
           if (window.PERSONA === "guest") {   // 客人視角：天花板上很多小小的圓形白燈（嵌燈）
-            dl = new THREE.Group(); const dg = new THREE.CylinderGeometry(0.075, 0.075, 0.02, 20), dm = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const d = new THREE.Mesh(dg, dm); d.position.set(x, UY + WT - 0.025, z); dl.add(d); }
+            dl = new THREE.Group(); const rg = new THREE.CylinderGeometry(0.115, 0.115, 0.02, 24), rm = new THREE.MeshStandardMaterial({ color: 0xb4b8be, roughness: 0.35, metalness: 0.7 }), dg = new THREE.CylinderGeometry(0.085, 0.085, 0.02, 24), dm = new THREE.MeshBasicMaterial({ color: 0xffffff });   // 嵌燈：金屬邊框 + 凹進去的發亮圓面（參考照片）
+            for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const r = new THREE.Mesh(rg, rm); r.position.set(x, UY + WT - 0.012, z); dl.add(r); const d = new THREE.Mesh(dg, dm); d.position.set(x, UY + WT - 0.004, z); dl.add(d); }
             dl.visible = false; scene.add(dl);
           }
           tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; if (dl) dl.visible = cm.visible; }); }
