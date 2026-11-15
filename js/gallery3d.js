@@ -1529,12 +1529,24 @@
           while (acc < len) { lamp(ax + ux * acc - uz * 1.6 * side, az + uz * acc + ux * 1.6 * side); side = -side; acc += 4.6; } acc -= len; }
         lamp(4.4, 5.6); lamp(-1.6, 5.6);   // 通往船尾的小徑
       }
-      // 池塘（有睡蓮與石頭）
-      { const PX = 19.0, PZ = 5.2, pr = 3.0, ps = 0.78;
-        const pw = new THREE.Mesh(new THREE.CircleGeometry(pr, 40), new THREE.MeshStandardMaterial({ color: 0x3a8fc0, roughness: 0.05, metalness: 0.3, emissive: 0x12405e, emissiveIntensity: 0.35 })); pw.rotation.x = -PI / 2; pw.scale.set(1, ps, 1); pw.position.set(PX, 0.03, PZ); scene.add(pw);
-        for (let k = 0; k < 26; k++) { const a = (k / 26) * PI * 2, r2 = mk(new THREE.SphereGeometry(0.3 + rnd() * 0.12, 8, 6), M([0x8e887a, 0x9a9486, 0x827c70][k % 3], 0.9), PX + Math.cos(a) * (pr + 0.1), 0.15, PZ + Math.sin(a) * (pr * ps + 0.1)); r2.scale.set(1.1, 0.6, 1.1); }
-        for (const [dx, dz] of [[-0.8, 0.2], [0.9, -0.4], [0.2, 0.9], [-1.4, -0.7]]) { const lp = mk(new THREE.CylinderGeometry(0.32, 0.32, 0.02, 14), M(0x3f9a5a, 0.8), PX + dx, 0.045, PZ + dz, false); mk(new THREE.SphereGeometry(0.08, 8, 6), M(0xffa8c8, 0.6), PX + dx + 0.05, 0.08, PZ + dz, false); }
-        addObs(PX, PZ, pr * 0.92, pr * ps * 0.92, undefined, 0.3); }
+      // 農地（取代原本的池塘）：五畦，種茄子、青椒、西瓜、橘子、藍莓
+      { const FZ = 5.6, FD = 3.5, X0 = 16.5, DX = 1.05, soil = M(0x4e3422, 1), frame = M(0x8a6a3e, 0.8);
+        const crops = ["茄子", "青椒", "西瓜", "橘子", "藍莓"];
+        crops.forEach((nm, i) => { const cx = X0 + i * DX;
+          mk(new THREE.BoxGeometry(0.92, 0.14, FD), soil, cx, 0.07, FZ);
+          for (const dz of [-FD / 2, FD / 2]) mk(new THREE.BoxGeometry(0.98, 0.2, 0.06), frame, cx, 0.1, FZ + dz, false);
+          for (const dx of [-0.46, 0.46]) mk(new THREE.BoxGeometry(0.05, 0.2, FD), frame, cx + dx, 0.1, FZ, false);
+          const sg = decalCanvas(256, 96, (c, w, h) => { c.fillStyle = "#f2e6c8"; c.fillRect(0, 0, w, h); c.strokeStyle = "#7a5a30"; c.lineWidth = 6; c.strokeRect(4, 4, w - 8, h - 8); c.fillStyle = "#3a2a18"; c.font = "800 54px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.fillText(nm, w / 2, 66); });
+          mk(new THREE.CylinderGeometry(0.025, 0.025, 0.55, 6), frame, cx, 0.3, FZ + FD / 2 + 0.2, false);
+          const sp = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.23), new THREE.MeshStandardMaterial({ map: mkTex(THREE, sg, aniso), roughness: 0.8 })); sp.position.set(cx, 0.66, FZ + FD / 2 + 0.2); sp.rotation.x = -0.25; scene.add(sp);
+          for (let r = 0; r < 4; r++) for (const sx of [-0.2, 0.2]) { const x = cx + sx, z = FZ - FD / 2 + 0.55 + r * 0.8;
+            if (i === 0) { mk(new THREE.CylinderGeometry(0.025, 0.03, 0.55, 6), M(0x3f7a3a, 0.9), x, 0.4, z, false); mk(new THREE.SphereGeometry(0.2, 8, 6), M(0x3a8a3a, 0.9), x, 0.72, z, false); for (const [fx, fz] of [[0.1, 0.05], [-0.1, -0.06]]) { const e = mk(new THREE.SphereGeometry(0.1, 10, 8), M(0x4a1f6e, 0.35), x + fx, 0.48, z + fz, false); e.scale.set(0.8, 1.6, 0.8); } }
+            else if (i === 1) { mk(new THREE.CylinderGeometry(0.025, 0.03, 0.5, 6), M(0x3f7a3a, 0.9), x, 0.38, z, false); mk(new THREE.SphereGeometry(0.22, 8, 6), M(0x2f8a3a, 0.9), x, 0.62, z, false); for (const [fx, fz] of [[0.12, 0.04], [-0.1, 0.1]]) { const e = mk(new THREE.ConeGeometry(0.06, 0.2, 8), M(0x3fae3f, 0.4), x + fx, 0.46, z + fz, false); e.rotation.x = PI; } }
+            else if (i === 2) { if (sx < 0) continue; mk(new THREE.SphereGeometry(0.19, 12, 9), M(0x2f7a3a, 0.5), x - 0.2, 0.3, z, false).scale.set(1.2, 1, 1); mk(new THREE.SphereGeometry(0.21, 12, 9), M(0x4a9a4a, 0.5), x - 0.2, 0.3, z + 0.01, false).scale.set(0.55, 1.02, 1.02); mk(new THREE.BoxGeometry(0.5, 0.01, 0.06), M(0x3f8a3a, 0.9), x - 0.2, 0.17, z + 0.4, false); }
+            else if (i === 3) { if (sx < 0 || r % 2) continue; mk(new THREE.CylinderGeometry(0.05, 0.07, 0.7, 8), M(0x6a4a2c, 0.9), x - 0.2, 0.45, z); mk(new THREE.SphereGeometry(0.34, 12, 9), M(0x2f7a34, 0.9), x - 0.2, 1.0, z); for (let k = 0; k < 4; k++) { const a = k * 1.7; mk(new THREE.SphereGeometry(0.08, 10, 8), M(0xf28a1c, 0.5), x - 0.2 + Math.cos(a) * 0.3, 0.95 + (k % 2) * 0.12, z + Math.sin(a) * 0.3, false); } }
+            else { mk(new THREE.SphereGeometry(0.19, 10, 8), M(0x2f6a34, 0.95), x, 0.26, z, false).scale.set(1, 0.9, 1); for (let k = 0; k < 4; k++) { const a = k * 1.6 + r; mk(new THREE.SphereGeometry(0.045, 8, 6), M(0x2c3f9a, 0.4), x + Math.cos(a) * 0.15, 0.3 + (k % 2) * 0.08, z + Math.sin(a) * 0.15, false); } } }
+        });
+        addObs(X0 + 2 * DX, FZ, 2.75, FD / 2 + 0.1, undefined, 0.3); }
       // 噴水廣場
       { const FX = 22.6, FZ = -4.6; mk(new THREE.CylinderGeometry(2.3, 2.3, 0.03, 32), M(0xb9b4a8, 0.9), FX, 0.04, FZ, false); mk(new THREE.CylinderGeometry(1.3, 1.4, 0.45, 24), M(0xcfcac0, 0.8), FX, 0.225, FZ); mk(new THREE.CylinderGeometry(1.15, 1.15, 0.05, 24), new THREE.MeshStandardMaterial({ color: 0x4aa0d0, roughness: 0.05, metalness: 0.3 }), FX, 0.44, FZ, false);
         mk(new THREE.CylinderGeometry(0.12, 0.18, 1.1, 10), M(0xcfcac0, 0.8), FX, 0.95, FZ); mk(new THREE.CylinderGeometry(0.55, 0.3, 0.12, 16), M(0xcfcac0, 0.8), FX, 1.5, FZ); mk(new THREE.SphereGeometry(0.16, 10, 8), new THREE.MeshStandardMaterial({ color: 0xcfe8ff, emissive: 0x6ab0e0, emissiveIntensity: 0.8, transparent: true, opacity: 0.8 }), FX, 1.7, FZ, false); addObs(FX, FZ, 1.4, 1.4, undefined, 0.5); }
