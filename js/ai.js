@@ -191,8 +191,10 @@
     return { ok: true, text: `${nm}：${done.join("；")}` };
   };
 
-  async function callAI(s, p, signal, onDelta) {
-    const hist = s.msgs.filter((m) => m.role === "user" || m.role === "ai").slice(-24);
+  async function callAI(s, p, signal, onDelta, opt = {}) {
+    const useM = opt.model || (cfg.provider === "aiso1" && !cfg.model.trim() ? aisoModelOf(s) : "");
+    // 比較模式的回答（cmp）每個模型各一則：只把「同一個模型」自己的那則放回對話紀錄
+    const hist = s.msgs.filter((m) => m.role === "user" || (m.role === "ai" && !m.live && (!m.cmp || m.model === useM || (!useM && m.cmpFirst)))).slice(-24);
     if (cfg.provider === "anthropic") {
       const messages = []; for (const m of hist) {
         const role = m.role === "user" ? "user" : "assistant", content = [];
@@ -206,7 +208,7 @@
       return { text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"), imgs: [] };
     }
     if (isLocal()) {
-      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
+      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store && !opt.compare, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
       for (const m of hist) {
         if (m.role === "user") {
           const noEyes = cfg.provider === "aiso1" && aiso.vision === false;   // 目前的模型不能看圖：不要把圖送過去（不然整段對話都會報錯），改成文字說明
@@ -230,7 +232,7 @@
       const push = () => onDelta && onDelta({ text: tidy(text), think, actions });
       // 最多 4 輪：模型呼叫工具 → 這裡執行（直接改藝廊資料）→ 把結果交回模型 → 模型回報做了什麼
       for (let round = 0; round < 8; round++) {
-        const body = { messages, stream: true }; const mdlId = cfg.provider === "aiso1" && !cfg.model.trim() ? aisoModelOf(s) : modelOf(); if (mdlId) body.model = mdlId;
+        const body = { messages, stream: true }; const mdlId = useM || modelOf(); if (mdlId) body.model = mdlId;
         body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
         if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
         if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
@@ -295,9 +297,25 @@
     return { text, imgs };
   }
 
+  // 比較模式：同一個問題同時丟給 AISO1 上的每個模型，並排顯示（只回答、不改白板，避免同一件事被改三次）
+  const CMP = "__all";
+  async function sendCompare(s, p) {
+    const L = aiso.models.map((m) => m.id); let raf = 0;
+    const lives = L.map((id, k) => ({ role: "ai", cmp: true, cmpFirst: k === 0, model: id, text: "", imgs: [], at: Date.now(), live: true, meta: mName(id) + " · 等待中…" }));
+    s.msgs.push(...lives); s.notify();
+    await Promise.all(L.map(async (id, k) => {
+      const m = lives[k], onDelta = (d) => { m.text = d.text; m.think = d.think; m.meta = mName(id) + " · 回答中…"; if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.notify(); }); };
+      try { const out = await callAI(s, p, s.ctl.signal, onDelta, { model: id, compare: true }); m.text = out.text || "（沒有回應）"; if (out.think) m.think = out.think; m.meta = out.meta || mName(id); }
+      catch (e) { m.meta = mName(id) + (e.name === "AbortError" ? " · （已停止）" : " · （中斷）" + (e.message ? "：" + e.message : "")); }
+      delete m.live; s.notify();
+    }));
+    cancelAnimationFrame(raf); s.pending = false; s.ctl = null; s.notify(); s.save();
+  }
+
   async function send(s, p, text, imgs) {
     if (s.pending) return; text = String(text || "").trim(); if (!text && !imgs.length) return;
     s.msgs.push({ role: "user", text, imgs: imgs.slice(), at: Date.now() }); s.pending = true; s.ctl = new AbortController(); s.notify();
+    if (s.model === CMP && cfg.provider === "aiso1" && (aiso.models || []).length > 1) return sendCompare(s, p);
     const live = { role: "ai", text: "", imgs: [], at: Date.now(), live: true }; let raf = 0;   // 串流中的那則回覆（第一個字到了才放進對話）
     const onDelta = (d) => { if (!s.msgs.includes(live)) s.msgs.push(live); live.text = d.text; live.think = d.think; if (d.actions && d.actions.length) live.actions = d.actions.slice(); if (!raf) raf = requestAnimationFrame(() => { raf = 0; s.notify(); }); };
     try {
@@ -367,10 +385,10 @@
     const q = (x) => el.querySelector(x), msgs = q(".ai-msgs"), ta = q("textarea"), prev = q(".ai-prev"), cfgBox = q(".ai-cfg"), file = q("input[type=file]"), sendBtn = q("[data-send]");
     const title = () => {
       const st = cfg.provider !== "aiso1" ? "" : aiso.ok === null ? " · 連線中…（等瀏覽器允許）" : aiso.ok ? " · ● 已連線" + (aiso.vision === true ? " · 可看圖" : aiso.vision === false ? " · 不能看圖" : "") : aiso.wait ? " · ◌ 等待瀏覽器允許" : " · ○ 未連線";
-      const mdl = modelOf() || (cfg.provider === "aiso1" && mName(aisoModelOf(s))) || "預設模型";
+      const mdl = modelOf() || (cfg.provider === "aiso1" && (s.model === CMP ? `${(aiso.models || []).length} 個模型比較` : mName(aisoModelOf(s)))) || "預設模型";
       q(".ai-title").textContent = `AI · ${provName()} · ${mdl}${st}`; q(".ai-title").classList.toggle("ai-off", cfg.provider === "aiso1" && aiso.ok === false);
       const sel = q("[data-mdl]"), L = aiso.models || []; if (sel) { sel.hidden = cfg.provider !== "aiso1" || !!cfg.model.trim() || L.length < 2; const cur = aisoModelOf(s);
-        if (!sel.hidden) { sel.innerHTML = L.map((m) => `<option value="${esc(m.id)}">${esc(mName(m.id))}${m.loaded ? "" : "（需載入）"}</option>`).join(""); sel.value = cur; } }
+        if (!sel.hidden) { sel.innerHTML = L.map((m) => `<option value="${esc(m.id)}">${esc(mName(m.id))}${m.loaded ? "" : "（需載入）"}</option>`).join("") + `<option value="${CMP}">⚡ ${L.length} 個一起比較</option>`; sel.value = s.model === CMP ? CMP : cur; } }
       const hs = q("[data-aiso-st]"); if (hs) hs.textContent = cfg.provider !== "aiso1" ? "" : aiso.ok ? `　目前：已連線（${aiso.name}）` : aiso.ok === false ? "　目前：連不到" : "";
     };
     const checkAiso = () => { if (cfg.provider !== "aiso1") return; aiso.ok = null; title(); pingAiso().then(() => { if (el.isConnected) { title(); paint(); } }); };
@@ -378,7 +396,9 @@
     const paint = () => {
       const empty = cfg.provider === "aiso1" && aiso.ok === false ? `<p class="ai-empty">還連不到 AISO1 本地模型。<br><b>${esc(LAUNCH_HELP)}</b><br><br>在線上網站直接連的話：<br><b>① 允許瀏覽器連本機：</b>${esc(LNA_HELP)}<br><b>② SSH 通道：</b>終端機執行 <code>${esc(AISO_TUNNEL)}</code>（出現 Address already in use 代表已經開著）<br><b>③</b> AISO1 上的模型服務要在跑。都好了就按 <button type="button" class="ai-retry" data-retry>重新連線</button></p>` : !ready() ? `<p class="ai-empty">先按右上角 ⚙ 設定${needKey() ? "你的 API Key" : "端點網址"}，就能開始聊天。</p>` : `<p class="ai-empty">${p.office ? "問我整體進度、該先做哪個專案、下一步怎麼走都可以" : "問我關於「" + esc(p.name) + "」的任何事"}。可以丟文字或圖片。</p>`;
       const last = s.msgs[s.msgs.length - 1];
-      msgs.innerHTML = (s.msgs.length ? s.msgs.map((m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${x.read ? " read" : ""}${m.undone && !x.read ? " undone" : ""}">${x.fail ? "✗" : x.read ? "⌕" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`).join("") : empty) + (s.pending && !(last && last.live) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
+      const one = (m) => `<div class="ai-m ai-${m.role}${m.live ? " ai-live" : ""}${m.cmp ? " ai-cmp" : ""}"><div class="ai-b">${m.think ? `<details class="ai-think"${m.live && !m.text ? " open" : ""}><summary>思考過程</summary>${fmt(m.think)}</details>` : ""}${m.text ? fmt(m.text) : ""}${(m.imgs || []).map((u) => `<a class="ai-imgwrap" href="${u}" download="image.${/png/.test(u.slice(0, 20)) ? "png" : "jpg"}" title="點一下下載"><img class="ai-img" src="${u}" alt=""></a>`).join("")}${(m.actions || []).length ? `<div class="ai-acts">${m.actions.map((x) => `<div class="${x.fail ? "fail" : ""}${x.read ? " read" : ""}${m.undone && !x.read ? " undone" : ""}">${x.fail ? "✗" : x.read ? "⌕" : "✓"} ${esc(x.text)}</div>`).join("")}${m.undo && !m.live ? (m.undone ? `<span class="ai-undone">已復原</span>` : `<button type="button" class="ai-undo" data-undo="${s.msgs.indexOf(m)}">復原這次改動</button>`) : ""}</div>` : ""}${m.meta ? `<div class="ai-meta">${esc(m.meta)}</div>` : ""}</div></div>`;
+      let html = ""; for (let i = 0; i < s.msgs.length; i++) { const m = s.msgs[i]; if (!m.cmp) { html += one(m); continue; } let g = ""; while (i < s.msgs.length && s.msgs[i].cmp) g += one(s.msgs[i++]); i--; html += `<div class="ai-cmpgrid">${g}</div>`; }
+      msgs.innerHTML = (s.msgs.length ? html : empty) + (s.pending && !(last && (last.live || last.cmp)) ? `<div class="ai-m ai-ai"><div class="ai-b ai-dots"><i></i><i></i><i></i></div>${cfg.provider === "aiso1" && !aiso.ok ? `<div class="ai-hint">等待連到 AISO1…${esc(LNA_HELP)}</div>` : ""}</div>` : "");
       msgs.scrollTop = msgs.scrollHeight; sendBtn.textContent = s.pending ? "停止" : "送出"; sendBtn.classList.toggle("stop", !!s.pending);
       const rb = msgs.querySelector("[data-retry]"); if (rb) rb.addEventListener("click", checkAiso);
       msgs.querySelectorAll("[data-undo]").forEach((b) => b.addEventListener("click", () => {   // 還原成這次改動前的白板資料，重新整理讓藝廊全部重畫
@@ -401,7 +421,7 @@
     const area = q(".ai"); area.addEventListener("dragover", (e) => { e.preventDefault(); }); area.addEventListener("drop", (e) => { e.preventDefault(); addFiles(e.dataTransfer.files); });
     q("[data-new]").addEventListener("click", () => { if (p.onNew) { p.onNew(); return; } if (s.pending && s.ctl) s.ctl.abort(); s.msgs = []; s.pending = false; s.save(); s.notify(); });   // 有對話清單時：開新的一段，舊的留著
     q("[data-cfg]").addEventListener("click", () => { cfgBox.hidden = !cfgBox.hidden; });
-    q("[data-mdl]").addEventListener("change", (e) => { s.model = e.target.value; cfg.aisoModel = s.model; saveCfg(); s.save(); title(); });   // 這段對話換模型；之後開的新對話也預設用它
+    q("[data-mdl]").addEventListener("change", (e) => { s.model = e.target.value; if (s.model !== CMP) { cfg.aisoModel = s.model; saveCfg(); } s.save(); title(); });   // 這段對話換模型；之後開的新對話也預設用它
     const baseRow = q("[data-base-row]"), base = q("[data-base]");
     const showRows = (pv) => {   // 依服務商顯示需要的欄位
       const loc = pv === "custom" || pv === "aiso1";

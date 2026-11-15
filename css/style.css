@@ -1184,3 +1184,8 @@ body.locked .santa-fab { display: none; }
 .dh-pg b { position: relative; display: block; text-align: center; font: 700 13.5px/24px var(--font); color: var(--hm-ink); }
 .dh-empty { font: italic 500 19px var(--hm-serif-tc); color: var(--hm-ink-2); }
 @media (max-width: 760px) { .dh { padding: 20px 16px 26px; } .dh-kpis { grid-template-columns: repeat(3, 1fr); } .dh-kpis b { font-size: 34px; } }
+/* AI 總管：比較模式，同一題多個模型並排 */
+.ai-cmpgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; align-items: start; margin: 6px 0 14px; }
+.ai-cmpgrid .ai-m { margin: 0; max-width: none; }
+.ai-cmpgrid .ai-b { max-width: none; width: 100%; box-sizing: border-box; font-size: .94em; }
+.ai-cmpgrid .ai-meta { font-weight: 700; }
