@@ -167,12 +167,7 @@
           pln(0.74, 0.46, scr, 0, 1.12, -0.16, 0, { p: q, glow: 0.7, rx: -0.08 });
           pln(0.9, 0.16, K.label("字幕工作站 · SUBTITLE", 640, 100, { bg: "#16161c", fg: "#f2e8d0", fs: 38 }), 0, 0.5, 0.33, 0, { p: q, glow: 0.3 });
           obs(1.2, -5.4, 0.78, 0.34);
-          const open = K.openLuka = () => { if (document.querySelector(".luka-ov")) return; const ov = document.createElement("div"); ov.className = "luka-ov"; document.body.classList.add("robot-open");
-            const U = "http://127.0.0.1:8766", embed = location.protocol !== "https:";   // 線上（https）的頁面不能把 http://127.0.0.1 嵌進來（瀏覽器會擋），所以線上版改成「一鍵開啟」
-            ov.innerHTML = `<div class="luka-card"><div class="luka-bar"><b>🎬 Luka Film 字幕工具</b><span>${embed ? "只有在你的 Mac 上已啟動工具才看得到" : "這個工具跑在你自己的 Mac 上"}</span><a href="${U}" target="_blank" rel="noopener">新分頁開啟</a><button type="button" class="luka-x" aria-label="關閉">✕</button></div>${embed ? `<iframe src="${U}" title="Luka Film 字幕工具" referrerpolicy="no-referrer"></iframe>` : `<div class="luka-launch"><div class="luka-ico">🎬</div><h3>Luka Film 字幕工具</h3><p>聽日文 → 對原稿 → 填時間，三步驟都在你的 Mac 本機執行。<br>瀏覽器基於安全限制，線上網頁不能直接把本機工具嵌進來，所以用新分頁開啟。</p><a class="luka-go" href="${U}" target="_blank" rel="noopener">▶ 開啟工具（${U.replace("http://", "")}）</a><small>打不開的話，先在 Mac 執行 Luka_film/V2/START_LUKA_FILM.command</small></div>`}</div>`;
-            document.body.appendChild(ov);
-            const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } }, close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
-            window.addEventListener("keydown", kd, true); ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".luka-x")) close(); }); };
+          const open = K.openLuka = () => { if (window.LukaTool) window.LukaTool.open(); };   // 工具畫面做在 js/luka.js（直接在網站裡，不是外連）
           const wp = K.w(1.2, -4.7), act = { id: "luka-tool" + K.s, x: wp.x, z: wp.z, r: 1.6, lvl: 0, html: "<kbd>Enter</kbd> 打開 <b>Luka Film 字幕工具</b> <small>　點螢幕也可以</small>", fn: open };
           interact.push(act); cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); });
           const hit = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 0.4), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(1.2, 1.1, -5.55); hit.userData = { station: K.s, kind: "act", act: open, stand: { x: wp.x, z: wp.z } }; K.g.add(hit); pickables.push(hit); cleanup.push(() => { const i = pickables.indexOf(hit); if (i >= 0) pickables.splice(i, 1); }); }
