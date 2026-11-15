@@ -1388,13 +1388,13 @@
           addObs(cx, (z0 + z1) / 2, 0.3, (z1 - z0) / 2, 1, 0.85); }
         // 天花板：只在第一人稱、人在二樓室內時出現（俯視 / 環繞視角不擋視線）；這時牆也升到完整高度，和天花板接起來
         { const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1 + 0.7 - X0 + 0.14, Z1 - Z0 + 0.14), M(0xf6f2ea, 0.95)); cm.rotation.x = Math.PI / 2; cm.position.set((X0 - 0.7 + X1) / 2, UY + WT - 0.01, ZC); cm.visible = false; scene.add(cm);
-          let dl = null;
+          let dl = null, dlMat = null; const dOff = new THREE.Color(0x2a2f3a), dOn = new THREE.Color(0xffffff);
           if (window.PERSONA === "guest") {   // 客人視角：天花板上很多小小的圓形白燈（嵌燈）
-            dl = new THREE.Group(); const rg = new THREE.CylinderGeometry(0.115, 0.115, 0.02, 24), rm = new THREE.MeshStandardMaterial({ color: 0xb4b8be, roughness: 0.35, metalness: 0.7 }), dg = new THREE.CylinderGeometry(0.085, 0.085, 0.02, 24), dm = new THREE.MeshBasicMaterial({ color: 0xffffff });   // 嵌燈：金屬邊框 + 凹進去的發亮圓面（參考照片）
-            for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const r = new THREE.Mesh(rg, rm); r.position.set(x, UY + WT - 0.012, z); dl.add(r); const d = new THREE.Mesh(dg, dm); d.position.set(x, UY + WT - 0.004, z); dl.add(d); }
+            dl = new THREE.Group(); const rg = new THREE.RingGeometry(0.088, 0.118, 28), rm = new THREE.MeshStandardMaterial({ color: 0xb4b8be, roughness: 0.35, metalness: 0.7, side: THREE.DoubleSide }), dg = new THREE.CircleGeometry(0.088, 28); dlMat = new THREE.MeshBasicMaterial({ color: 0x2a2f3a, side: THREE.DoubleSide });   // 嵌燈：金屬邊框（環）+ 凹進去的圓面；有人在才亮
+            for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const r = new THREE.Mesh(rg, rm); r.rotation.x = Math.PI / 2; r.position.set(x, UY + WT - 0.02, z); dl.add(r); const d = new THREE.Mesh(dg, dlMat); d.rotation.x = Math.PI / 2; d.position.set(x, UY + WT - 0.018, z); dl.add(d); }
             dl.visible = false; scene.add(dl);
           }
-          tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; if (dl) dl.visible = cm.visible; }); }
+          tickHooks.push(() => { cm.visible = fpv && insH > 0.5 && lvlS > 0.5; if (dl) { dl.visible = cm.visible; dlMat.color.copy(dOff).lerp(dOn, akari.k); } }); }   // 有人在二樓才亮（跟吊燈同一個開關）
         // 冰箱：灰色上下兩門（上面冷凍小、下面冷藏大），放在客廳西北角（靠北牆、貼隔間牆），門朝南
         { const fx = 7.1, fz = Z0 + 0.55, gm = new THREE.MeshStandardMaterial({ color: 0x7e838b, roughness: 0.32, metalness: 0.55 }), dk = new THREE.MeshStandardMaterial({ color: 0x4a4e55, roughness: 0.5, metalness: 0.4 });
           U(new THREE.BoxGeometry(0.95, 1.75, 0.82), gm, fx, 0.875, fz);                                                 // 機身

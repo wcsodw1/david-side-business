@@ -371,6 +371,8 @@
   };
 
   let clockTimer;
+  // 瀏覽器分頁標題前面標上帳號類型：ADMIN（David）/ GUEST（訪客）/ ARIES，開多個分頁時一眼分得出來
+  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", aeris: "[ARIES] " }[window.PERSONA] || "");
   function render() {
     const hash = window.PERSONA === "guest" ? "" : location.hash.replace(/^#\/?/, "");   // 訪客永遠只看得到 3D 房子
     const [seg, arg] = hash.split("/");
@@ -427,7 +429,7 @@
     requestAnimationFrame(() => requestAnimationFrame(() => $$("[data-ring]", app).forEach((r) => { const C = parseFloat(r.style.strokeDasharray); r.style.strokeDashoffset = (C * (1 - r.dataset.ring / 100)).toFixed(2); })));
     window.scrollTo(0, 0);
     requestAnimationFrame(() => requestAnimationFrame(() => $$("[data-w]", app).forEach((b) => (b.style.width = b.dataset.w + "%"))));
-    document.title = (seg === "office" ? "辦公室 · " : "") + (seg === "p" && P.find((p) => p.id === arg) ? P.find((p) => p.id === arg).name + " · " : "") + (SITE.name || "David's Side Business");
+    document.title = acctTag() + (seg === "office" ? "辦公室 · " : "") + (seg === "p" && P.find((p) => p.id === arg) ? P.find((p) => p.id === arg).name + " · " : "") + (SITE.name || "David's Side Business");
   }
 
   /* ---------- 解鎖 / 鎖定 ---------- */
@@ -441,6 +443,7 @@
     render();
   }
   function lock() {
+    document.title = SITE.name || "David's Side Business";
     try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); } catch (_) {}
     location.hash = "";
     if (window.News) window.News.unmount();
