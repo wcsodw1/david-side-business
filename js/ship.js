@@ -44,7 +44,7 @@
       const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: 24 });
       const m = new THREE.Mesh(g, mats); m.rotation.x = PI / 2; m.position.y = top; m.castShadow = true; m.receiveShadow = true; root.add(m); return m;
     };
-    const deckWood = M(0xb88c5c, 0.65), white = M(0xf2f3f5, 0.6), navy = M(0x1d2a44, 0.6), red = M(0x8a1f1f, 0.7);
+    const deckWood = M(0xc99a5b, 0.7), white = M(0xe9d8b4, 0.7), navy = M(0xb8793c, 0.75), red = M(0x4a2e1a, 0.8);   // 千陽號：淺木甲板 + 奶油色上層 + 橘褐木船身 + 深褐水線
     const POOL = ctx.POOL;
     const topShape = outline(1), hole = new THREE.Path(); hole.moveTo(POOL.x0, POOL.z0); hole.lineTo(POOL.x1, POOL.z0); hole.lineTo(POOL.x1, POOL.z1); hole.lineTo(POOL.x0, POOL.z1); hole.closePath(); topShape.holes.push(hole);   // 泳池挖洞
     layer(topShape, 4.6, -0.03, [deckWood, white]);                                       // 白色上層（頂面 = 船首 / 船尾甲板）
@@ -53,7 +53,7 @@
 
     // 船名（兩側船身）
     const nameC = document.createElement("canvas"); nameC.width = 2048; nameC.height = 256; const ng = nameC.getContext("2d");
-    ng.fillStyle = "rgba(0,0,0,0)"; ng.clearRect(0, 0, 2048, 256); ng.fillStyle = "#f4efe2"; ng.font = "800 150px Georgia, serif"; ng.textAlign = "center"; if ("letterSpacing" in ng) ng.letterSpacing = "26px"; ng.fillText("DAVID'S GALLERY", 1024, 175);
+    ng.fillStyle = "rgba(0,0,0,0)"; ng.clearRect(0, 0, 2048, 256); ng.fillStyle = "#fff4cf"; ng.font = "800 150px Georgia, serif"; ng.textAlign = "center"; if ("letterSpacing" in ng) ng.letterSpacing = "26px"; ng.fillText("THOUSAND SUNNY", 1024, 175);
     const nameT = new THREE.CanvasTexture(nameC); if ("colorSpace" in nameT) nameT.colorSpace = THREE.SRGBColorSpace; else nameT.encoding = THREE.sRGBEncoding;
     for (const s of [-1, 1]) { const p = new THREE.Mesh(new THREE.PlaneGeometry(28, 3.5), new THREE.MeshBasicMaterial({ map: nameT, transparent: true })); p.position.set(W * 0.7, -8.4, s * (halfAt(W * 0.7) * 0.97 + 0.05)); p.rotation.y = s > 0 ? 0 : PI; root.add(p); }
 
@@ -131,10 +131,50 @@
     palm(-11.0, 0.0, 3.0); palm(-1.6, 5.8, 2.6);
     add(new THREE.CylinderGeometry(0.04, 0.05, 2.2, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 1.1, 3.9); add(new THREE.SphereGeometry(0.16, 10, 8), M(0xd7dbe2, 0.25, 0.9), -2.2, 2.25, 3.9, root, false);
 
-    // 船首：繫纜柱與旗桿
+    // ===== 千陽號船首：獅子船首像、兩根桅杆 + 帆（主帆是草帽海賊旗）、草皮甲板、蜜柑樹 =====
     for (const z of [-3, 3]) add(new THREE.CylinderGeometry(0.2, 0.26, 0.7, 12), M(0x2a2d36, 0.5, 0.6), W + 14, 0.35, z);
-    add(new THREE.CylinderGeometry(0.06, 0.08, 8, 8), M(0xe8e8ee, 0.4, 0.4), W + 19, 4, 0);
-    const flag = add(new THREE.PlaneGeometry(2.2, 1.3), new THREE.MeshBasicMaterial({ color: 0xc23a2a, side: THREE.DoubleSide }), W + 20.2, 7.2, 0, root, false);
+    const mastM = M(0x8a5a33, 0.8), sailM = M(0xf6f1e4, 0.9, 0, { side: THREE.DoubleSide }), sailMat = (map) => new THREE.MeshStandardMaterial({ map, color: 0xffffff, roughness: 0.9, side: THREE.DoubleSide });
+    const srgb = (t) => { if ("colorSpace" in t) t.colorSpace = THREE.SRGBColorSpace; else t.encoding = THREE.sRGBEncoding; return t; };
+    // 草帽海賊旗貼圖：骷髏 + 交叉骨 + 草帽
+    const jrC = document.createElement("canvas"); jrC.width = jrC.height = 512; const jg = jrC.getContext("2d");
+    const drawJR = (g, bg) => {
+      g.fillStyle = bg; g.fillRect(0, 0, 512, 512);
+      g.strokeStyle = "#f4f1e8"; g.lineCap = "round"; g.lineWidth = 26;
+      g.beginPath(); g.moveTo(110, 400); g.lineTo(402, 250); g.moveTo(402, 400); g.lineTo(110, 250); g.stroke();
+      for (const [x, y] of [[96, 410], [120, 392], [416, 410], [392, 392], [96, 240], [120, 258], [416, 240], [392, 258]]) { g.fillStyle = "#f4f1e8"; g.beginPath(); g.arc(x, y, 16, 0, 7); g.fill(); }
+      g.fillStyle = "#f4f1e8"; g.beginPath(); g.ellipse(256, 290, 105, 95, 0, 0, 7); g.fill(); g.fillRect(205, 340, 102, 70);
+      g.fillStyle = bg; g.beginPath(); g.ellipse(215, 292, 28, 34, 0, 0, 7); g.ellipse(297, 292, 28, 34, 0, 0, 7); g.fill(); g.beginPath(); g.moveTo(256, 318); g.lineTo(244, 345); g.lineTo(268, 345); g.fill();
+      for (let k = 0; k < 5; k++) g.fillRect(222 + k * 16, 372, 4, 34);
+      g.fillStyle = "#e8c15a"; g.beginPath(); g.ellipse(256, 212, 190, 46, 0, 0, 7); g.fill();               // 草帽帽簷
+      g.beginPath(); g.ellipse(256, 180, 100, 72, 0, PI, 0); g.lineTo(356, 200); g.lineTo(156, 200); g.fill();  // 帽頂
+      g.fillStyle = "#c8281e"; g.fillRect(158, 176, 196, 24);                                                 // 紅帽帶
+    };
+    drawJR(jg, "#1b1b20"); const jrT = srgb(new THREE.CanvasTexture(jrC));
+    const sunC = document.createElement("canvas"); sunC.width = sunC.height = 256; { const g = sunC.getContext("2d"); g.fillStyle = "#f6f1e4"; g.fillRect(0, 0, 256, 256); g.fillStyle = "#f2b81c"; for (let k = 0; k < 14; k++) { g.save(); g.translate(128, 128); g.rotate(k * PI / 7); g.beginPath(); g.moveTo(-18, -60); g.lineTo(0, -112); g.lineTo(18, -60); g.fill(); g.restore(); } g.beginPath(); g.arc(128, 128, 62, 0, 7); g.fill(); g.fillStyle = "#c8281e"; g.beginPath(); g.arc(128, 128, 34, 0, 7); g.fill(); }
+    const sunT = srgb(new THREE.CanvasTexture(sunC));
+    const billow = (w, h, mat, x, y, z, amp) => { const g = new THREE.PlaneGeometry(w, h, 12, 8), p = g.attributes.position; for (let i = 0; i < p.count; i++) { const u = p.getX(i) / w, v = p.getY(i) / h; p.setZ(i, amp * Math.cos(u * PI) * Math.cos(v * PI) * 1.0); } g.computeVertexNormals(); const m = add(g, mat, x, y, z, root, true); m.rotation.y = PI / 2; return m; };   // 風帆（朝船首鼓起）
+    const mast = (x, h, sw, sh, sy, mat, amp) => {
+      add(new THREE.CylinderGeometry(0.28, 0.4, h, 10), mastM, x, h / 2, 0);
+      for (const yy of [sy + sh / 2 + 0.2, sy - sh / 2 - 0.2]) add(new THREE.CylinderGeometry(0.16, 0.16, sw + 1.6, 8), mastM, x, yy, 0, root, false).rotation.x = PI / 2;
+      billow(sw, sh, mat, x + amp * 0.5, sy, 0, amp);
+    };
+    mast(W + 8, 24, 13, 10, 16, sailMat(jrT), 1.6);                                                          // 主桅（帆上是草帽海賊旗）
+    mast(W + 20, 16, 8, 6.5, 10.8, sailMat(sunT), 1.1);                                                      // 前桅（帆上是太陽）
+    { const nest = add(new THREE.CylinderGeometry(1.5, 1.2, 0.9, 16), mastM, W + 8, 22.2, 0); add(new THREE.TorusGeometry(1.5, 0.07, 6, 20), brass, W + 8, 23.2, 0, root, false).rotation.x = PI / 2; }   // 瞭望台
+    const flag = add(new THREE.PlaneGeometry(3, 3), new THREE.MeshBasicMaterial({ map: jrT, side: THREE.DoubleSide }), W + 9.6, 25.3, 0, root, false);   // 桅頂海賊旗
+    // 草皮甲板 + 蜜柑樹
+    const lawn = add(new THREE.CylinderGeometry(1, 1, 0.05, 28), M(0x4f9d3a, 0.95), W + 11, 0.03, 0, root, false); lawn.scale.set(10, 1, 6.5);
+    for (const [tx, tz] of [[W + 2.5, -4.2], [W + 2.5, 4.2]]) { add(new THREE.CylinderGeometry(0.12, 0.16, 1.1, 8), M(0x6b4a2a, 0.9), tx, 0.55, tz, root, false); add(new THREE.SphereGeometry(0.85, 12, 10), M(0x2e8a3a, 0.85), tx, 1.5, tz, root, false); for (let k = 0; k < 7; k++) add(new THREE.SphereGeometry(0.13, 8, 6), M(0xf28a1f, 0.6), tx + Math.cos(k * 0.9) * 0.78, 1.4 + (k % 3) * 0.22, tz + Math.sin(k * 0.9) * 0.78, root, false); }
+    // 獅子船首像（太陽般的鬃毛）
+    { const g = new THREE.Group(); g.position.set(W + 32.4, 2.6, 0); root.add(g);
+      const gold = M(0xf2c230, 0.55), orange = M(0xf08a1c, 0.6), dark = M(0x2a1a10, 0.6);
+      for (let k = 0; k < 16; k++) { const a = k / 16 * PI * 2, c = add(new THREE.ConeGeometry(0.55, 1.5, 8), k % 2 ? orange : gold, 0, Math.sin(a) * 1.75, Math.cos(a) * 1.75, g, false); c.rotation.x = -a + PI; }   // 鬃毛的尖瓣
+      add(new THREE.CylinderGeometry(1.7, 1.7, 0.5, 24), orange, -0.2, 0, 0, g, false).rotation.z = PI / 2;
+      add(new THREE.SphereGeometry(1.2, 18, 14), gold, 0.6, 0, 0, g);                                       // 頭
+      add(new THREE.BoxGeometry(0.9, 0.6, 0.9), gold, 1.5, -0.35, 0, g, false);                             // 口鼻
+      add(new THREE.SphereGeometry(0.2, 8, 6), dark, 1.98, -0.1, 0, g, false);                              // 鼻
+      for (const z of [-0.5, 0.5]) { add(new THREE.SphereGeometry(0.16, 8, 6), dark, 1.5, 0.35, z, g, false); add(new THREE.SphereGeometry(0.34, 8, 6), gold, 0.4, 1.05, z * 1.6, g, false); }   // 眼睛、耳朵
+      g.scale.setScalar(1.15); }
 
     // 救生艇（掛在兩側船舷外）與救生圈
     const boatM = M(0xf28a1f, 0.6), boatW = M(0xf4f4f4, 0.6);
@@ -151,14 +191,12 @@
     // 煙囪（在美術館屋頂上，走進去會跟著屋頂一起變透明）+ 煙
     const fadeMats = [];
     const roofPart = (geo, color, x, y, z) => { const mat = M(color, 0.6, 0.1, { transparent: true }); const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; scene.add(m); ctx.roofs.push({ m, mat, grp: "M" }); fadeMats.push(m); return m; };
-    const funnelX = [ENTRY + 24, ENTRY + 46];
+    const funnelX = [];   // 千陽號沒有煙囪
     for (const fx of funnelX) {
       const f = roofPart(new THREE.CylinderGeometry(1.5, 1.8, 7.5, 24), 0xf4f0e6, fx, 4.5 + 3.75, 0); f.scale.set(1.5, 1, 1);
       roofPart(new THREE.CylinderGeometry(1.52, 1.52, 1.4, 24), 0xc23a2a, fx, 4.5 + 5.6, 0).scale.set(1.5, 1, 1.0);
       roofPart(new THREE.CylinderGeometry(1.55, 1.55, 0.9, 24), 0x1a1a22, fx, 4.5 + 7.4, 0).scale.set(1.5, 1, 1.0);
     }
-    roofPart(new THREE.CylinderGeometry(0.07, 0.1, 9, 8), 0xe8e8ee, ENTRY + 8, 4.5 + 4.5, 0);   // 雷達桅杆
-    roofPart(new THREE.BoxGeometry(2.6, 0.12, 0.5), 0x9aa4b4, ENTRY + 8, 4.5 + 8.6, 0);
     const smokeC = document.createElement("canvas"); smokeC.width = smokeC.height = 64; const sg = smokeC.getContext("2d"), gr = sg.createRadialGradient(32, 32, 0, 32, 32, 30);
     gr.addColorStop(0, "rgba(255,255,255,.7)"); gr.addColorStop(1, "rgba(255,255,255,0)"); sg.fillStyle = gr; sg.fillRect(0, 0, 64, 64);
     const smokeT = new THREE.CanvasTexture(smokeC), puffs = [];
