@@ -1374,11 +1374,11 @@
           const bar = (sw, sh, sd, z, y) => { const b = new THREE.Mesh(new THREE.BoxGeometry(sd, sh, sw), gold); b.position.set(X - 0.02, UY + y, z); scene.add(b); };
           bar(w + 0.1, 0.07, 0.06, cz, 0.95); bar(w + 0.1, 0.07, 0.06, cz, 2.25); for (let k = 0; k <= 6; k++) bar(0.05, 1.3, 0.06, cz - w / 2 + (w * k) / 6, 1.6);
           const cur = new THREE.Mesh(new THREE.BoxGeometry(0.14, 1.5, 0.34), M(0x8a5a2a, 0.9)); cur.position.set(X - 0.08, UY + 1.55, cz - w / 2 - 0.12); scene.add(cur); }
-        { const w = 1.8, cx = 3.95, Z = Z0 + 0.075;                                          // 臥室（北牆）
-          const q = new THREE.Mesh(new THREE.PlaneGeometry(w, 1.3), skyM); q.position.set(cx, UY + 1.6, Z); scene.add(q);
+        { const w = 0.9, h = 0.8, cx = 5.2, cy = 1.85, Z = Z0 + 0.075;                       // 浴室（北牆）小窗：中間偏右、偏上
+          const q = new THREE.Mesh(new THREE.PlaneGeometry(w, h), skyM); q.position.set(cx, UY + cy, Z); scene.add(q);
           const bar = (sw, sh, x, y, horiz) => { const b = new THREE.Mesh(new THREE.BoxGeometry(horiz ? sw : 0.05, horiz ? 0.07 : sh, 0.06), gold); b.position.set(x, UY + y, Z + 0.02); scene.add(b); };
-          bar(w + 0.1, 0.07, cx, 0.95, true); bar(w + 0.1, 0.07, cx, 2.25, true); for (let k = 0; k <= 3; k++) bar(0.05, 1.3, cx - w / 2 + (w * k) / 3, 1.6, false);
-          const cur = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.5, 0.14), M(0x8a5a2a, 0.9)); cur.position.set(cx - w / 2 - 0.12, UY + 1.55, Z + 0.09); scene.add(cur); }
+          bar(w + 0.1, 0.07, cx, cy - h / 2, true); bar(w + 0.1, 0.07, cx, cy + h / 2, true); for (let k = 0; k <= 2; k++) bar(0.05, h, cx - w / 2 + (w * k) / 2, cy, false);
+          const cur = new THREE.Mesh(new THREE.BoxGeometry(0.34, 1.0, 0.14), M(0x8a5a2a, 0.9)); cur.position.set(cx - w / 2 - 0.12, UY + cy, Z + 0.09); scene.add(cur); }
         // 嵌入式矮櫃（窗下，三個開放格）
         { const cx = 11.62, z0 = -7.2, z1 = -1.2, cw = M(0xfbfaf6, 0.85), inn = M(0xe6e6e2, 0.9);
           U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.85, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.55, 0.06, z1 - z0), cw, cx, 0.03, (z0 + z1) / 2); U(new THREE.BoxGeometry(0.04, 0.8, z1 - z0), inn, cx + 0.255, 0.44, (z0 + z1) / 2);
