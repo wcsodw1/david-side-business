@@ -365,8 +365,9 @@
       for (const arm of [av.armL, av.armR]) { const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.045, 18), clothMat); cuff.position.set(0, -0.285, 0); arm.el.add(cuff); }
     } catch (e) { console.warn("睡衣失敗", e); }
     if (who === "guest" && av.torso) av.torso.children.forEach((m) => { if (m.isMesh && m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });   // 圓領毛衣：不要 V 領的襯衫三角
-    if (who === "guest" && av.torso) {   // 斜背的亮綠色背包帶
-      const st = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.62, 0.006), new THREE.MeshStandardMaterial({ color: 0x9fd13b, roughness: 0.6 })); st.position.set(0.03, 0.36, 0.142); st.rotation.z = -0.62; av.torso.add(st);
+    if (who === "guest") {   // 女生的窄肩：肩線內縮、肩頭與上臂變細（同 ARIES）
+      for (const arm of [av.armL, av.armR]) { const sd = Math.sign(arm.sh.position.x); arm.sh.position.set(sd * 0.158, 0.49, 0); arm.sh.children.slice(0, 3).forEach((m) => m.scale.multiplyScalar(0.8)); }
+      av.root.scale.setScalar(0.95);
     }
     // （睡衣是長袖，不把前臂改成皮膚）
     av.faceDone = true; av.hairGroup = hair;
