@@ -352,7 +352,7 @@
       // 袖子 / 褲管改成長版寬鬆：前臂用上衣材質、褲管加粗
       const clothMat = top && top.material;
       for (const arm of [av.armL, av.armR]) { arm.el.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry" && m.geometry.parameters.height > 0.2) { m.material = clothMat; m.scale.set(1.12, 1, 1.12); } }); arm.sh.children.forEach((m) => { if (m.isMesh) m.scale.multiplyScalar(1.06); }); }
-      for (const lg of [av.legL, av.legR]) { lg.hip.children.forEach((m) => { if (m.isMesh && m.geometry.type !== "SphereGeometry") m.scale.set(1.18, 1, 1.18); }); lg.knee.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(1.3, 1, 1.3); }); }
+      if (!GU) for (const lg of [av.legL, av.legR]) { lg.hip.children.forEach((m) => { if (m.isMesh && m.geometry.type !== "SphereGeometry") m.scale.set(1.18, 1, 1.18); }); lg.knee.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(1.3, 1, 1.3); }); }
       const trim = new THREE.MeshStandardMaterial({ color: trimC, roughness: 0.7 });
       const wood = new THREE.MeshStandardMaterial({ color: 0xc89a62, roughness: 0.6 });
       // 翻領（兩片，向外斜）
@@ -366,7 +366,7 @@
     } catch (e) { console.warn("睡衣失敗", e); }
     if (who === "guest" && av.torso) av.torso.children.forEach((m) => { if (m.isMesh && m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });   // 圓領毛衣：不要 V 領的襯衫三角
     if (who === "guest") {   // 女生的窄肩：肩線內縮、肩頭與上臂變細（同 ARIES）
-      for (const arm of [av.armL, av.armR]) { const sd = Math.sign(arm.sh.position.x); arm.sh.position.set(sd * 0.158, 0.49, 0); arm.sh.children.slice(0, 3).forEach((m) => m.scale.multiplyScalar(0.8)); }
+      for (const arm of [av.armL, av.armR]) { const sd = Math.sign(arm.sh.position.x); arm.sh.position.set(sd * 0.185, 0.49, 0); arm.sh.children.slice(0, 3).forEach((m) => m.scale.multiplyScalar(0.8)); arm.sh.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(0.9, 1, 0.9); }); arm.el.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(0.9, 1, 0.9); }); }   // 肩比男生窄，但手臂要離開髖部，不穿進褲子
       av.root.scale.setScalar(0.95);
     }
     // （睡衣是長袖，不把前臂改成皮膚）
