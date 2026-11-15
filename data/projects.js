@@ -17,6 +17,8 @@ window.SITE = {
   // 留空 = 用程式畫的舞台風格海報。⚠ 這個 repo 是公開的，請只放你有權使用的圖片。
   // 藝廊背景音樂：貼上 YouTube 影片或播放清單網址（走進藝廊才會播，右下角會出現小播放器）。留空 = 使用內建合成的波薩諾瓦。
   galleryMusicYouTube: "",
+  // 家（房子裡）的背景音樂：米津玄師「Lemon」官方 MV（走進家裡才播，右下角出現小播放器；失敗就退回內建音樂）
+  homeMusicYouTube: "https://www.youtube.com/watch?v=SX_ViT4Ra7k",
   posterPhotos: ["chanyeol-1.jpg", "chanyeol-2.jpg", "chanyeol-3.jpg", "chanyeol-4.jpg", "chanyeol-5.jpg", "chanyeol-6.jpg", "chanyeol-7.jpg"],   // 照片來源與授權見 README 與二樓海報旁的標註（CC BY 4.0）
 };
 
