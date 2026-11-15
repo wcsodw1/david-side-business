@@ -1511,20 +1511,20 @@
 
       // ===== 任意門：家門外的粉紅門，走進去（站 0.5 秒）直接跳到匹克球館；球館裡也有一扇回家 =====
       { const pink = M(0xf08ab4, 0.45), frm = M(0xf4efe6, 0.5), gold = M(0xe8c14a, 0.3, 0.7);
-        const mkDoor = (x, z, rot, label) => {   // rot 0：門面朝 +z（寬在 x）；PI/2：門面朝 +x（寬在 z）
-          const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot; scene.add(g);
+        const mkDoor = (x, z, rot, label, o = {}) => {   // rot 0：門面朝 +z（寬在 x）；PI/2：門面朝 +x（寬在 z）
+          const g = new THREE.Group(); g.position.set(x, o.y || 0, z); g.rotation.y = rot; scene.add(g);
           const add = (geo, mat, px, py, pz) => { const m = new THREE.Mesh(geo, mat); m.position.set(px, py, pz); m.castShadow = true; g.add(m); return m; };
-          add(new THREE.BoxGeometry(0.1, 2.4, 0.2), frm, -0.62, 1.2, 0); add(new THREE.BoxGeometry(0.1, 2.4, 0.2), frm, 0.62, 1.2, 0); add(new THREE.BoxGeometry(1.34, 0.1, 0.2), frm, 0, 2.4, 0);
-          add(new THREE.BoxGeometry(1.14, 2.3, 0.07), pink, 0, 1.15, 0); add(new THREE.SphereGeometry(0.06, 10, 8), gold, 0.4, 1.1, 0.07); add(new THREE.SphereGeometry(0.06, 10, 8), gold, 0.4, 1.1, -0.07);
-          const lt = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.4), new THREE.MeshStandardMaterial({ map: mkTex(THREE, decalCanvas(384, 112, (c, w, h) => { c.fillStyle = "#fff6e8"; c.fillRect(0, 0, w, h); c.strokeStyle = "#f08ab4"; c.lineWidth = 8; c.strokeRect(5, 5, w - 10, h - 10); c.fillStyle = "#b03a74"; c.font = "800 44px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.fillText("任意門", w / 2, 50); c.font = "700 30px 'Noto Sans TC', sans-serif"; c.fillText(label, w / 2, 90); }), aniso), roughness: 0.7, emissive: 0xffffff, emissiveIntensity: 0.15 })); lt.position.set(0, 2.78, 0.11); g.add(lt);
+          if (!o.inFrame) { add(new THREE.BoxGeometry(0.1, 2.4, 0.2), frm, -0.62, 1.2, 0); add(new THREE.BoxGeometry(0.1, 2.4, 0.2), frm, 0.62, 1.2, 0); add(new THREE.BoxGeometry(1.34, 0.1, 0.2), frm, 0, 2.4, 0); }
+          add(new THREE.BoxGeometry(o.inFrame ? 0.82 : 1.14, o.inFrame ? 2.1 : 2.3, 0.07), pink, 0, o.inFrame ? 1.05 : 1.15, 0); add(new THREE.SphereGeometry(0.06, 10, 8), gold, 0.4, 1.1, 0.07); add(new THREE.SphereGeometry(0.06, 10, 8), gold, 0.4, 1.1, -0.07);
+          const lt = new THREE.Mesh(new THREE.PlaneGeometry(1.34, 0.4), new THREE.MeshStandardMaterial({ map: mkTex(THREE, decalCanvas(384, 112, (c, w, h) => { c.fillStyle = "#fff6e8"; c.fillRect(0, 0, w, h); c.strokeStyle = "#f08ab4"; c.lineWidth = 8; c.strokeRect(5, 5, w - 10, h - 10); c.fillStyle = "#b03a74"; c.font = "800 44px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.fillText("任意門", w / 2, 50); c.font = "700 30px 'Noto Sans TC', sans-serif"; c.fillText(label, w / 2, 90); }), aniso), roughness: 0.7, emissive: 0xffffff, emissiveIntensity: 0.15 })); lt.position.set(0, o.inFrame ? 2.55 : 2.78, 0.11); if (o.inFrame) lt.scale.set(0.8, 0.8, 1); g.add(lt);
           const lb = lt.clone(); lb.position.z = -0.11; lb.rotation.y = PI; g.add(lb);
           return g; };
-        const HOMEX = X1 + 0.8, HOMEZ = -4.1, HALLX = COURT_CX - HX + 1.4, HALLZ = -HZ + 0.3;
-        mkDoor(HOMEX, HOMEZ, PI / 2, "→ 匹克球館"); addObs(HOMEX, HOMEZ, 0.15, 0.62, undefined, 3);
+        const HOMEX = X0 - 0.7, HOMEZ = -0.15, HALLX = COURT_CX - HX + 1.4, HALLZ = -HZ + 0.3;
+        mkDoor(HOMEX, HOMEZ, -PI / 2, "→ 匹克球館", { y: UY, inFrame: true });
         mkDoor(HALLX, HALLZ, 0, "→ 回家"); addObs(HALLX, HALLZ, 0.62, 0.15, undefined, 3);
-        const doors = [{ x: HOMEX + 0.6, z: HOMEZ, t: 0, armed: true, to: [COURT_CX - HX + 1.8, 0.0] }, { x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX + 1.6, HOMEZ] }];
+        const doors = [{ x: HOMEX - 0.35, z: HOMEZ, t: 0, armed: true, to: [COURT_CX - HX + 1.8, 0.0] }, { x: HALLX, z: HALLZ + 0.7, t: 0, armed: true, to: [HOMEX - 0.45, HOMEZ, 0] }];
         tickHooks.push((dt) => { if (window.GUESTLIKE || typeof sitting !== "undefined" && sitting >= 0) return;
-          for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.7;
+          for (const d of doors) { const near = Math.hypot(pos.x - d.x, pos.z - d.z) < 0.5;
             if (!near) { d.armed = true; d.t = 0; continue; }
             if (!d.armed) continue; d.t += dt;
             if (d.t > 0.5) { d.t = 0; for (const o of doors) o.armed = false; if (S && S.teleport) S.teleport(d.to[0], d.to[1], 0); } } }); }

@@ -376,9 +376,10 @@
         let pln0 = () => {};
         const menuT = tx(640, 512, (c, w, h) => { c.fillStyle = "#23261f"; c.fillRect(0, 0, w, h); c.strokeStyle = "#c9a36a"; c.lineWidth = 10; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = "#f4f0e0"; c.textAlign = "center"; c.font = "800 42px Georgia"; c.fillText("COFFEE BEANS  / 磅", w / 2, 60); c.font = "600 29px 'Noto Sans TC'"; [["衣索比亞 獅王花蜜藝伎",1200],["衣索比亞 露娜藝伎",1100],["衣索比亞 西達摩水洗",1100],["衣索比亞 粉紅蜜桃耶加",950],["衣索比亞 沃卡香菲日曬",900],["衣索比亞 沃卡香妃水洗",900],["烏拉嘎 風信子水洗",900],["巴西 可可精靈日曬",900],["瓜地馬拉 薇薇特南果",800],["瓜地馬拉 酒香背影",900],["薩爾瓦多 紅蠻牛紅蜜",900],["哥斯大黎加 捷豹黑蜜",900]].forEach(([n, pr], k) => { c.textAlign = "left"; c.fillText(n, 36, 112 + k * 33); c.textAlign = "right"; c.fillStyle = "#ffd48a"; c.fillText("$" + pr, w - 36, 112 + k * 33); c.fillStyle = "#f4f0e0"; }); });
         K.pln(1.5, 1.2, menuT, -2.3, K.wh - 0.8, -6.11, 0, { glow: 0.15 });
+        const drinkT = tx(640, 512, (c, w, h) => { c.fillStyle = "#23261f"; c.fillRect(0, 0, w, h); c.strokeStyle = "#c9a36a"; c.lineWidth = 10; c.strokeRect(6, 6, w - 12, h - 12); c.fillStyle = "#f4f0e0"; c.textAlign = "center"; c.font = "800 54px Georgia"; c.fillText("COFFEE", w / 2, 84); c.font = "600 28px 'Noto Sans TC'"; c.fillText("飲品 Menu", w / 2, 124); [["髒髒", "Dirty", 160], ["小白", "Flat White", 150], ["美式", "Americano", 120], ["拿鐵", "Latte", 140], ["摩卡", "Mocha", 160], ["濃縮", "Espresso", 80]].forEach(([n, e, pr], k) => { const y = 190 + k * 52; c.textAlign = "left"; c.font = "700 38px 'Noto Sans TC'"; c.fillStyle = "#f4f0e0"; c.fillText(n, 56, y); c.font = "500 24px Georgia"; c.fillStyle = "#b9b3a0"; c.fillText(e, 170, y); c.textAlign = "right"; c.font = "800 40px Georgia"; c.fillStyle = "#ffd48a"; c.fillText("$" + pr, w - 56, y); }); });
         pln0 = () => {
-          K.pln(1.0, 0.8, menuT, 3.12, 0.8, -3.5, -PI / 2, { glow: 0.2 });   // 咖啡師身後的牆上（面向客人）
-          const tb = K.grp(2.4, 1.06, -2.6, 0); box(0.04, 0.34, 0.5, M(0x23261f, 0.8), 0, 0.2, 0, { p: tb, r: [0, 0, 0.12], k: 1 }); K.pln(0.46, 0.31, menuT, -0.03, 0.2, 0, -PI / 2, { p: tb, glow: 0.25, rz: 0.12 });   // 吧台上的小立牌
+          K.pln(1.0, 0.8, drinkT, 3.12, 0.8, -3.5, -PI / 2, { glow: 0.2 });   // 咖啡師身後的牆上（面向客人）
+          const tb = K.grp(2.4, 1.06, -2.6, 0); box(0.04, 0.34, 0.5, M(0x23261f, 0.8), 0, 0.2, 0, { p: tb, r: [0, 0, 0.12], k: 1 }); K.pln(0.46, 0.31, drinkT, -0.03, 0.2, 0, -PI / 2, { p: tb, glow: 0.25, rz: 0.12 });   // 吧台上的小立牌
         };
         // 面對咖啡師的菜單：吧台上的小立牌 + 咖啡師身後牆上的菜單板（都朝客人這一側）
         { pln0(); }
