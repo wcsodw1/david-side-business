@@ -1106,3 +1106,81 @@ body.locked .santa-fab { display: none; }
 /* AI 總管：這段對話用的模型（AISO1 router） */
 .ai-bar select[data-mdl] { flex: none; max-width: 46vw; padding: 4px 8px; border-radius: 8px; border: 1.5px solid #cfc8b6; font: 600 12px var(--font); color: #3a3150; background: transparent; cursor: pointer; }
 .office-ai .ai-bar select[data-mdl] { height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--hm-ink); color: var(--hm-ink); font: 600 13px var(--font); }
+
+/* ============================================================
+   辦公室儀表板：Hermès 風格（與 AI 總管同一套：羊皮紙底、橘色點綴、襯線標題、大字、圓角）
+   ============================================================ */
+.office-room, .dh {
+  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #e3651d; --hm-orange-2: #c4520f;
+  --hm-serif: "Cormorant Garamond", "Noto Serif TC", "Songti TC", serif; --hm-serif-tc: "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif;
+}
+.office-room .bezel { position: relative; overflow: hidden; background: var(--hm-paper); color: var(--hm-ink); border: 1px solid var(--hm-line); border-radius: 28px; padding: 34px 38px 34px; box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 70px -30px rgba(0,0,0,.55); }
+.office-room .bezel::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--hm-orange); }
+.office-room .stand, .office-room .desk { display: none; }
+.office-room .mon-top { font: 600 14px var(--font); letter-spacing: .32em; text-transform: uppercase; color: var(--hm-orange); margin-bottom: 22px; }
+.office-room .mon-top time { font: 600 17px var(--font); letter-spacing: .1em; color: var(--hm-ink-2); }
+.office-room .led.on { background: var(--hm-orange); color: var(--hm-orange); }
+.office-room .kpis { gap: 14px; margin-bottom: 26px; }
+.office-room .kpis div { padding: 20px 24px; border-radius: 20px; background: #fffdf8; border: 1px solid var(--hm-line); }
+.office-room .kpis b { font: 600 50px/1.05 var(--hm-serif); font-variant-numeric: lining-nums; letter-spacing: -.01em; color: var(--hm-ink); }
+.office-room .kpis small { font-size: 22px; opacity: .55; }
+.office-room .kpis span { display: block; margin-top: 4px; font: 500 16px var(--font); color: var(--hm-ink-2); letter-spacing: .06em; }
+.office-room .wb-pager { gap: 10px; margin-bottom: 18px; }
+.office-room .wb-pager button { padding: 12px 16px; border-radius: 999px; border: 1px solid var(--hm-line); background: transparent; color: var(--hm-ink-2); font: 600 16px var(--font); letter-spacing: .06em; }
+.office-room .wb-pager button.on { background: var(--hm-ink); border-color: var(--hm-ink); color: var(--hm-paper); }
+.office-room .kb-sec { margin-bottom: 22px; }
+.office-room .kb-sec h3 { font: 600 15px var(--font); letter-spacing: .28em; color: var(--hm-orange); border-bottom: 1px solid var(--hm-line); padding-bottom: 10px; margin-bottom: 8px; }
+.office-room .kb-sec h3 span { opacity: 1; color: var(--hm-ink-2); font-weight: 600; }
+.office-room .kb-row { padding: 12px 10px; border-radius: 18px; gap: 18px; }
+.office-room .kb-row:hover, .office-room .kb-row:focus-within, .office-room .kb-row.open { background: #fffdf8; box-shadow: 0 8px 22px -14px rgba(42,31,23,.4); }
+.office-room .kb-name { width: 300px; padding: 9px 16px; border-radius: 14px; font: 700 20px var(--hm-serif-tc); color: var(--hm-ink); background: color-mix(in srgb, var(--c) 16%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); }
+.office-room .kb-name:hover { background: color-mix(in srgb, var(--c) 26%, #fffdf8); text-decoration: none; }
+.office-room .kb-row .ps-chip { font-size: 12px; padding: 3px 11px; }
+.office-room .kb-now { font: 500 17px var(--font); color: var(--hm-ink-2); }
+.office-room .kb-now.none { color: #b3a38f; opacity: 1; }
+.office-room .kb-t { font-size: 14px; color: #b3a38f; }
+.office-room .kb-new { font-size: 11px; border-color: var(--hm-orange); color: var(--hm-orange); }
+.office-room .kb-pg { width: 130px; height: 26px; background: var(--hm-paper-2); }
+.office-room .kb-pg i { opacity: 1; }
+.office-room .kb-pg b { font-size: 14px; color: var(--hm-ink); text-shadow: none; }
+.office-room .kb-btn { padding: 7px 16px; border: 1px solid var(--hm-ink); background: transparent; color: var(--hm-ink); font: 600 14px var(--font); letter-spacing: .05em; }
+.office-room .kb-upd:hover .kb-btn, .office-room .kb-upd:focus-within .kb-btn, .office-room .kb-row.open .kb-btn { background: var(--hm-ink); color: var(--hm-paper); }
+.office-room .kb-form { border-radius: 18px; background: #fffdf8; border: 1px solid var(--hm-line); border-right: 5px solid var(--c); }
+.office-room .kb-form b { font: 700 17px var(--hm-serif-tc); }
+.office-room .kb-form select, .office-room .kb-form input { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--hm-line); font-size: 15px; }
+.office-room .kb-form button[type=submit] { padding: 11px; border-radius: 999px; background: var(--hm-orange); font-size: 15px; letter-spacing: .12em; }
+.office-room .energy { margin-top: 22px; font: 500 15px var(--font); color: var(--hm-ink-2); letter-spacing: .08em; }
+.office-room .energy .seg { height: 12px; }
+.office-sched { border-radius: 28px; background: var(--hm-paper, #f7f2e8); border: 1px solid #d9ccb6; padding: 26px 30px; font-size: 16px; }
+.office-sched .sch-head b { font: 600 14px var(--font); letter-spacing: .28em; color: #e3651d; }
+@media (max-width: 760px) { .office-room .bezel { padding: 24px 18px; } .office-room .kb-name { width: auto; max-width: 46%; font-size: 17px; } .office-room .kpis b { font-size: 38px; } }
+
+/* AI 總管視窗裡的「儀表板」分頁（唯讀，同一套 Hermès 風格） */
+.office-ai .vs-dash .vs-ic { color: var(--hm-orange); }
+.office-ai .vs-dashview { overflow-y: auto; max-height: min(68vh, 680px); background: #fffdf8; }
+.dh { padding: 28px 32px 34px; color: var(--hm-ink); }
+.dh-top { display: flex; justify-content: space-between; align-items: baseline; font: 600 13px var(--font); letter-spacing: .3em; color: var(--hm-orange); margin-bottom: 20px; }
+.dh-top time { font: 600 16px var(--font); letter-spacing: .08em; color: var(--hm-ink-2); }
+.dh-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 26px; }
+.dh-kpis div { padding: 16px 18px; border-radius: 18px; background: var(--hm-paper); border: 1px solid var(--hm-line); }
+.dh-kpis b { display: block; font: 600 42px/1.05 var(--hm-serif); font-variant-numeric: lining-nums; color: var(--hm-ink); }
+.dh-kpis small { font-size: 20px; opacity: .55; }
+.dh-kpis span { display: block; margin-top: 4px; font: 500 15px var(--font); color: var(--hm-ink-2); letter-spacing: .06em; }
+.dh-sec { margin-bottom: 22px; }
+.dh-sec h3 { display: flex; align-items: baseline; gap: 10px; font: 600 14px var(--font); letter-spacing: .28em; color: var(--hm-orange); padding-bottom: 9px; border-bottom: 1px solid var(--hm-line); margin: 0 0 8px; }
+.dh-sec h3 span { margin-left: auto; color: var(--hm-ink-2); letter-spacing: .05em; }
+.dh-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.dh-row { padding: 16px 20px 16px; border-radius: 18px; background: var(--hm-paper); border: 1px solid var(--hm-line); }
+.dh-main { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dh-name { font: 700 21px var(--hm-serif-tc); color: var(--hm-ink); text-decoration: none; }
+.dh-name:hover { color: var(--hm-orange-2); }
+.dh .ps-chip { font-size: 12px; padding: 3px 11px; }
+.dh-now { margin: 8px 0 0; font: 500 17px/1.6 var(--font); color: var(--hm-ink-2); }
+.dh-now.none { color: #b3a38f; font-style: italic; }
+.dh-next { margin: 4px 0 0; font: 500 16.5px/1.6 var(--font); color: var(--hm-ink); }
+.dh-next b { margin-right: 10px; font: 600 12px var(--font); letter-spacing: .22em; text-transform: uppercase; color: var(--hm-orange); }
+.dh-pg { position: relative; margin-top: 12px; height: 24px; border-radius: 99px; background: var(--hm-paper-2); overflow: hidden; }
+.dh-pg i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: linear-gradient(90deg, var(--hm-orange), #f1a56f); }
+.dh-pg b { position: relative; display: block; text-align: center; font: 700 13.5px/24px var(--font); color: var(--hm-ink); }
+.dh-empty { font: italic 500 19px var(--hm-serif-tc); color: var(--hm-ink-2); }
+@media (max-width: 760px) { .dh { padding: 20px 16px 26px; } .dh-kpis { grid-template-columns: repeat(3, 1fr); } .dh-kpis b { font-size: 34px; } }

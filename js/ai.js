@@ -432,7 +432,7 @@
     let ids = [1]; try { const v = JSON.parse(localStorage.getItem(PANES_KEY) || "[1]"); if (Array.isArray(v) && v.length) ids = v.filter((x) => Number.isInteger(x) && x > 0).slice(0, 8); } catch (_) {}
     if (!ids.length) ids = [1];
     let sel = "ai:" + ids[0]; try { const v = localStorage.getItem(SEL_KEY) || ""; if (/^ai:\d+$/.test(v) && ids.includes(+v.slice(3))) sel = v; } catch (_) {}
-    if (window.__aiSel && (/^term:/.test(window.__aiSel) ? TERM_ITEMS.some((t) => "term:" + t.n === window.__aiSel) : ids.includes(+window.__aiSel.slice(3)))) sel = window.__aiSel;
+    if (window.__aiSel && (window.__aiSel === "dash" || (/^term:/.test(window.__aiSel) ? TERM_ITEMS.some((t) => "term:" + t.n === window.__aiSel) : ids.includes(+window.__aiSel.slice(3))))) sel = window.__aiSel;
     const keep = () => { try { localStorage.setItem(PANES_KEY, JSON.stringify(ids)); if (/^ai:/.test(sel)) localStorage.setItem(SEL_KEY, sel); } catch (_) {} window.__aiSel = sel; };
     const sid = (k) => (k === 1 ? p.id : p.id + "#" + k);
     let timer = 0, slotsCool = 0;
@@ -460,16 +460,19 @@
     const views = {};   // key → view div
     const aiView = (k) => { const d = document.createElement("div"); d.className = "vs-view"; d.dataset.key = "ai:" + k; main.appendChild(d); mount(d, { ...p, id: sid(k), onNew: () => newAI() }); /* 「新對話」= 在右邊清單開一個新的，舊的留著 */ views["ai:" + k] = d; return d; };
     ids.forEach(aiView);
+    // 「儀表板」分頁：右側清單最上面，點一下在同一個視窗看到全部專案現況（不用關掉 AI 視窗）
+    const dashView = document.createElement("div"); dashView.className = "vs-view vs-dashview"; dashView.dataset.key = "dash"; dashView.hidden = true; main.appendChild(dashView); views.dash = dashView;
+    const drawDash = () => { dashView.innerHTML = window.Dash ? window.Dash.html(p.projects || []) : "<p class=\"dh-empty\">儀表板載入失敗。</p>"; };
     TERM_ITEMS.forEach((t) => { const d = document.createElement("div"); d.className = "vs-view vs-termview"; d.dataset.key = "term:" + t.n; d.appendChild(t.box); main.appendChild(d); views["term:" + t.n] = d; });
     const paintList = () => {
       if (!el.isConnected) return;
-      const rows = ids.map((k) => { const s2 = sessions[sid(k)], run = s2 && s2.pending; return `<li class="${sel === "ai:" + k ? "on" : ""}" data-key="ai:${k}" title="AI 對話 ${k}"><span class="vs-ic">✦</span><span class="vs-name">${esc(label(k))}</span>${run ? `<i class="vs-run" title="正在回答"></i>` : ""}${ids.length > 1 ? `<button type="button" data-x="ai:${k}" aria-label="關閉">×</button>` : ""}</li>`; })
-        .concat(TERM_ITEMS.map((t) => `<li class="${sel === "term:" + t.n ? "on" : ""}${t.h && !t.h.alive ? " dead" : ""}" data-key="term:${t.n}"><span class="vs-ic">⌨</span><span class="vs-name">AISO1 · bash ${t.n}${t.h ? (t.h.alive ? "" : "（已斷線）") : "（連線中…）"}</span><button type="button" data-x="term:${t.n}" aria-label="關閉">×</button></li>`));
+      const rows = [`<li class="vs-dash ${sel === "dash" ? "on" : ""}" data-key="dash" title="全部專案現況"><span class="vs-ic">▦</span><span class="vs-name">儀表板</span></li>`].concat(ids.map((k) => { const s2 = sessions[sid(k)], run = s2 && s2.pending; return `<li class="${sel === "ai:" + k ? "on" : ""}" data-key="ai:${k}" title="AI 對話 ${k}"><span class="vs-ic">✦</span><span class="vs-name">${esc(label(k))}</span>${run ? `<i class="vs-run" title="正在回答"></i>` : ""}${ids.length > 1 ? `<button type="button" data-x="ai:${k}" aria-label="關閉">×</button>` : ""}</li>`; })
+        .concat(TERM_ITEMS.map((t) => `<li class="${sel === "term:" + t.n ? "on" : ""}${t.h && !t.h.alive ? " dead" : ""}" data-key="term:${t.n}"><span class="vs-ic">⌨</span><span class="vs-name">AISO1 · bash ${t.n}${t.h ? (t.h.alive ? "" : "（已斷線）") : "（連線中…）"}</span><button type="button" data-x="term:${t.n}" aria-label="關閉">×</button></li>`)));
       list.innerHTML = rows.join("");
       list.querySelectorAll("li").forEach((li) => li.addEventListener("click", (e) => { const x = e.target.closest("[data-x]"); if (x) { e.stopPropagation(); closeItem(x.dataset.x); return; } show(li.dataset.key); }));
     };
     const show = (key) => {
-      if (!views[key]) key = "ai:" + ids[0]; sel = key; keep();
+      if (!views[key]) key = "ai:" + ids[0]; sel = key; keep(); if (key === "dash") drawDash();
       Object.entries(views).forEach(([k2, d]) => (d.hidden = k2 !== key));
       paintList();
       const t = TERM_ITEMS.find((x) => "term:" + x.n === key);
