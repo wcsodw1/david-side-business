@@ -10,7 +10,7 @@
    ============================================================ */
 (() => {
   "use strict";
-  const api = (window.Director = { mount, unmount, dismiss: () => !!(D && D.dismissFn && D.dismissFn()) });
+  const api = (window.Director = { mount, unmount, dismiss: () => !!(D && D.dismissFn && D.dismissFn()), bell: (fast) => !!(D && D.bellNow && D.bellNow(fast)) });   // bell()：馬上觸發一次按電鈴（測試用）
   let D = null;
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const angDiff = (a, b) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return d; };
@@ -134,7 +134,9 @@
       inRoom = ctx.roomAt(npc.x, npc.z);
       const blocked = window.PERSONA === "aeris" || document.body.classList.contains("board-open") || document.body.classList.contains("news-open") || document.body.classList.contains("locked");
       cool -= dt;
-      if (state === "talk") {
+      if (window.PERSONA !== "aeris" && !blocked && B.st === "idle" && !bubble.hidden === false && state !== "talk" && !bellDone()) { B.wait -= dt; if (B.wait <= 0) bellStart(); }
+      if (B.st !== "idle") { speed = bellStep(dt); }
+      else if (state === "talk") {
         speed = 0; npc.face += angDiff(npc.face, Math.atan2(dx, dz)) * Math.min(1, dt * 7);
         if (dist > 9.5 && !document.body.classList.contains("dir-typing")) end(20);
       } else if (state === "pause") {
@@ -155,13 +157,58 @@
         bubble.style.left = x + "px"; bubble.style.top = y + "px";
       }
     };
+    /* ----- 每天來按一次電鈴：提醒 David 的專案進度 -----
+       當天第一次進入藝廊約 20 秒後，館長會走到我家大門口，按電鈴（叮咚），然後報告今天的進度提醒。一天只按一次（記在這台瀏覽器）。 */
+    const HX1 = ctx.HOUSE.x1, DOOR_Z = -2.4, BELL_Z = -1.35, dayKey = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+    const bellDone = () => { try { return localStorage.getItem("dsb-bell-day") === dayKey(); } catch (_) { return false; } };
+    const markBell = () => { try { localStorage.setItem("dsb-bell-day", dayKey()); } catch (_) {} };
+    const bellBtn = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 16), new THREE.MeshStandardMaterial({ color: 0xf2c14e, emissive: 0xf2a900, emissiveIntensity: 0.25, roughness: 0.4 }));
+    bellBtn.rotation.z = Math.PI / 2; bellBtn.position.set(HX1 + 0.1, 1.25, BELL_Z); scene.add(bellBtn);
+    const bellPlate = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.15, 0.09), new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.5, metalness: 0.4 })); bellPlate.position.set(HX1 + 0.085, 1.25, BELL_Z); scene.add(bellPlate);
+    let actx = null;
+    const ding = () => {   // 叮咚
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; actx = actx || new AC(); actx.resume && actx.resume();
+        [[880, 0], [659, 0.55]].forEach(([f, dl]) => { const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + dl; o.type = "sine"; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.1); o.connect(g); g.connect(actx.destination); o.start(t0); o.stop(t0 + 1.2); });
+      } catch (_) {}
+    };
+    const toast = document.createElement("div"); toast.className = "dir-toast"; toast.hidden = true; toast.textContent = "🔔 叮咚！館長在門口按電鈴"; document.body.appendChild(toast);
+    const B = { st: "idle", t: 0, wait: 20, tg: null };
+    const bellMsg = () => {
+      const who = "David", days = (p) => window.Store.daysSinceUpdate(p), stale = P.filter((p) => { const d = days(p); return d == null || d >= 7; }), active = P.filter((p) => p.wbStatus === "ON PROCESS");
+      const withNext = P.filter((p) => p.next).slice(0, 2);
+      return `<b>${who}</b>，叮咚～今天的進度提醒：<br>・進行中的專案：<b>${active.length}</b> 個<br>${stale.length ? `・超過 7 天沒更新：<b>${stale.length}</b> 個（${stale.slice(0, 4).map((p) => esc(p.name)).join("、")}${stale.length > 4 ? "…" : ""}）` : "・每個專案最近都有更新，很好！"}${withNext.length ? "<br>・下一步：" + withNext.map((p) => `<b>${esc(p.name)}</b> → ${esc(p.next)}`).join("；") : ""}`;
+    };
+    const bellStart = () => {
+      markBell(); B.st = "walk"; B.t = 0; state = "pause"; talk = null; bubble.hidden = true;
+      const pts = []; if (inRoom >= 0) pts.push(...exitPts(inRoom, npc));
+      pts.push({ x: npc.x, z: lane }, { x: HX1 + 3.4, z: lane }, { x: HX1 + 1.45, z: DOOR_Z });
+      route = pts; return true;
+    };
+    const bellStep = (dt) => {
+      B.t += dt;
+      if (B.st === "walk") { const sp = stepRoute(dt); if (!route.length) { B.st = "press"; B.t = 0; npc.face = -Math.PI / 2; } return sp; }
+      npc.face += angDiff(npc.face, -Math.PI / 2) * Math.min(1, dt * 6);
+      if (B.st === "press") {   // 伸手按鈴
+        const k = Math.min(1, B.t / 0.6); av.armR.sh.rotation.x = -1.35 * k; av.armR.el.rotation.x = -0.35 * k;
+        if (B.t > 0.7 && !B.rang) { B.rang = true; ding(); toast.hidden = false; bellBtn.material.emissiveIntensity = 1.4; }
+        if (B.t > 1.6) { bellBtn.material.emissiveIntensity = 0.25; B.st = "talk"; B.t = 0; B.rang = false; render({ msg: bellMsg(), buttons: [{ label: "知道了", fn: () => bellLeave() }, { label: "去看專案", fn: () => { bellLeave(); } }] }); }
+        return 0;
+      }
+      if (B.st === "talk") { av.armR.sh.rotation.x *= 0.9; if (B.t > 4) toast.hidden = true; if (B.t > 90) bellLeave(); return 0; }
+      if (B.st === "leave") { const sp = stepRoute(dt); if (!route.length) { B.st = "idle"; state = "pause"; timer = 4; cool = 60; } return sp; }
+      return 0;
+    };
+    const bellLeave = () => { bubble.hidden = true; toast.hidden = true; document.body.classList.remove("dir-typing"); B.st = "leave"; route = [{ x: HX1 + 3.4, z: lane }, { x: npc.x, z: lane }]; };
     hooks.push(hook);
-    D = { av, bubble, hook, hooks, entering: -1, dismissFn: () => { if (bubble.hidden) return false; const p = talk && P.find((x) => x.id === talk.pid); if (p) snooze[p.id] = Date.now() + 180000; end(40); return true; } };
+    D = {
+      bellNow: (fast) => { if (B.st !== "idle") return false; if (fast) { npc.x = HX1 + 6; npc.z = lane; } return bellStart(); }, bellBtn, bellPlate, toast, av, bubble, hook, hooks, entering: -1, dismissFn: () => { if (bubble.hidden) return false; const p = talk && P.find((x) => x.id === talk.pid); if (p) snooze[p.id] = Date.now() + 180000; end(40); return true; } };
   }
 
   function unmount() {
     if (!D) return;
     const i = D.hooks.indexOf(D.hook); if (i >= 0) D.hooks.splice(i, 1);
+    D.toast && D.toast.remove(); [D.bellBtn, D.bellPlate].forEach((m) => m && m.parent && m.parent.remove(m));
     D.bubble.remove(); D.av.root.parent && D.av.root.parent.remove(D.av.root);
     document.body.classList.remove("dir-typing"); D = null;
   }
