@@ -1226,3 +1226,10 @@ body.locked .santa-fab { display: none; }
 .agent-say.show { opacity: 1; transform: translate(-50%, -50%) scale(1); visibility: visible; transition: opacity .3s ease, transform .35s cubic-bezier(.2,.8,.2,1), visibility 0s; }
 .agent-say > b:first-child { display: block; margin-bottom: 8px; font: 700 13px var(--font); letter-spacing: .3em; color: #ffe9b8; }
 .agent-say b { color: #ffe9b8; }
+
+.luka-ov { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 14px; background: rgba(8,6,20,.62); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+.luka-card { width: min(1100px, 100%); height: min(780px, calc(100vh - 28px)); display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; background: #fff6e6; border: 3px solid #2a2540; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.luka-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #2a2540; color: #fff6e6; font-size: 14px; flex-wrap: wrap; }
+.luka-bar span { flex: 1; min-width: 160px; font-size: 12px; opacity: .7; } .luka-bar a { color: #ffd48a; text-decoration: none; font-weight: 700; font-size: 13px; }
+.luka-x { border: 0; background: #ef4b3f; color: #fff; width: 30px; height: 30px; border-radius: 8px; font-size: 14px; cursor: pointer; }
+.luka-card iframe { flex: 1; width: 100%; border: 0; background: #fff6e6; }

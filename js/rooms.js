@@ -156,6 +156,25 @@
         // ON AIR 燈（門上；門外門內都看得到，會輕輕閃）
         const air = tx(512, 160, (c, w, h) => { c.fillStyle = "#4a0508"; c.fillRect(0, 0, w, h); c.strokeStyle = "#ff3b3b"; c.lineWidth = 8; c.strokeRect(10, 10, w - 20, h - 20); c.fillStyle = "#ff4a4a"; c.font = "800 100px Arial, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; if ("letterSpacing" in c) c.letterSpacing = "10px"; c.fillText("ON AIR", w / 2, h / 2 + 6); });
         const a1 = pln(0.9, 0.28, air, DOOR_DX, 2.35, -1.55, 0, { glow: 1.2 }), a2 = pln(0.9, 0.28, air, DOOR_DX, 2.35, -1.65, PI, { glow: 1.2 }); an((dt, t) => { const v = 1.0 + 0.45 * Math.sin(t * 2.2); a1.material.emissiveIntensity = a2.material.emissiveIntensity = v; });
+        // 字幕工作站（Luka Film 工具）：走近按 Enter / 點螢幕 → 開啟本機的字幕工具 http://127.0.0.1:8766
+        { const q = K.grp(1.2, 0, -5.4, 0), wd = M(0x2a2a30, 0.5, 0.3);
+          box(1.5, 0.05, 0.62, M(0x1d1d22, 0.45, 0.3), 0, 0.74, 0, { p: q, k: 1 }); for (const [dx, dz] of [[-0.7, -0.26], [0.7, -0.26], [-0.7, 0.26], [0.7, 0.26]]) box(0.04, 0.72, 0.04, wd, dx, 0.36, dz, { p: q });
+          box(0.8, 0.5, 0.03, M(0x0c0c10, 0.4), 0, 1.12, -0.18, { p: q, r: [-0.08, 0, 0], k: 1 }); box(0.04, 0.2, 0.04, wd, 0, 0.88, -0.2, { p: q });
+          const scr = tx(512, 320, (c, w, h) => { c.fillStyle = "#fff6e6"; c.fillRect(0, 0, w, h); c.fillStyle = "#ef4b3f"; rr(c, 22, 18, 46, 46, 12); c.fill(); c.fillStyle = "#fff"; c.font = "800 34px Arial"; c.textAlign = "center"; c.fillText("L", 45, 52); c.fillStyle = "#2a2540"; c.textAlign = "left"; c.font = "800 34px 'Noto Sans TC', sans-serif"; c.fillText("Luka Film 字幕工具", 84, 52);
+            c.fillStyle = "#d9f7e8"; rr(c, 22, 86, 230, 64, 14); c.fill(); rr(c, 262, 86, 160, 64, 14); c.fill(); c.fillStyle = "#ef4b3f"; rr(c, 432, 86, 62, 64, 14); c.fill();
+            [["聽日文", "#37c98a"], ["對原稿", "#f2c230"], ["填時間", "#f2c230"]].forEach(([t, col], i) => { const cx = 90 + i * 170; c.fillStyle = col; c.beginPath(); c.arc(cx, 210, 30, 0, 7); c.fill(); c.fillStyle = "#2a2540"; c.font = "700 22px 'Noto Sans TC', sans-serif"; c.textAlign = "center"; c.fillText(t, cx, 268); if (i < 2) { c.fillStyle = "#f2c230"; c.fillRect(cx + 34, 207, 106, 7); } });
+            c.fillStyle = "#2a2540"; c.font = "600 18px 'Noto Sans TC', sans-serif"; c.fillText("按 Enter 開啟工具", 256, 306); });
+          pln(0.74, 0.46, scr, 0, 1.12, -0.16, 0, { p: q, glow: 0.7, rx: -0.08 });
+          pln(0.9, 0.16, K.label("字幕工作站 · SUBTITLE", 640, 100, { bg: "#16161c", fg: "#f2e8d0", fs: 38 }), 0, 0.5, 0.33, 0, { p: q, glow: 0.3 });
+          obs(1.2, -5.4, 0.78, 0.34);
+          const open = K.openLuka = () => { if (document.querySelector(".luka-ov")) return; const ov = document.createElement("div"); ov.className = "luka-ov"; document.body.classList.add("robot-open");
+            ov.innerHTML = `<div class="luka-card"><div class="luka-bar"><b>🎬 Luka Film 字幕工具</b><span>只有在你的 Mac 上已啟動工具（START_LUKA_FILM.command）才看得到</span><a href="http://127.0.0.1:8766" target="_blank" rel="noopener">新分頁開啟</a><button type="button" class="luka-x" aria-label="關閉">✕</button></div><iframe src="http://127.0.0.1:8766" title="Luka Film 字幕工具" referrerpolicy="no-referrer"></iframe></div>`;
+            document.body.appendChild(ov);
+            const kd = (e) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); close(); } }, close = () => { ov.remove(); document.body.classList.remove("robot-open"); window.removeEventListener("keydown", kd, true); };
+            window.addEventListener("keydown", kd, true); ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest(".luka-x")) close(); }); };
+          const wp = K.w(1.2, -4.7), act = { id: "luka-tool" + K.s, x: wp.x, z: wp.z, r: 1.6, lvl: 0, html: "<kbd>Enter</kbd> 打開 <b>Luka Film 字幕工具</b> <small>　點螢幕也可以</small>", fn: open };
+          interact.push(act); cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); });
+          const hit = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 0.4), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(1.2, 1.1, -5.55); hit.userData = { station: K.s, kind: "act", act: open, stand: { x: wp.x, z: wp.z } }; K.g.add(hit); pickables.push(hit); cleanup.push(() => { const i = pickables.indexOf(hit); if (i >= 0) pickables.splice(i, 1); }); }
       },
 
       /* ===== LINE ERP：倉儲出貨 ===== */
