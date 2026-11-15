@@ -1167,7 +1167,7 @@
       }
 
       // ===== David 的家：兩層樓（一樓 David、二樓 Aeris）=====
-      const plasterH = M(window.PERSONA === "guest" ? 0xc6cad0 : 0xd9c8a6, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
+      const plasterH = M(window.GUESTLIKE ? 0xc6cad0 : 0xd9c8a6, 0.92), wood = M(0xc9a36a, 0.55), bronze = M(0x7d6446, 0.38, 0.85);
       const shellBox = (w, h, d, x, z, mat, grp, low, y0 = 0) => { const g0 = new THREE.BoxGeometry(w, h, d); g0.translate(0, h / 2, 0); const m = new THREE.Mesh(g0, mat); m.position.set(x, y0, z); m.castShadow = true; m.receiveShadow = true; scene.add(m); shells.push({ m, grp, low }); return m; };
       const X0 = HOUSE.x0, X1 = HOUSE.x1, Z0 = HOUSE.z0, Z1 = HOUSE.z1, ZC = (Z0 + Z1) / 2, DW0 = -3.2, DW1 = -1.6, FH = UY - 0.22, WT = 2.8, TOP = UY + WT;   // FH：一樓牆高；UY：二樓地板面；TOP：二樓牆頂
       const ft = floorTex.clone(); ft.needsUpdate = true; ft.repeat.set(1.4, 1);
@@ -1186,7 +1186,7 @@
       const paneM = new THREE.MeshStandardMaterial({ color: 0xbfe0ff, roughness: 0.1, metalness: 0.2, transparent: true, opacity: 0.45, emissive: 0x4a6a90, emissiveIntensity: 0.3 });
       for (const [z, y] of [[-6.0, 1.5], [-0.7, 1.5]]) { mk(new THREE.BoxGeometry(0.05, 1.2, 1.4), paneM, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 1.3, 0.08), bronze, X1 + 0.09, y, z, false); mk(new THREE.BoxGeometry(0.06, 0.08, 1.5), bronze, X1 + 0.09, y, z, false); }
       // 二樓地板（中間留樓梯口）：四塊，頂面 = UY
-      const slabM = new THREE.MeshStandardMaterial({ color: window.PERSONA === "guest" ? 0x9b978d : 0xeadfc8, roughness: window.PERSONA === "guest" ? 0.35 : 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
+      const slabM = new THREE.MeshStandardMaterial({ color: window.GUESTLIKE ? 0x9b978d : 0xeadfc8, roughness: window.GUESTLIKE ? 0.35 : 0.22, metalness: 0.05, transparent: true });   // 米色亮面地磚
       const slab = (x0, x1, z0, z1) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, 0.22, z1 - z0), slabM); m.position.set((x0 + x1) / 2, UY - 0.11, (z0 + z1) / 2); m.castShadow = true; m.receiveShadow = true; scene.add(m); roofs.push({ m, mat: slabM, grp: "H2" }); };
       slab(X0 - 0.7, X1, Z0, Z1);   // 二樓往西多出 0.7 公尺（臥室 / 走道）；樓梯在屋外（南側），二樓地板是完整一塊
 
@@ -1277,7 +1277,7 @@
           const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(gc), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); halo.scale.set(2.4, 2.4, 1); halo.position.set(LX, LY, LZ); scene.add(halo); akari.halo = halo; }
         // 臥室 / 浴室 / 走道的燈：人走進那個房間就亮起來（夜晚也一樣明亮），人離開就慢慢熄掉
         akari.rooms = [[3.0, -3.1, 3.6, 13, (x, z) => x < 6.3 && z > -5.6 && z < -0.55], [4.6, -6.8, 3.2, 8, (x, z) => x > 2.8 && x < 6.3 && z < -5.6], [3.0, -0.1, 2.4, 9, (x, z) => x < 6.3 && z >= -0.55]].map(([rx, rz, base, dist, test]) => { const l = new THREE.PointLight(0xfff1d6, 0, dist); l.position.set(rx, UY + 2.4, rz); scene.add(l); return { l, base, test, k: 0 }; });
-        if (window.PERSONA === "guest") { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
+        if (window.GUESTLIKE) { shade.visible = cap.visible = cord.visible = false; if (akari.halo) akari.halo.visible = false; }   // 客人視角：不要和紙吊燈（改成天花板的小圓燈）
       }
       { const _bc = scene.children.length, _ob = obstacles.length; bed(5.2, -3.6, 1.98, M(0xeef1f6, 0.9), UY, 1); for (let k = _bc; k < scene.children.length; k++) { const m = scene.children[k]; m.position.x = 6.22 - (6.22 - (10.4 - m.position.x)) * 1.25; m.scale.x *= 1.25; } obstacles[_ob].minX -= 0.53; }   // 左右鏡像（床頭靠東牆）+ 床長加長 25%   // 床頭靠東（右）牆：整張床左右鏡像                                                                                             // 二樓雙人床（兩個人一起睡）
       for (const [bz2, lc] of [[-5.1, 0xffe9b8]]) { U(new THREE.BoxGeometry(0.5, 0.5, 0.45), bedF, 6.0, 0.25, bz2); U(new THREE.SphereGeometry(0.12, 10, 8), new THREE.MeshStandardMaterial({ color: lc, emissive: lc, emissiveIntensity: 1.3 }), 6.0, 0.62, bz2, false); }   // 床頭櫃 + 小燈（只留北側一個，南側那個已移除）
@@ -1417,7 +1417,7 @@
         // 天花板：只在第一人稱、人在二樓室內時出現（俯視 / 環繞視角不擋視線）；這時牆也升到完整高度，和天花板接起來
         { const cm = new THREE.Mesh(new THREE.PlaneGeometry(X1 + 0.7 - X0 + 0.14, Z1 - Z0 + 0.14), M(0xf6f2ea, 0.95)); cm.rotation.x = Math.PI / 2; cm.position.set((X0 - 0.7 + X1) / 2, UY + WT - 0.01, ZC); cm.visible = false; scene.add(cm);
           let dl = null, dlMat = null; const dOff = new THREE.Color(0x2a2f3a), dOn = new THREE.Color(0xffffff);
-          if (window.PERSONA === "guest") {   // 客人視角：天花板上很多小小的圓形白燈（嵌燈）
+          if (window.GUESTLIKE) {   // 客人視角：天花板上很多小小的圓形白燈（嵌燈）
             dl = new THREE.Group(); const rg = new THREE.RingGeometry(0.088, 0.118, 28), rm = new THREE.MeshStandardMaterial({ color: 0xb4b8be, roughness: 0.35, metalness: 0.7, side: THREE.DoubleSide }), dg = new THREE.CircleGeometry(0.088, 28); dlMat = new THREE.MeshBasicMaterial({ color: 0x2a2f3a, side: THREE.DoubleSide });   // 嵌燈：金屬邊框（環）+ 凹進去的圓面；有人在才亮
             for (let x = 1.0; x <= 11.5; x += 1.5) for (let z = -7.4; z <= -0.4; z += 1.4) { const r = new THREE.Mesh(rg, rm); r.rotation.x = Math.PI / 2; r.position.set(x, UY + WT - 0.02, z); dl.add(r); const d = new THREE.Mesh(dg, dlMat); d.rotation.x = Math.PI / 2; d.position.set(x, UY + WT - 0.018, z); dl.add(d); }
             dl.visible = false; scene.add(dl);
@@ -1482,7 +1482,7 @@
         let posterN = 0;
         const PHOTOS = (window.SITE && window.SITE.posterPhotos) || [];   // 要放真正的照片：把圖片放進 img/posters/，並把檔名依序寫進 data/projects.js 的 SITE.posterPhotos
         const poster = (x, y, z, ry, st, pw = 0.9, ph = 1.35) => {
-          if (window.PERSONA === "guest") return;   // 客人視角沒有明星海報
+          if (window.GUESTLIKE) return;   // 客人視角沒有明星海報
           const tex = mkTex(THREE, decalCanvas(512, 768, (g, w, h) => drawPoster2(g, w, h, st)), aniso); const photo = pw >= 0.6 && posterN < PHOTOS.length ? PHOTOS[posterN++] : null;   // 每張大海報用不同的照片（小的那張保留程式畫的風格）
           const grp = new THREE.Group(); grp.position.set(x, UY + y, z); grp.rotation.y = ry; scene.add(grp);
           const fr = new THREE.Mesh(new THREE.BoxGeometry(pw + 0.08, ph + 0.08, 0.03), frameM); fr.castShadow = false; grp.add(fr);
@@ -1747,8 +1747,8 @@
     }
 
     /* ----- 人物 ----- */
-    const GUEST = window.PERSONA === "guest";   // 訪客：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
-    const av = GUEST ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (GUEST && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
+    const GUEST = !!window.GUESTLIKE, AGENT = window.PERSONA === "agent";   // 訪客（含房仲 David）：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
+    const av = GUEST && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (GUEST && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
@@ -1779,7 +1779,7 @@
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
     const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 4.5;           // 起床後站在自己那一側的床邊
-    const pos = GUEST ? { x: 8.8, z: -3.6 } : spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
+    const pos = GUEST ? (AGENT ? { x: 10.7, z: -0.55 } : { x: 8.8, z: -3.6 }) : spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -1800,7 +1800,8 @@
     let route = [], afterFn = null, nearIdx = -1, speedNow = 0, inside = -1, zoomK = 0, lastWheel = 0, promptKey = "", boardS = -1;
 
 
-    if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>' + (window.GUEST_NAME || "訪客") + '</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
+    if (AGENT) root.insertAdjacentHTML("beforeend", '<div class="g-start">你是 <b>David（房仲）</b>：平常站在門口介紹這個房間；訪客進來時你們在同一個空間。</div>');
+    else if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>' + (window.GUEST_NAME || "訪客") + '</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
     else if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
     const infoEl = root.querySelector("#gInfo"); let lastInfoS = 0, dwell = 0, dwellS = -1;
@@ -2288,7 +2289,7 @@
     if (window.Robot && !GUEST) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
     if (window.Rooms && !GUEST) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
     if (window.Animals && !GUEST) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
-    if (window.Presence && !GUEST) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
+    if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
       root, cv, renderer, fpvKey: S_fpvKey, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面

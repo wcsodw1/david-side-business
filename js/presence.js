@@ -10,8 +10,18 @@
   const api = (window.Presence = { mount, unmount, broadcast: (m) => { if (!Pz || !Pz.conns) return false; let ok = false; Pz.conns.forEach((c) => { if (c.open) { try { c.send(m); ok = true; } catch (_) {} } }); return ok; }, state: () => (Pz ? { status: Pz.status, remote: Pz.remote, peer: !!Pz.peer } : null) });
   const PEER_SRC = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
   const ROOM = (() => { try { const r = new URLSearchParams(location.search).get("room"); return r ? "-" + r.replace(/[^a-z0-9]/gi, "").slice(0, 12) : ""; } catch (_) { return ""; } })();   // 測試用：?room=xxx 使用獨立代號，不干擾正式的兩個身分
-  const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM };
-  const NAME = { david: "David", aeris: "ARIES ✿" };
+  const ID = { david: "dsb7f3a-david-v1" + ROOM, aeris: "dsb7f3a-aeris-v1" + ROOM, guest: "dsb7f3a-guest-v1" + ROOM, agent: "dsb7f3a-agent-v1" + ROOM };
+  const NAME = { david: "David", aeris: "ARIES ✿", guest: "訪客", agent: "David（房仲）" };
+  const PAIR = { david: "aeris", aeris: "david", guest: "agent", agent: "guest" };   // 兩組：David ⇄ ARIES、房仲 David ⇄ 訪客（同一個二樓空間）
+  const AGENT_SPOT = { x: 10.7, z: -0.55, y: 3.3, f: Math.PI };   // 房仲平常站的位置：二樓大門口（南牆最右邊那扇門內側），面向客廳
+  const TOUR = [   // 訪客走到哪，房仲就介紹哪一區（房仲不在線時由「站在門口的 David」講解）
+    [(x, z) => x > 5.4 && x < 6.3 && z < -6.5, "這裡是<b>淋浴間</b>：蓮蓬頭在這，走進去浴簾會自動拉上、開始出水，再走出來就停。"],
+    [(x, z) => x > 2.8 && x < 6.3 && z < -5.6, "這是主臥室的<b>套房浴室</b>：馬桶、洗手台加圓鏡，窗邊是淋浴間，浴室門會自動開關。"],
+    [(x, z) => x < 6.3 && z >= -0.55, "這是<b>走道</b>：一頭連到客廳，另一頭是西邊的出口門；北邊那扇門進主臥室。"],
+    [(x, z) => x < 6.3, "這是<b>主臥室</b>：雙人床、床頭櫃，浴室的門在西北角；夜晚進來燈會自動亮起。"],
+    [(x, z) => x >= 6.3 && z < -6.5, "這裡是客廳<b>北側</b>：冰箱放在角落，旁邊就是主臥室的牆。"],
+    [(x, z) => x >= 6.3, "這是<b>客廳</b>：整面東牆是落地長窗，採光很好；往西走到底是走道和主臥室。"],
+  ];
   const BED = { david: { x: 4.4, z: -4.05, y: 3.3 + 0.74 }, aeris: { x: 4.4, z: -3.15, y: 3.3 + 0.74 } };   // 兩人睡二樓同一張雙人床（David 北側、ARIES 南側）   // David 睡一樓大床；Aeris 睡二樓自己的床（y = 床面高度）   // 睡覺時「腳」的位置（床尾）；頭朝西躺在枕頭上
   let Pz = null;
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -26,9 +36,9 @@
   function mount(ctx) {
     unmount();
     const { THREE, scene, hooks, camera } = ctx;
-    const me = window.PERSONA === "aeris" ? "aeris" : "david", other = me === "aeris" ? "david" : "aeris";
-    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : ctx.buildAvatar(window.Faces ? window.Faces.opts("david") : undefined);
-    if (other !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david");
+    const me = PAIR[window.PERSONA] ? window.PERSONA : "david", other = PAIR[me], initiator = me === "david" || me === "agent", isGuestPair = me === "guest" || me === "agent";
+    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : other === "guest" ? ctx.buildAvatar(window.Faces ? window.Faces.opts("guest") : undefined) : ctx.buildAvatar(window.Faces ? window.Faces.opts("david") : undefined);
+    if (other === "guest" && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (other !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david");
     const W = new THREE.Group(); W.add(av.root); scene.add(W);
 
     const tagTex = (txt, fill, stroke, ink) => {
@@ -37,7 +47,7 @@
       g.strokeStyle = stroke; g.lineWidth = 3; g.stroke(); g.fillStyle = ink; g.font = "700 34px 'Noto Sans TC', -apple-system, sans-serif"; g.textAlign = "center"; g.fillText(txt, 128, 52);
       return new THREE.CanvasTexture(c);
     };
-    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: other === "aeris" ? tagTex(NAME.aeris, "rgba(255,240,250,.92)", "#e58fb0", "#b0466e") : tagTex(NAME.david, "rgba(20,17,43,.88)", "#ffe9b8", "#ffe9b8"), transparent: true, depthTest: false }));
+    const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: other === "aeris" ? tagTex(NAME.aeris, "rgba(255,240,250,.92)", "#e58fb0", "#b0466e") : tagTex(NAME[other] || NAME.david, "rgba(20,17,43,.88)", "#ffe9b8", "#ffe9b8"), transparent: true, depthTest: false }));
     tag.renderOrder = 11; scene.add(tag);
     const zc = document.createElement("canvas"); zc.width = 128; zc.height = 128; const zg = zc.getContext("2d");
     zg.fillStyle = "#fff"; zg.strokeStyle = "#3a3358"; zg.lineWidth = 6; zg.font = "800 70px sans-serif"; zg.textAlign = "center"; zg.strokeText("Z", 48, 80); zg.fillText("Z", 48, 80); zg.font = "800 46px sans-serif"; zg.strokeText("z", 92, 56); zg.fillText("z", 92, 56);
@@ -57,9 +67,11 @@
     let sendT = 0, vis = 0;
 
     // 連線管理：可能同時有好幾條連線（重連時），全部都收、全部都送，避免「A 以為連上、B 以為沒連上」的平行宇宙
+    const offTxt = () => (isGuestPair ? (other === "agent" ? "房仲 David 在門口，走近聽他介紹" : "訪客還沒進來") : `${NAME[other].replace(" ✿", "")} 睡覺中 💤`);
+    const say = document.createElement("div"); say.className = "agent-say"; say.hidden = true; document.body.appendChild(say); Pz.say = say;
     const conns = new Set(); Pz.conns = conns;
     const anyOpen = () => [...conns].some((c) => c.open);
-    const drop = () => { rm.on = false; Pz.remote = null; conns.forEach((c) => { try { c.close(); } catch (_) {} }); conns.clear(); setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; };
+    const drop = () => { rm.on = false; Pz.remote = null; conns.forEach((c) => { try { c.close(); } catch (_) {} }); conns.clear(); setPill(offTxt()); Pz.status = "對方離線"; };
     const adopt = (c) => {
       conns.add(c); c.__t = performance.now();
       c.on("open", () => { Pz.status = "對方在線"; setPill(`${NAME[other].replace(" ✿", "")} 在線上`); setTimeout(() => setPill(""), 3500); });
@@ -75,8 +87,8 @@
         { urls: ["turn:openrelay.metered.ca:80", "turn:openrelay.metered.ca:443", "turn:openrelay.metered.ca:443?transport=tcp"], username: "openrelayproject", credential: "openrelayproject" }] } }); Pz.peer = peer;
       peer.on("open", () => {
         // NPC 版 Aeris：有連上同步服務，就由「真人上線 / 睡覺」取代；沒連上則保留 NPC
-                setPill(`${NAME[other].replace(" ✿", "")} 睡覺中 💤`); Pz.status = "對方離線"; setDbg(me === "david" ? "已連上同步服務，找對方中" : "已登記，等 David 連入");
-        if (me === "david") {
+                setPill(offTxt()); Pz.status = "對方離線"; setDbg(initiator ? "已連上同步服務，找對方中" : "已登記，等對方連入");
+        if (initiator) {
           const tryConn = () => {
             if (!Pz || anyOpen()) return;
             const now = performance.now();
@@ -105,13 +117,25 @@
       vis = lerp(vis, on ? 1 : 0, Math.min(1, dt * 5));
       if (on) {
         rm.x += 0; const k = Math.min(1, dt * 9);
-        av.root.rotation.set(0, av.root.rotation.y, 0); W.position.set(0, 0, 0); W.rotation.set(0, 0, 0);
+        av.root.visible = true; say.hidden = true; av.root.rotation.set(0, av.root.rotation.y, 0); W.position.set(0, 0, 0); W.rotation.set(0, 0, 0);
         const px = av.root.position.x, pz = av.root.position.z;
         av.root.position.set(lerp(px || rm.x, rm.x, k), lerp(av.root.position.y, rm.y || 0, k), lerp(pz || rm.z, rm.z, k));
         av.root.rotation.y += angDiff(av.root.rotation.y, rm.f) * Math.min(1, dt * 10);
         if (rm.sw && ctx.POOL) av.root.position.y = lerp(av.root.position.y, ctx.POOL.surface - 0.02, k);
         av.update(dt, rm.sp || 0, t); if (rm.sit > 0.5 && ctx.seatPose) ctx.seatPose(av, rm.sit); if (ctx.swimPose) ctx.swimPose(av, rm.sw ? 1 : 0, t, (rm.sp || 0) > 0.3);
         tag.visible = true; tag.position.set(av.root.position.x, av.root.position.y + 2.0, av.root.position.z); zzz.visible = false;
+      } else if (isGuestPair) {
+        // 訪客 ⇄ 房仲：對方不在線 → 房仲 David 站在門口講解（訪客視角）；訪客不在線 → 看不到
+        zzz.visible = false;
+        if (other === "agent") {
+          av.root.visible = true; W.position.set(0, 0, 0); W.rotation.set(0, 0, 0); av.root.rotation.order = "XYZ"; av.root.position.set(AGENT_SPOT.x, AGENT_SPOT.y, AGENT_SPOT.z);
+          const m = ctx.getMe(), face = Math.atan2(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z), near = Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 5;
+          av.root.rotation.y += angDiff(av.root.rotation.y, near ? face : AGENT_SPOT.f) * Math.min(1, dt * 4); av.root.rotation.z = 0; av.root.rotation.x = 0;
+          av.update(dt, 0, t); if (av.armR) av.armR.sh.rotation.x = near ? -0.5 + Math.sin(t * 2.2) * 0.12 : 0;   // 介紹時手微微抬起
+          tag.visible = true; tag.position.set(AGENT_SPOT.x, AGENT_SPOT.y + 2.0, AGENT_SPOT.z);
+          const hit = TOUR.find(([f]) => f(m.x, m.z)); const txt = near && Math.hypot(m.x - AGENT_SPOT.x, m.z - AGENT_SPOT.z) < 3.2 ? "歡迎參觀！我是 <b>David</b>，這間房子由我來介紹。往裡面走，走到哪我就講到哪。" : hit ? hit[1] : "";
+          if (txt) { if (say.__t !== txt) { say.__t = txt; say.innerHTML = `<b>David（房仲）</b>${txt}`; } say.hidden = false; } else say.hidden = true;
+        } else { av.root.visible = false; tag.visible = false; say.hidden = true; }
       } else {
         const b = BED[other]; W.position.set(b.x, b.y, b.z); W.rotation.set(0, -Math.PI / 2, 0); av.root.rotation.order = "XYZ"; av.root.rotation.set(-Math.PI / 2, 0, 0); av.root.position.set(0, 0, 0);
         av.update(dt, 0, t); av.torso.rotation.x = Math.sin(t * 1.4) * 0.02; av.head.rotation.set(0, 0.3, 0);
@@ -134,7 +158,7 @@
     Pz.timers.forEach(clearInterval);
     try { Pz.conns.forEach((c) => c.close()); Pz.peer && Pz.peer.destroy(); } catch (_) {}
     for (const o of [Pz.W, Pz.tag, Pz.zzz]) o.parent && o.parent.remove(o);
-    Pz.pill.remove();
+    Pz.pill.remove(); Pz.say && Pz.say.remove();
     Pz = null;
   }
 })();

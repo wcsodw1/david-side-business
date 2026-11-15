@@ -18,7 +18,8 @@
   const GUEST_HASH = "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec";   // 訪客密碼 guest（不分大小寫，只存雜湊）：只能在二樓房間走動，看不到屋外，不能進辦公室 / 白板 / NEWS
   const LYJ_HASH = "de6d23fe62808d9e7e3e324d94db6cffefba6994f935aa630c0826801d6f8f6d";   // 訪客「林晏如」的密碼 LYJ（不分大小寫，只存雜湊）；登入後歡迎詞顯示她的名字
   const GUEST_ALT = [LYJ_HASH];
-  window.PERSONA = "david";
+  const AGENT_HASH = "3cce5ca57826b4509c7d1ffea69aaa803428a73c7838065a249c9c44f3d0e89e";   // 房仲 David 的密碼 guest-agent（只存雜湊）：跟訪客同一個二樓空間；沒人登入時，房仲 David 站在門口講解
+  window.PERSONA = "david"; window.GUESTLIKE = false;
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -372,9 +373,9 @@
 
   let clockTimer;
   // 瀏覽器分頁標題前面標上帳號類型：ADMIN（David）/ GUEST（訪客）/ ARIES，開多個分頁時一眼分得出來
-  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", aeris: "[ARIES] " }[window.PERSONA] || "");
+  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
   function render() {
-    const hash = window.PERSONA === "guest" ? "" : location.hash.replace(/^#\/?/, "");   // 訪客永遠只看得到 3D 房子
+    const hash = window.GUESTLIKE ? "" : location.hash.replace(/^#\/?/, "");   // 訪客永遠只看得到 3D 房子
     const [seg, arg] = hash.split("/");
     if (window.Gallery) window.Gallery.unmount();
     if (window.Gallery3D) window.Gallery3D.unmount();
@@ -436,10 +437,10 @@
   function enter() {
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
-    if (window.PERSONA === "guest") [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
+    if (window.GUESTLIKE) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
     buildMega();
-    if (window.News && window.PERSONA !== "guest") window.News.mount(P, {});
+    if (window.News && !window.GUESTLIKE) window.News.mount(P, {});
     render();
   }
   function lock() {
@@ -458,10 +459,11 @@
     const v = $("#pw").value;
     if (!v) return;
     const hv = await sha256(v.trim()), ha = await sha256(v.trim().toLowerCase());   // Aeris 的密碼不分大小寫
-    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha)) {
-      window.PERSONA = hv === PASS_HASH ? "david" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
-      if (window.PERSONA === "guest") window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : "訪客";
-      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.PERSONA === "guest" ? ha : PASS_HASH); } catch (_) {}
+    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha) || ha === AGENT_HASH) {
+      window.PERSONA = hv === PASS_HASH ? "david" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
+      window.GUESTLIKE = window.PERSONA === "guest" || window.PERSONA === "agent";
+      if (window.PERSONA === "guest") window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : "訪客"; else if (window.PERSONA === "agent") window.GUEST_NAME = "David（房仲）";
+      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE ? ha : PASS_HASH); } catch (_) {}
       { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } }
       enter();
     } else {
@@ -485,6 +487,6 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   let ok = false;
-  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH) { window.PERSONA = "guest"; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === AGENT_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();
