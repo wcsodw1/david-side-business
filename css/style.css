@@ -1191,23 +1191,17 @@ body.locked .santa-fab { display: none; }
 .ai-cmpgrid .ai-meta { font-weight: 700; }
 
 /* ============================================================
-   AI 總管 × 儀表板 融合：標題列右上的「▦ 儀表板」；全螢幕時左邊對話、右邊即時儀表板
+   AI 總管 × 儀表板 融合：平常收在標題列右上的「▦ 儀表板」，滑鼠移過去從右上角向左下像推開窗戶一樣滑出來
    ============================================================ */
 .robot-chat .rc-dash { position: relative; width: auto !important; height: 36px !important; padding: 0 16px !important; border-radius: 999px !important; font: 600 14px var(--font) !important; letter-spacing: .06em; white-space: nowrap; }
 .robot-chat .rc-dash.on { background: var(--hm-ink) !important; color: var(--hm-paper) !important; border-color: var(--hm-ink) !important; }
+.robot-chat .rc-dash[aria-pressed="true"]::after { content: "📌"; font-size: 11px; margin-left: 6px; }
 .robot-chat .rc-dash i { position: absolute; right: 4px; top: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--hm-orange); box-shadow: 0 0 0 2px var(--hm-paper); }
-.robot-chat .rc-body { display: block; min-width: 0; }
-.robot-chat .dh-pane { display: none; overflow-y: auto; min-width: 0; background: #fffdf8; border: 1px solid var(--hm-line); border-radius: 22px; }
-.robot-chat .rc-body.dash-on .dh-pane { display: block; max-height: min(66vh, 640px); }
-.robot-chat:not(.rc-full) .rc-body.dash-on > [data-m] { display: none; }        /* 小視窗：對話 ⇄ 儀表板 切換 */
-.robot-chat.rc-full .rc-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.robot-chat.rc-full .rc-body > [data-m] { flex: 1; min-height: 0; }
-@media (min-width: 1100px) {
-  .robot-chat.rc-full .rc-body.dash-on { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(380px, .95fr); gap: 22px; }
-  .robot-chat.rc-full .rc-body.dash-on > [data-m] { display: flex; flex-direction: column; min-height: 0; }
-  .robot-chat.rc-full .rc-body.dash-on .dh-pane { max-height: none; height: 100%; }
-}
-@media (max-width: 1099px) { .robot-chat.rc-full .rc-body.dash-on > [data-m] { display: none; } .robot-chat.rc-full .rc-body.dash-on .dh-pane { flex: 1; max-height: none; } }
+.robot-chat .office-ai { position: relative; }
+.robot-chat .dh-pane { position: absolute; z-index: 30; right: 20px; top: 66px; width: min(580px, calc(100% - 40px)); max-height: calc(100% - 90px); overflow-y: auto; background: #fffdf8; border: 1px solid var(--hm-line); border-radius: 22px; box-shadow: 0 30px 70px -18px rgba(42,31,23,.55), 0 4px 14px rgba(42,31,23,.14);
+  transform-origin: 100% 0; transform: perspective(900px) translate(8px, -6px) rotateY(-24deg) scale(.86); opacity: 0; visibility: hidden; pointer-events: none; transition: transform .34s cubic-bezier(.2,.8,.2,1), opacity .22s ease, visibility 0s linear .34s; }
+.robot-chat .dh-pane.open { transform: none; opacity: 1; visibility: visible; pointer-events: auto; transition: transform .34s cubic-bezier(.2,.8,.2,1), opacity .22s ease, visibility 0s; }
 .robot-chat .dh { padding: 22px 24px 28px; }
+@media (max-width: 640px) { .robot-chat .dh-pane { right: 10px; left: 10px; width: auto; top: 62px; } }
 .dh-row.dh-flash { animation: dhFlash 2.4s ease-out; }
 @keyframes dhFlash { 0% { background: #fde3cf; box-shadow: 0 0 0 3px rgba(227,101,29,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(227,101,29,0); } }

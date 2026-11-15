@@ -32,32 +32,35 @@
     </div>`;
   }
   /* ----- 融合：把儀表板接到 AI 總管視窗（機器人 / 聖誕老人開的那個）-----
-     · 標題列右上多一顆「▦ 儀表板」：小視窗 = 切到儀表板，大螢幕全螢幕 = 左邊對話、右邊儀表板並排
-     · AI 改了白板（ai:applied / store:change）→ 儀表板即時刷新，被改到的專案那一列會閃一下橘色
+     · 平常收在標題列右上的「▦ 儀表板」，AI 對話佔滿整個視窗
+     · 滑鼠移到按鈕上 → 儀表板像推開窗戶一樣從右上角向左下滑出來；滑鼠移開就收起；點按鈕可以「釘住」一直開著（觸控裝置就是點一下開 / 關）
+     · AI 改了白板（ai:applied / store:change）→ 儀表板即時刷新，被改到的專案那一列會閃一下橘色；收起來時按鈕上會冒出橘色小點
      · 以後狀態、Next Step、進度都直接跟 AI 說，不用再自己填 */
   const snap = (P) => { const o = {}; (P || []).forEach((p) => { o[p.id] = [p.wbStatus, p.wbNote, p.next, p.progress, p.goal, p.status].join("¦"); }); return o; };
   function attach(box, getP) {
-    const sec = box.querySelector(".office-ai"), hdr = box.querySelector(".rc-h"), mount = box.querySelector("[data-m]");
-    if (!sec || !hdr || !mount || box.__dash) return; box.__dash = true;
-    const body = document.createElement("div"); body.className = "rc-body"; mount.parentNode.insertBefore(body, mount); body.appendChild(mount);
-    const pane = document.createElement("aside"); pane.className = "dh-pane"; pane.setAttribute("aria-label", "儀表板"); body.appendChild(pane);
-    const btn = document.createElement("button"); btn.type = "button"; btn.className = "rc-dash"; btn.innerHTML = "▦ 儀表板<i hidden></i>"; btn.setAttribute("aria-pressed", "false");
-    const first = hdr.querySelector("button"); hdr.insertBefore(btn, first);
-    let on = false, last = snap(getP());
+    const sec = box.querySelector(".office-ai"), hdr = box.querySelector(".rc-h");
+    if (!sec || !hdr || box.__dash) return; box.__dash = true;
+    const pane = document.createElement("aside"); pane.className = "dh-pane"; pane.setAttribute("aria-label", "儀表板"); sec.appendChild(pane);
+    const btn = document.createElement("button"); btn.type = "button"; btn.className = "rc-dash"; btn.innerHTML = "▦ 儀表板<i hidden></i>"; btn.setAttribute("aria-pressed", "false"); btn.setAttribute("aria-expanded", "false");
+    hdr.insertBefore(btn, hdr.querySelector("button"));
+    let open = false, pinned = false, closeT = 0, last = snap(getP());
     const hot = {};   // 專案 id → 閃色到什麼時候（連續幾個事件重畫時，閃色不會被洗掉）
     const draw = (flash) => {
       const P = getP(), now = snap(P), keep = pane.scrollTop, t0 = Date.now();
-      if (flash) { const ids = P.filter((p) => now[p.id] !== last[p.id]).map((p) => p.id); ids.forEach((id) => (hot[id] = t0 + 2400)); if (ids.length && !on) btn.querySelector("i").hidden = false; }
+      if (flash) { const ids = P.filter((p) => now[p.id] !== last[p.id]).map((p) => p.id); ids.forEach((id) => (hot[id] = t0 + 2400)); if (ids.length && !open) btn.querySelector("i").hidden = false; }
       last = now; pane.innerHTML = html(P); pane.scrollTop = keep;
       pane.querySelectorAll(".dh-row").forEach((r) => { const a = r.querySelector(".dh-name"), id = a && decodeURIComponent((a.getAttribute("href") || "").replace("#/p/", "")); if (id && hot[id] > t0) r.classList.add("dh-flash"); });
     };
-    const set = (v) => { on = v; body.classList.toggle("dash-on", v); btn.setAttribute("aria-pressed", String(v)); btn.classList.toggle("on", v); if (v) { btn.querySelector("i").hidden = true; draw(false); } try { localStorage.setItem("dsb-rc-dash", v ? "1" : ""); } catch (_) {} };
-    btn.addEventListener("click", () => set(!on));
+    const show = (v) => { if (v === open) return; open = v; pane.classList.toggle("open", v); btn.classList.toggle("on", v || pinned); btn.setAttribute("aria-expanded", String(v)); if (v) { btn.querySelector("i").hidden = true; draw(false); } };
+    const later = () => { clearTimeout(closeT); closeT = setTimeout(() => { if (!pinned) show(false); }, 280); };
+    const now = () => { clearTimeout(closeT); show(true); };
+    const hoverOK = matchMedia("(hover: hover)").matches;
+    if (hoverOK) { btn.addEventListener("mouseenter", now); pane.addEventListener("mouseenter", now); btn.addEventListener("mouseleave", later); pane.addEventListener("mouseleave", later); }
+    btn.addEventListener("click", () => { pinned = !pinned; btn.setAttribute("aria-pressed", String(pinned)); if (pinned) show(true); else if (hoverOK) later(); else show(false); btn.classList.toggle("on", open || pinned); });
+    box.addEventListener("keydown", (e) => { if (e.key === "Escape" && open) { pinned = false; btn.setAttribute("aria-pressed", "false"); show(false); } }, true);
     const refresh = () => { if (!box.isConnected) { window.removeEventListener("ai:applied", refresh); window.removeEventListener("store:change", refresh); return; } draw(true); };
     window.addEventListener("ai:applied", refresh); window.addEventListener("store:change", refresh);
-    let pref = false; try { pref = localStorage.getItem("dsb-rc-dash") === "1"; } catch (_) {}
-    if (pref || matchMedia("(min-width: 1100px)").matches && box.classList.contains("rc-full")) set(true); else draw(false);
-    new MutationObserver(() => { if (box.classList.contains("rc-full") && matchMedia("(min-width: 1100px)").matches && !on) set(true); }).observe(box, { attributes: true, attributeFilter: ["class"] });
+    draw(false);
   }
   window.Dash = { html, attach };
 })();
