@@ -11,6 +11,7 @@
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
   const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e6207542afa9e43cb59bf41af439c06ebb9a5b1c0652e3dcdb14b0b81931873a";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
+  let officeTab = "gallery";   // 辦公室上方兩個類型：gallery（Side Business 儀表板）/ tpi（TPI 工作區）
   let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
   // 辦公室權限閘：機器人 / AI 總管也要先輸入辦公室密碼（這個分頁輸入過一次就不再問）
@@ -300,7 +301,11 @@
             <h1>David 的辦公室</h1>
             <p>每個 Side Business 的即時現況，都貼在這間辦公室裡。</p>
           </div>
-          <div class="office-room">
+          ${tpi ? `<div class="ot-switch" role="tablist" aria-label="辦公室類型">
+            <button type="button" role="tab" data-otb="gallery" class="${officeTab === "gallery" ? "on" : ""}">Gallery<small>Side Business</small></button>
+            <button type="button" role="tab" data-otb="tpi" class="${officeTab === "tpi" ? "on" : ""}">TPI<small>本業工作區</small></button>
+          </div>` : ""}
+          <div class="office-room" data-ot="gallery" ${tpi && officeTab === "tpi" ? "hidden" : ""}>
 
             <div class="monitor">
               <div class="bezel">
@@ -324,7 +329,7 @@
             </div>
 
           </div>
-          ${tpi ? `<section class="tpi-zone" id="tpiZone" style="--c:${accent(P.indexOf(tpi))}">
+          ${tpi ? `<section class="tpi-zone" id="tpiZone" data-ot="tpi" ${officeTab === "tpi" ? "" : "hidden"} style="--c:${accent(P.indexOf(tpi))}">
             <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span></div>
             <div class="tz-grid">
               <div class="tz-prog">
@@ -471,6 +476,9 @@
         const y = scrollY; render(); scrollTo(0, y);
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
+      // 上方 Gallery / TPI：滑鼠移過去就切換（也可以點）
+      { const sw = (k) => { officeTab = k; $$("[data-otb]", app).forEach((x) => x.classList.toggle("on", x.dataset.otb === k)); $$("[data-ot]", app).forEach((x) => (x.hidden = x.dataset.ot !== k)); };
+        $$("[data-otb]", app).forEach((b) => { b.addEventListener("mouseenter", () => sw(b.dataset.otb)); b.addEventListener("click", () => sw(b.dataset.otb)); b.addEventListener("focus", () => sw(b.dataset.otb)); }); }
       { const tp = P.find((x) => x.id === "tpi"), pm = $("[data-tpi-plan]", app);   // TPI 獨立區：專案進度表（可編輯）+ 專屬 AI
         if (tp && pm && window.Schedule) { const again = () => { const y = scrollY; render(); scrollTo(0, y); }; window.Schedule.bind(pm, tp, again); }
         const ai = $("#tpiAI", app); if (tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } } }
