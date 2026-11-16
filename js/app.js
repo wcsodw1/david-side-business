@@ -11,6 +11,7 @@
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
   const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e6207542afa9e43cb59bf41af439c06ebb9a5b1c0652e3dcdb14b0b81931873a";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
+  let updTab = "gallery";   // 最新動態：藝廊 / TPI
   let officeTab = "gallery";   // 辦公室上方兩個類型：gallery（Side Business 儀表板）/ tpi（TPI 工作區）
   let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
@@ -111,15 +112,25 @@
 
   /* ---------- Mega menu ---------- */
   function buildMega() {
-    $("#megaGrid").innerHTML = P.map((p, i) => `
-      <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}" style="--c:${accent(i)}">
+    const PS = P.filter((p) => p.category !== "Work"), tpi = P.find((p) => p.id === "tpi");
+    const item = (p) => `
+      <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}" style="--c:${accent(P.indexOf(p))}">
         <span class="mega-name">${esc(p.name)}</span>
         <span class="mega-meta"><i class="pill-dot" style="background:${st(p).color}"></i>${esc(st(p).label)}</span>
         <span class="mega-pg" title="完成度 ${p.progress ?? 0}%"><i style="width:${p.progress ?? 0}%"></i><b>${p.progress ?? 0}%</b></span>
-      </a>`).join("");
-    if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip($("#megaGrid"), ".mega-item", (el) => { const id = decodeURIComponent((el.getAttribute("href") || "").replace("#/p/", "")); return P.find((x) => x.id === id); }, (p) => accent(P.indexOf(p)));   // 選單裡滑過專案 → 浮出它自己的進度表
-    const h3 = $(".mega-intro h3");
-    if (h3) h3.textContent = `${P.length} 個正在長大的夢`;
+      </a>`;
+    const grids = {
+      gallery: PS.map(item).join(""),
+      tpi: tpi ? item(tpi) + `<a class="mega-item mega-wide" role="menuitem" href="#/office" data-mego="tpi" style="--c:${accent(P.indexOf(tpi))}"><span class="mega-name">TPI 工作區</span><span class="mega-meta">專案進度 + 專屬 AI</span><span class="mega-pg"><b>進入 →</b></span></a>` + (tpi.next ? `<p class="mega-note"><b>NEXT</b>${esc(tpi.next)}</p>` : "") : "",
+    };
+    const heads = { gallery: `${PS.length} 個正在長大的夢`, tpi: "TPI · 本業工作" };
+    const grid = $("#megaGrid"), h3 = $(".mega-intro h3");
+    const show = (k) => { grid.innerHTML = grids[k] || grids.gallery; if (h3) h3.textContent = heads[k] || heads.gallery; $$("[data-mo]", $("#mega")).forEach((b) => b.classList.toggle("on", b.dataset.mo === k)); };
+    const go = (k) => { officeTab = k; if (location.hash === "#/office") render(); else location.hash = "#/office"; };
+    $$("[data-mo]", $("#mega")).forEach((b) => { if (b.__mo) return; b.__mo = true; b.addEventListener("mouseenter", () => show(b.dataset.mo)); b.addEventListener("focus", () => show(b.dataset.mo)); b.addEventListener("click", () => go(b.dataset.mo)); });
+    if (!grid.__mg) { grid.__mg = true; grid.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest("[data-mego]"); if (a) { e.preventDefault(); go(a.dataset.mego); } }); }
+    show("gallery");
+    if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip($("#megaGrid"), ".mega-item[href^='#/p/']", (el) => { const id = decodeURIComponent((el.getAttribute("href") || "").replace("#/p/", "")); return P.find((x) => x.id === id); }, (p) => accent(P.indexOf(p)));   // 選單裡滑過專案 → 浮出它自己的進度表
   }
 
   const nav = $("#nav"), mega = $("#mega"), scrim = $("#megaScrim"), trig = $("#megaTrigger"), megaLink = $("#megaLink");
@@ -369,21 +380,26 @@
     updates() {
       const all = P.flatMap((p, i) => (p.updates || []).map((u) => ({ ...u, p, i })))
                    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      const list = (L) => L.length ? `<ul class="timeline" style="--c:#ffb28a">${L.map((u) => `
+              <li style="--c:${accent(u.i)}">
+                <time>${fmt(u.date)}</time>
+                <h4><a href="#/p/${esc(u.p.id)}">${esc(u.title)}</a><span class="tag">${esc(u.p.name)}</span></h4>
+                <p>${esc(u.text)}</p>
+              </li>`).join("")}</ul>` : `<p class="empty">還沒有任何紀錄。</p>`;
+      const gal = all.filter((u) => u.p.category !== "Work"), tp = all.filter((u) => u.p.category === "Work");
       return `
         <section class="page">
           <div class="page-head">
             <p class="eyebrow">UPDATES</p>
             <h1>最新動態</h1>
-            <p>所有專案的進度紀錄，依日期排列。</p>
+            <p>藝廊（Side Business）與 TPI 的進度紀錄，依日期排列。</p>
           </div>
-          <div class="panel">
-            ${all.length ? `<ul class="timeline" style="--c:#ffb28a">${all.map((u) => `
-              <li style="--c:${accent(u.i)}">
-                <time>${fmt(u.date)}</time>
-                <h4><a href="#/p/${esc(u.p.id)}">${esc(u.title)}</a><span class="tag">${esc(u.p.name)}</span></h4>
-                <p>${esc(u.text)}</p>
-              </li>`).join("")}</ul>` : `<p class="empty">還沒有任何紀錄。</p>`}
+          <div class="ot-switch" role="tablist" aria-label="動態類型">
+            <button type="button" role="tab" data-upb="gallery" class="${updTab === "gallery" ? "on" : ""}">藝廊<small>${gal.length} 則</small></button>
+            <button type="button" role="tab" data-upb="tpi" class="${updTab === "tpi" ? "on" : ""}">TPI<small>${tp.length} 則</small></button>
           </div>
+          <div class="panel" data-up="gallery" ${updTab === "gallery" ? "" : "hidden"}>${list(gal)}</div>
+          <div class="panel" data-up="tpi" ${updTab === "tpi" ? "" : "hidden"}>${list(tp)}</div>
         </section>`;
     },
 
@@ -455,6 +471,8 @@
       const jm = $("[data-jmount]", app), pi = P.findIndex((x) => x.id === arg);
       if (jm && pi >= 0) { jm.innerHTML = window.Journal.card(P[pi], pi, GH, { page: true }); window.Journal.bind(jm, P[pi], pi, GH, { rerender: () => { const y = scrollY; render(); scrollTo(0, y); } }); }
     }
+    if (seg === "updates") { const sw = (k) => { updTab = k; $$("[data-upb]", app).forEach((x) => x.classList.toggle("on", x.dataset.upb === k)); $$("[data-up]", app).forEach((x) => (x.hidden = x.dataset.up !== k)); };   // 動態也分藝廊 / TPI：滑過去就切換
+      $$("[data-upb]", app).forEach((b) => { b.addEventListener("mouseenter", () => sw(b.dataset.upb)); b.addEventListener("click", () => sw(b.dataset.upb)); b.addEventListener("focus", () => sw(b.dataset.upb)); }); }
     if (window.VIEWER && seg === "p") $$("[data-jmount] form, [data-jmount] button:not([data-tab]), [data-jmount] textarea, [data-jmount] select, [data-jmount] input", app).forEach((e) => { if (!e.closest(".sch-scroll")) e.hidden = true; });   // 客人唯讀：專案頁的編輯控制全部藏起來（資料層本來就擋寫入）
     if (seg === "office" && !officeOpen() && !window.VIEWER) {
       const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);

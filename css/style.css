@@ -830,7 +830,7 @@ body.locked .music-btn { display: none; }
    只作用在 .office-ai（辦公室與館長機器人的聊天框）
    ============================================================ */
 .office-ai {
-  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #e3651d; --hm-orange-2: #c4520f;
+  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #8b1e3f; --hm-orange-2: #6d1530;
   --hm-serif: "Cormorant Garamond", "Noto Serif TC", "Songti TC", serif; --hm-serif-tc: "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif;
   padding: 30px 34px 30px; border-radius: 4px; background: var(--hm-paper); border: 1px solid var(--hm-line); color: var(--hm-ink);
   box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 70px -30px rgba(0,0,0,.55); position: relative;
@@ -876,7 +876,7 @@ body.locked .music-btn { display: none; }
 /* 輸入列 */
 .office-ai .ai-form { gap: 10px; align-items: stretch; }
 .office-ai .ai-form textarea { padding: 14px 18px; border-radius: 2px; border: 1px solid var(--hm-line); background: #fffdf8; font-size: 17px; line-height: 1.5; min-height: 54px; }
-.office-ai .ai-form textarea:focus { border-color: var(--hm-orange); box-shadow: 0 0 0 3px rgba(227,101,29,.15); }
+.office-ai .ai-form textarea:focus { border-color: var(--hm-orange); box-shadow: 0 0 0 3px rgba(139,30,63,.15); }
 .office-ai .ai-form button { height: auto; min-height: 54px; padding: 0 30px; border-radius: 2px; background: var(--hm-orange); color: #fff; font: 600 15px var(--font); letter-spacing: .2em; transition: background .2s; }
 .office-ai .ai-form button:hover { background: var(--hm-orange-2); }
 .office-ai .ai-form .ai-att { width: 54px; padding: 0; background: transparent; border: 1px solid var(--hm-line); color: var(--hm-ink); letter-spacing: 0; }
@@ -928,7 +928,7 @@ body.locked .music-btn { display: none; }
 .office-ai .tm-tab.dead { opacity: .6; } .office-ai .tm-tab i { font-style: normal; font-size: 15px; padding: 0 4px; opacity: .7; } .office-ai .tm-tab i:hover { opacity: 1; color: var(--hm-orange); }
 .office-ai .tm-new { height: 36px; padding: 0 18px; border-radius: 999px; border: 1px solid var(--hm-ink); background: var(--hm-ink); color: var(--hm-paper); font: 600 13px var(--font); letter-spacing: .08em; cursor: pointer; }
 .office-ai .tm-new:hover { background: var(--hm-orange); border-color: var(--hm-orange); } .office-ai .tm-new:disabled { opacity: .5; cursor: default; }
-.office-ai .tm-body { height: min(60vh, 520px); padding: 12px 6px 12px 14px; border-radius: 2px; background: #1b1410; border: 1px solid #3a2c22; box-shadow: inset 0 0 0 1px rgba(227,101,29,.08); }
+.office-ai .tm-body { height: min(60vh, 520px); padding: 12px 6px 12px 14px; border-radius: 2px; background: #1b1410; border: 1px solid #3a2c22; box-shadow: inset 0 0 0 1px rgba(139,30,63,.08); }
 .office-ai .tm-body[hidden] { display: none; }
 .office-ai .tm-term { height: 100%; } .office-ai .tm-term[hidden] { display: none; }
 .office-ai .tm-note, .office-ai .tm-off { font-size: 14px; line-height: 1.7; color: var(--hm-ink-2); margin: 0; }
@@ -1027,29 +1027,29 @@ body.locked .santa-fab { display: none; }
 
 /* 新版本提示 */
 .upd-bar { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 200; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 20px; border-radius: 999px; background: #2a1f17; color: #f7f2e8; font: 600 14px var(--font); letter-spacing: .04em; box-shadow: 0 14px 34px rgba(0,0,0,.35); animation: fadeUp .3s ease; }
-.upd-bar [data-r] { padding: 7px 16px; border-radius: 999px; border: 0; background: #e3651d; color: #fff; font: 700 13px var(--font); cursor: pointer; }
+.upd-bar [data-r] { padding: 7px 16px; border-radius: 999px; border: 0; background: #8b1e3f; color: #fff; font: 700 13px var(--font); cursor: pointer; }
 .upd-bar [data-x] { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: #f7f2e8; font-size: 16px; cursor: pointer; opacity: .7; }
 
 /* ============ 輸入區：Hermès / Chanel 式的一張卡片（隨文字長高） ============ */
 :is(.ai, .office-ai) .ai-form.ai-composer { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 16px 18px 12px; border: 1px solid var(--hm-line, #d9ccb6); border-radius: 24px; background: #fffdf8;
   box-shadow: 0 1px 0 rgba(255,255,255,.7) inset, 0 22px 44px -32px rgba(42,31,23,.45); transition: border-color .25s, box-shadow .25s; }
-:is(.ai, .office-ai) .ai-form.ai-composer:focus-within { border-color: var(--hm-orange, #e3651d); box-shadow: 0 0 0 4px rgba(227,101,29,.10), 0 26px 50px -30px rgba(42,31,23,.5); }
+:is(.ai, .office-ai) .ai-form.ai-composer:focus-within { border-color: var(--hm-orange, #8b1e3f); box-shadow: 0 0 0 4px rgba(139,30,63,.10), 0 26px 50px -30px rgba(42,31,23,.5); }
 :is(.ai, .office-ai) .ai-form.ai-composer textarea { flex: none; width: 100%; min-height: 30px; max-height: 45vh; padding: 2px 4px; border: 0; border-radius: 0; outline: none; box-shadow: none; background: transparent; resize: none; overflow-y: hidden;
   font: 400 17px/1.7 var(--font); letter-spacing: .01em; color: var(--hm-ink, #2a1f17); transition: height .12s ease; }
 :is(.ai, .office-ai) .ai-form.ai-composer textarea:focus { border: 0; box-shadow: none; }
 :is(.ai, .office-ai) .ai-form.ai-composer textarea::placeholder { font: italic 500 17px/1.7 var(--hm-serif-tc, "Noto Serif TC", serif); color: #b3a38f; -webkit-text-fill-color: #b3a38f; letter-spacing: .03em; }
 .ai-comp-row { display: flex; align-items: center; gap: 12px; padding-top: 8px; border-top: 1px solid rgba(217,204,182,.55); }
 :is(.ai, .office-ai) .ai-form.ai-composer .ai-att { flex: none; width: 38px; height: 38px; min-height: 0; padding: 0; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--hm-line, #d9ccb6); background: transparent; color: var(--hm-ink-2, #6b5a4a); letter-spacing: 0; transition: color .2s, border-color .2s, background .2s; }
-:is(.ai, .office-ai) .ai-form.ai-composer .ai-att:hover { color: var(--hm-orange, #e3651d); border-color: var(--hm-orange, #e3651d); background: #fbf3e9; }
+:is(.ai, .office-ai) .ai-form.ai-composer .ai-att:hover { color: var(--hm-orange, #8b1e3f); border-color: var(--hm-orange, #8b1e3f); background: #fbf3e9; }
 .ai-comp-hint { flex: 1; min-width: 0; font: 500 10.5px var(--font); letter-spacing: .22em; color: #b3a38f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send] { flex: none; height: 42px; min-height: 0; padding: 0 22px 0 24px; border: 0; border-radius: 999px; background: var(--hm-ink, #2a1f17); color: var(--hm-paper, #f7f2e8);
   font: 600 13px var(--font); letter-spacing: .3em; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; transition: background .25s, transform .15s; }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send]::after { content: ""; width: 18px; height: 1px; background: currentColor; box-shadow: 4px -3px 0 -0.5px transparent; position: relative; }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send]::before { content: "→"; order: 2; font: 400 16px/1 var(--hm-serif, serif); letter-spacing: 0; }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send]::after { display: none; }
-:is(.ai, .office-ai) .ai-form.ai-composer [data-send]:hover { background: var(--hm-orange, #e3651d); }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send]:hover { background: var(--hm-orange, #8b1e3f); }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send]:active { transform: scale(.97); }
-:is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop { background: var(--hm-orange, #e3651d); }
+:is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop { background: var(--hm-orange, #8b1e3f); }
 :is(.ai, .office-ai) .ai-form.ai-composer [data-send].stop::before { content: "■"; font-size: 10px; }
 @media (max-width: 640px) { .ai-comp-hint { display: none; } :is(.ai, .office-ai) .ai-form.ai-composer { padding: 12px 14px 10px; border-radius: 20px; } }
 .ai-bar button { white-space: nowrap; flex: none; } .office-ai .ai-bar { flex-wrap: nowrap; } .office-ai .ai-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1 1 auto; }
@@ -1068,7 +1068,7 @@ body.locked .santa-fab { display: none; }
 .office-ai .ai-user .ai-b { border-radius: 20px 20px 6px 20px; }
 .office-ai .ai-ai .ai-b { border-left: 0; padding-left: 0; }
 .office-ai .ai-ai { position: relative; padding-left: 20px; }
-.office-ai .ai-ai::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 3px; background: linear-gradient(var(--hm-orange), rgba(227,101,29,.25)); }
+.office-ai .ai-ai::before { content: ""; position: absolute; left: 0; top: 4px; bottom: 4px; width: 3px; border-radius: 3px; background: linear-gradient(var(--hm-orange), rgba(139,30,63,.25)); }
 .office-ai .ai-err .ai-b { border-radius: 16px; border-left: 0; box-shadow: inset 3px 0 0 #b3261e; }
 .office-ai .ai-acts { border-radius: 14px; border-left: 0; box-shadow: inset 3px 0 0 var(--hm-orange); }
 .office-ai .ai-think { border-radius: 14px; }
@@ -1111,7 +1111,7 @@ body.locked .santa-fab { display: none; }
    辦公室儀表板：Hermès 風格（與 AI 總管同一套：羊皮紙底、橘色點綴、襯線標題、大字、圓角）
    ============================================================ */
 .office-room, .dh {
-  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #e3651d; --hm-orange-2: #c4520f;
+  --hm-paper: #f7f2e8; --hm-paper-2: #efe6d6; --hm-ink: #2a1f17; --hm-ink-2: #6b5a4a; --hm-line: #d9ccb6; --hm-orange: #8b1e3f; --hm-orange-2: #6d1530;
   --hm-serif: "Cormorant Garamond", "Noto Serif TC", "Songti TC", serif; --hm-serif-tc: "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif;
 }
 .office-room .bezel { position: relative; overflow: hidden; background: var(--hm-paper); color: var(--hm-ink); border: 1px solid var(--hm-line); border-radius: 28px; padding: 34px 38px 34px; box-shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 30px 70px -30px rgba(0,0,0,.55); }
@@ -1152,7 +1152,7 @@ body.locked .santa-fab { display: none; }
 .office-room .energy { margin-top: 22px; font: 500 15px var(--font); color: var(--hm-ink-2); letter-spacing: .08em; }
 .office-room .energy .seg { height: 12px; }
 .office-sched { border-radius: 28px; background: var(--hm-paper, #f7f2e8); border: 1px solid #d9ccb6; padding: 26px 30px; font-size: 16px; }
-.office-sched .sch-head b { font: 600 14px var(--font); letter-spacing: .28em; color: #e3651d; }
+.office-sched .sch-head b { font: 600 14px var(--font); letter-spacing: .28em; color: #8b1e3f; }
 @media (max-width: 760px) { .office-room .bezel { padding: 24px 18px; } .office-room .kb-name { width: auto; max-width: 46%; font-size: 17px; } .office-room .kpis b { font-size: 38px; } }
 
 /* AI 總管視窗裡的「儀表板」分頁（唯讀，同一套 Hermès 風格） */
@@ -1207,15 +1207,15 @@ body.locked .santa-fab { display: none; }
 .robot-chat .dh { padding: 22px 24px 28px; }
 @media (max-width: 640px) { .robot-chat .dh-pane { left: 8px; right: 8px; bottom: 8px; } }
 .dh-row.dh-flash { animation: dhFlash 2.4s ease-out; }
-@keyframes dhFlash { 0% { background: #fde3cf; box-shadow: 0 0 0 3px rgba(227,101,29,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(227,101,29,0); } }
+@keyframes dhFlash { 0% { background: #f6dbe2; box-shadow: 0 0 0 3px rgba(139,30,63,.55); } 100% { background: var(--hm-paper); box-shadow: 0 0 0 0 rgba(139,30,63,0); } }
 
 /* AI 總管：比較模式 —— 上方一排模型分頁，滑鼠移過去就切換看哪個模型的回答（不再三欄並排） */
 .ai-cmpgrid.ai-cmptabbed { display: block; margin: 8px 0 18px; }
 .ai-cmptabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--hm-line, #d9ccb6); }
 .ai-cmptabs button { position: relative; padding: 9px 20px; border-radius: 999px; border: 1px solid var(--hm-line, #d9ccb6); background: transparent; color: var(--hm-ink-2, #6b5a4a); font: 600 14.5px var(--font); letter-spacing: .04em; cursor: pointer; transition: background .18s, color .18s, border-color .18s; }
-.ai-cmptabs button:hover { border-color: var(--hm-orange, #e3651d); color: var(--hm-ink, #2a1f17); }
+.ai-cmptabs button:hover { border-color: var(--hm-orange, #8b1e3f); color: var(--hm-ink, #2a1f17); }
 .ai-cmptabs button.on { background: var(--hm-ink, #2a1f17); border-color: var(--hm-ink, #2a1f17); color: var(--hm-paper, #f7f2e8); }
-.ai-cmptabs button.live::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 9px; border-radius: 50%; background: var(--hm-orange, #e3651d); animation: vsPulse 1s ease-in-out infinite; vertical-align: 1px; }
+.ai-cmptabs button.live::after { content: ""; display: inline-block; width: 8px; height: 8px; margin-left: 9px; border-radius: 50%; background: var(--hm-orange, #8b1e3f); animation: vsPulse 1s ease-in-out infinite; vertical-align: 1px; }
 .ai-cmptabbed .ai-cmpcol[hidden] { display: none; }
 .ai-cmptabbed .ai-cmpcol .ai-m { margin: 0; max-width: none; }
 .ai-cmptabbed .ai-cmpcol .ai-b { font-size: 1em; max-width: none; width: 100%; box-sizing: border-box; }
@@ -1256,7 +1256,7 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 /* 滑過專案列 → 浮出該專案的進度表 */
 #kbTip { position: fixed; z-index: 2147483000; pointer-events: none; padding: 14px 16px 12px; border-radius: 16px; background: #fffdf7; color: #2a2038; border: 1px solid #d9ccb6; box-shadow: 0 18px 48px rgba(20,10,40,.35); font: 500 13px var(--font); }
 #kbTip[hidden] { display: none; }
-#kbTip h4 { margin: 0 0 8px; font: 700 16px var(--font); display: flex; align-items: baseline; gap: 10px; padding-left: 10px; border-left: 5px solid var(--c, #e3651d); }
+#kbTip h4 { margin: 0 0 8px; font: 700 16px var(--font); display: flex; align-items: baseline; gap: 10px; padding-left: 10px; border-left: 5px solid var(--c, #8b1e3f); }
 #kbTip h4 span { font: 600 12px var(--font); color: #8a7a98; }
 .kt-none { margin: 4px 0; color: #8a7a98; }
 .kt-r { display: grid; grid-template-columns: minmax(120px, 1.6fr) 34px 54px 64px 82px minmax(110px, 1.4fr); gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid #efe6d4; }
@@ -1267,7 +1267,7 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .kt-s-Doing { background: #dbe7ff; color: #2a56b8; } .kt-s-Done { background: #d6efe0; color: #2a7a4b; } .kt-s-Blocked { background: #f9d5da; color: #b02a3c; }
 .kt-bar { height: 7px; border-radius: 9px; background: #e6dfcf; overflow: hidden; } .kt-bar u { display: block; height: 100%; background: #4b78e0; }
 .kt-d { font-size: 11.5px; color: #6a5c7a; }
-.kt-tl { position: relative; height: 12px; border-radius: 6px; background: #f1ead9; } .kt-tl u { position: absolute; top: 2px; bottom: 2px; border-radius: 5px; background: var(--c, #6b83e0); } .kt-tl s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #e3651d; }
+.kt-tl { position: relative; height: 12px; border-radius: 6px; background: #f1ead9; } .kt-tl u { position: absolute; top: 2px; bottom: 2px; border-radius: 5px; background: var(--c, #6b83e0); } .kt-tl s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #8b1e3f; }
 @media (max-width: 760px) { .kt-r { grid-template-columns: 1fr 34px 54px; } .kt-bar, .kt-d, .kt-tl { display: none; } }
 
 /* 辦公室權限閘（機器人 / AI 總管） */
@@ -1280,11 +1280,11 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 
 /* 專案選單（滑過「辦公室」展開）：跟辦公室儀表板同一套 Hermès 羊皮紙風格 */
 .mega { background: #f7f2e8; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 1px solid #d9ccb6; color: #2a1f17; box-shadow: 0 24px 60px rgba(8,6,20,.35); }
-.mega::after { content: ""; position: absolute; left: 0; right: 0; top: var(--nav-h); height: 3px; background: #e3651d; }
-.mega .eyebrow { color: #e3651d; font: 600 12px var(--font); letter-spacing: .32em; }
+.mega::after { content: ""; position: absolute; left: 0; right: 0; top: var(--nav-h); height: 3px; background: #8b1e3f; }
+.mega .eyebrow { color: #8b1e3f; font: 600 12px var(--font); letter-spacing: .32em; }
 .mega-intro h3 { font: 700 28px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; color: #2a1f17; }
 .mega-intro p { color: #6b5a4a; }
-.mega-all { color: #c4520f; }
+.mega-all { color: #6d1530; }
 .mega-grid { gap: 8px 22px; }
 .mega-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n p" "m p"; align-items: center; column-gap: 14px; row-gap: 2px; padding: 10px 14px; border-radius: 14px; border: 0; background: color-mix(in srgb, var(--c) 16%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); }
 .mega-item:hover { background: color-mix(in srgb, var(--c) 28%, #fffdf8); border-color: transparent; transform: none; }
@@ -1299,16 +1299,16 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 
 /* TPI 獨立工作區（辦公室頁下方） */
 .tpi-zone { margin-top: 28px; padding: 30px 34px; border-radius: 28px; background: #f7f2e8; color: #2a1f17; border: 1px solid #d9ccb6; position: relative; overflow: hidden; }
-.tpi-zone::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c, #e3651d); }
+.tpi-zone::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c, #8b1e3f); }
 .tz-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
-.tz-head .eyebrow { color: #e3651d; font: 600 12px var(--font); letter-spacing: .32em; margin: 0; }
+.tz-head .eyebrow { color: #8b1e3f; font: 600 12px var(--font); letter-spacing: .32em; margin: 0; }
 .tz-head h2 { margin: 0; font: 700 30px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; }
 .tz-head span { color: #6b5a4a; font-size: 14px; }
 .tz-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }   /* 專案進度整排拉寬，AI 區在下方 */
 .tz-prog, .tz-ai { background: #fffdf8; border: 1px solid #d9ccb6; border-radius: 18px; padding: 18px 20px; min-width: 0; }
 .tz-top { display: flex; align-items: center; gap: 12px; } .tz-name { font: 700 24px "Noto Serif TC", serif; color: #2a1f17; text-decoration: none; padding: 4px 14px; border-radius: 12px; background: color-mix(in srgb, var(--c) 18%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); } .tz-pct { margin-left: auto; font: 700 22px "Cormorant Garamond", serif; }
 .tz-bar { width: 100%; height: 14px; margin: 10px 0 12px; background: #efe6d6; } .tz-bar i { background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); opacity: 1; }
-.tz-now { margin: 0 0 6px; font-weight: 600; } .tz-next { margin: 0 0 12px; color: #6b5a4a; } .tz-next b { color: #c4520f; letter-spacing: .14em; font-size: 11px; margin-right: 8px; }
+.tz-now { margin: 0 0 6px; font-weight: 600; } .tz-next { margin: 0 0 12px; color: #6b5a4a; } .tz-next b { color: #6d1530; letter-spacing: .14em; font-size: 11px; margin-right: 8px; }
 .tz-ai h3 { margin: 0 0 10px; font: 700 16px var(--font); } #tpiAI { min-height: 360px; max-height: 70vh; overflow: auto; }
 .tpi-zone .sch { margin-top: 8px; }
 @media (max-width: 960px) { .tz-grid { grid-template-columns: 1fr; } .tpi-zone { padding: 22px 16px; } }
@@ -1321,3 +1321,12 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .ot-switch button:hover { background: rgba(247,242,232,.24); }
 .ot-switch button.on { background: #f7f2e8; color: #2a1f17; border-color: #f7f2e8; }
 @media (max-width: 640px) { .ot-switch button { padding: 10px 18px; font-size: 17px; } }
+
+/* 專案選單最左邊：藝廊 / TPI 兩個選項 */
+.mega-opts { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.mega-opts button { display: inline-flex; align-items: baseline; gap: 8px; padding: 8px 18px; border-radius: 999px; border: 1px solid #d9ccb6; background: transparent; color: #2a1f17; font: 700 17px "Noto Serif TC", "Songti TC", serif; cursor: pointer; }
+.mega-opts button small { font: 500 11px var(--font); letter-spacing: .1em; color: #6b5a4a; }
+.mega-opts button:hover { background: #efe6d6; }
+.mega-opts button.on { background: #2a1f17; border-color: #2a1f17; color: #f7f2e8; } .mega-opts button.on small { color: #d9ccb6; }
+.mega-wide { grid-column: span 2; } .mega-note { grid-column: 1 / -1; margin: 6px 4px 0; color: #6b5a4a; font-size: 13px; } .mega-note b { color: #6d1530; letter-spacing: .14em; font-size: 11px; margin-right: 8px; }
+[data-up][hidden] { display: none !important; }

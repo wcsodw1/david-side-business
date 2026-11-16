@@ -121,7 +121,7 @@
     let tip = document.getElementById("kbTip"); if (!tip) { tip = document.createElement("div"); tip.id = "kbTip"; tip.hidden = true; document.body.appendChild(tip); }
     const ts = (x) => new Date(x + "T00:00:00").getTime();
     const build = (p) => {
-      const L = (p.tasks || []).filter((t) => valid(t.start) && valid(t.end)), c = colorOf ? colorOf(p) : "#e3651d";
+      const L = (p.tasks || []).filter((t) => valid(t.start) && valid(t.end)), c = colorOf ? colorOf(p) : "#8b1e3f";
       if (!L.length) return `<h4 style="--c:${c}">${esc(p.name)}<span>${p.progress ?? 0}%</span></h4><p class="kt-none">還沒有任務。到白板「時程」分頁新增。</p>`;
       const a0 = Math.min(...L.map((t) => ts(t.start))), b0 = Math.max(...L.map((t) => ts(t.end))) + 86400000, span = Math.max(b0 - a0, 86400000), now = Date.now();
       const nowPct = now >= a0 && now <= b0 ? ((now - a0) / span) * 100 : -1, done = L.filter((t) => t.status === "Done").length;
