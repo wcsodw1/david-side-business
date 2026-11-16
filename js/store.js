@@ -55,7 +55,7 @@
   }
 
   const api = (window.Store = {
-    init(projects) { P = projects; P.forEach((p) => { if (Array.isArray(p.tasks) && p.tasks0 === undefined) { p.tasks0 = p.tasks; } }); load(); seedTasks(); P.forEach(apply); },
+    init(projects) { if (window.VIEWER) ["addUpdate","setGoal","setStatus","setNext","setNote","setProgress","addMilestone","addMilestones","toggleMilestone","removeMilestone","addTask","updateTask","removeTask"].forEach((k) => { if (typeof api[k] === "function") api[k] = () => null; }); P = projects; P.forEach((p) => { if (Array.isArray(p.tasks) && p.tasks0 === undefined) { p.tasks0 = p.tasks; } }); load(); seedTasks(); P.forEach(apply); },
     today,
     daysSinceUpdate(p) {
       const real = (p.updates || []).filter((u) => !/專案頁建立/.test(u.title));

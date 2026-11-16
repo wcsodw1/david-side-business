@@ -19,7 +19,9 @@
   const LYJ_HASH = "de6d23fe62808d9e7e3e324d94db6cffefba6994f935aa630c0826801d6f8f6d";   // 訪客「林晏如」的密碼 LYJ（不分大小寫，只存雜湊）；登入後歡迎詞顯示她的名字
   const GUEST_ALT = [LYJ_HASH];
   const AGENT_HASH = "3cce5ca57826b4509c7d1ffea69aaa803428a73c7838065a249c9c44f3d0e89e";   // 房仲 David 的密碼 guest-agent（只存雜湊）：跟訪客同一個二樓空間；沒人登入時，房仲 David 站在門口講解
-  window.PERSONA = "david"; window.GUESTLIKE = false;
+  const VIEWER_HASH = "953e94c8759bc230f2ca27c3448f66741ce8e7cd4424f89dd605844a67b343d1";   // 客人（唯讀）密碼 david-guest（不分大小寫，只存雜湊）：只能看辦公室儀表板 / 專案進度表 / 進度總覽 / 專案頁，不能改任何資料、沒有 AI 總管 / NEWS / 3D 藝廊
+  window.PERSONA = "david"; window.GUESTLIKE = false; window.VIEWER = false;
+  const setViewer = () => { window.PERSONA = "viewer"; window.VIEWER = true; window.GUESTLIKE = false; document.body.classList.add("viewer"); };
 
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -186,7 +188,7 @@
 
 
     office() {
-      if (!officeOpen()) return `
+      if (!officeOpen() && !window.VIEWER) return `
         <section class="page office office-locked">
           <a class="back-btn" href="#/" data-office-back>← 返回藝廊 <kbd>Esc</kbd></a>
           <form class="office-gate" id="officeGate" autocomplete="off">
@@ -215,6 +217,17 @@
           <span class="g-meta"><i class="led" style="background:${st(p).color};color:${st(p).color}"></i>${esc(st(p).label)}</span>
           <span class="g-last">${esc((latest(p) || {}).title || "—")}</span>
         </a>`;
+      const permHtml = () => {
+        const Y = '<b class="pm-y">✓</b>', N = '<span class="pm-n">✕</span>', R = '<span class="pm-r">唯讀</span>';
+        const rows = [
+          ["David（ADMIN）", "本人", Y, Y, Y, Y, Y, "全部功能；辦公室需再輸入辦公室密碼"],
+          ["ARIES（朋友）", "Aeris 玩家模式", Y, Y, Y, Y, Y, "粉色角色；看不到「專案目標」欄；辦公室需辦公室密碼"],
+          ["客人（VIEWER）", "唯讀客人", N, Y, R, R, N, "只有進度總覽 / 辦公室儀表板 / 專案進度表 / 專案頁；不能改任何資料；沒有 AI 總管、NEWS、3D 藝廊"],
+          ["訪客（GUEST）", "含林晏如", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
+          ["房仲（AGENT）", "David（房仲）", N, N, N, N, N, "跟訪客同一個二樓空間；站在門口講解；穿紫色禮賓員制服"],
+        ];
+        return `<div class="sch-scroll"><table class="sch-t pm-t"><thead><tr><th>角色</th><th>對象</th><th>3D 藝廊</th><th>進度總覽 / 專案頁</th><th>辦公室儀表板</th><th>專案進度表</th><th>改資料 / AI 總管 / NEWS</th><th>說明</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="nm">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div><p class="sch-empty">密碼不顯示在這裡（網站只存雜湊）。「改資料」= 白板 / 更新 / 時程表編輯、AI 總管、NEWS。</p>`;
+      };
       const cols = ["backlog", "idea", "building", "live", "paused"];
       // 儀表板整合看板：每個類型條列式，每個專案一行「一句話目前狀態」；右邊的 ✎ 滑鼠移過去會向左展開，直接填更新。
       // 第 1 頁 = ON-PROCESS + TODO；第 2 頁 = Backlog + 其他（PENDING / BLOCK / FINISH）
@@ -243,6 +256,7 @@
             <button type="button" data-wbp="0" class="${wbPage === 0 ? "on" : ""}" role="tab">1 · 進行中 / 待辦</button>
             <button type="button" data-wbp="1" class="${wbPage === 1 ? "on" : ""}" role="tab">2 · Backlog</button>
             <button type="button" data-wbp="2" class="${wbPage === 2 ? "on" : ""}" role="tab">3 · 專案進度表</button>
+            ${window.VIEWER ? "" : `<button type="button" data-wbp="3" class="${wbPage === 3 ? "on" : ""}" role="tab">4 · 帳號權限</button>`}
           </div>
           <div class="wb-page" data-wbpage="0" ${wbPage === 0 ? "" : "hidden"}>
             ${sect("ON-PROCESS", "#2f7be0", inB("proc"))}
@@ -255,6 +269,7 @@
           <div class="wb-page" data-wbpage="2" ${wbPage === 2 ? "" : "hidden"}>
             <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(P, accent) : ""}</section>
           </div>
+          ${window.VIEWER ? "" : `<div class="wb-page" data-wbpage="3" ${wbPage === 3 ? "" : "hidden"}>${permHtml()}</div>`}
         </div>`;
       const seg = cols.map((k) => `<i style="flex:${by(k).length};background:${S[k].color}" title="${esc(S[k].label)} ${by(k).length}"></i>`).join("");
       return `
@@ -371,9 +386,10 @@
 
   let clockTimer;
   // 瀏覽器分頁標題前面標上帳號類型：ADMIN（David）/ GUEST（訪客）/ ARIES，開多個分頁時一眼分得出來
-  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
+  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", viewer: "[VIEWER] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
   function render() {
-    const hash = window.GUESTLIKE ? "" : location.hash.replace(/^#\/?/, "");   // 訪客永遠只看得到 3D 房子
+    let hash = window.GUESTLIKE ? "" : location.hash.replace(/^#\/?/, "");
+    if (window.VIEWER && !/^(overview|office|p\/)/.test(hash)) { hash = "overview"; if (location.hash !== "#/overview") history.replaceState(null, "", "#/overview"); }   // 客人：沒有 3D 藝廊 / 最新動態，一律回進度總覽   // 訪客永遠只看得到 3D 房子
     const [seg, arg] = hash.split("/");
     if (window.Gallery) window.Gallery.unmount();
     if (window.Gallery3D) window.Gallery3D.unmount();
@@ -401,7 +417,8 @@
       const jm = $("[data-jmount]", app), pi = P.findIndex((x) => x.id === arg);
       if (jm && pi >= 0) { jm.innerHTML = window.Journal.card(P[pi], pi, GH, { page: true }); window.Journal.bind(jm, P[pi], pi, GH, { rerender: () => { const y = scrollY; render(); scrollTo(0, y); } }); }
     }
-    if (seg === "office" && !officeOpen()) {
+    if (window.VIEWER && seg === "p") $$("[data-jmount] form, [data-jmount] button:not([data-tab]), [data-jmount] textarea, [data-jmount] select, [data-jmount] input", app).forEach((e) => { if (!e.closest(".sch-scroll")) e.hidden = true; });   // 客人唯讀：專案頁的編輯控制全部藏起來（資料層本來就擋寫入）
+    if (seg === "office" && !officeOpen() && !window.VIEWER) {
       const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);
       if (f) f.addEventListener("submit", async (e) => {
         e.preventDefault(); const v = pw.value.trim(); if (!v) return;
@@ -435,10 +452,11 @@
   function enter() {
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
+    if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
     if (window.GUESTLIKE) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
     buildMega();
-    if (window.News && !window.GUESTLIKE) window.News.mount(P, {});
+    if (window.News && !window.GUESTLIKE && !window.VIEWER) window.News.mount(P, {});
     render();
   }
   function lock() {
@@ -457,11 +475,12 @@
     const v = $("#pw").value;
     if (!v) return;
     const hv = await sha256(v.trim()), ha = await sha256(v.trim().toLowerCase());   // Aeris 的密碼不分大小寫
-    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha) || ha === AGENT_HASH) {
-      window.PERSONA = hv === PASS_HASH ? "david" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
+    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha) || ha === AGENT_HASH || ha === VIEWER_HASH) {
+      window.PERSONA = hv === PASS_HASH ? "david" : ha === VIEWER_HASH ? "viewer" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
       window.GUESTLIKE = window.PERSONA === "guest" || window.PERSONA === "agent";
+      if (window.PERSONA === "viewer") setViewer();
       if (window.PERSONA === "guest") window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : "訪客"; else if (window.PERSONA === "agent") window.GUEST_NAME = "David（房仲）";
-      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE ? ha : PASS_HASH); } catch (_) {}
+      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE || window.VIEWER ? ha : PASS_HASH); } catch (_) {}
       { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } }
       enter();
     } else {
@@ -485,6 +504,6 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   let ok = false;
-  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === AGENT_HASH; if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === AGENT_HASH || k === VIEWER_HASH; if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();
