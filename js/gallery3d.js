@@ -384,6 +384,7 @@
         <button type="button" id="gAuto" aria-pressed="false">360° 環繞</button>
         <button type="button" class="g-jump" id="gJump" aria-label="跳">⤒</button>
         <button type="button" id="gFpv" aria-pressed="false">第一人稱</button>
+        <button type="button" id="gPar" aria-pressed="false" title="平行視角（正射投影感：遠近一樣大，像建築圖）">平行視角</button>
         <button type="button" id="gReset">重置視角</button>
       </div>
       <div class="g-board-ov" id="gBoardOv" hidden></div>
@@ -1834,6 +1835,8 @@
     let lastDown = 0;
     let S_fpvKey = null;
     const fpTilt = { u: 0, d: 0 }, fpTap = {};
+    let par = false;   // 平行視角：鏡頭拉很遠、視野角壓到 4°，近似正射投影（遠近一樣大）
+    const PARFOV = 4;
     let fpv = false, fpPitch = 0;   // 第一人稱：鏡頭在眼睛位置，往 yaw 方向看（拖曳轉頭，V 鍵或按鈕切換）
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
@@ -2075,8 +2078,12 @@
     const fpvBtn = root.querySelector("#gFpv");
     const keysEl = root.querySelector(".g-keys"), keysHTML = keysEl.innerHTML;
     const FPV_HINT = '第一人稱：<kbd>Q</kbd> <kbd>←</kbd> 向左轉頭　<kbd>E</kbd> <kbd>→</kbd> 向右轉頭　拖曳滑鼠：轉頭 / 抬頭低頭　<kbd>↑</kbd><kbd>↓</kbd> 連按兩下（第二下按住）：抬頭 / 低頭　<kbd>W</kbd> <kbd>S</kbd> 或單按 <kbd>↑</kbd><kbd>↓</kbd>：前進 / 後退　<kbd>A</kbd> <kbd>D</kbd> 左右平移　<kbd>V</kbd> 回到原視角';
-    const setFpv = (on) => { keysEl.innerHTML = on ? FPV_HINT : keysHTML; fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : 36; camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
+    const setFpv = (on) => { keysEl.innerHTML = on ? FPV_HINT : keysHTML; fpv = on; fpvBtn.setAttribute("aria-pressed", String(on)); camera.fov = on ? 72 : (par ? PARFOV : 36); camera.near = on ? 0.08 : 0.1; camera.updateProjectionMatrix(); if (on) { fpPitch = 0; auto = false; autoBtn.setAttribute("aria-pressed", "false"); } else av.root.visible = true; };
     fpvBtn.addEventListener("click", () => setFpv(!fpv));
+    const parBtn = root.querySelector("#gPar");
+    const setPar = (on) => { par = on; parBtn.setAttribute("aria-pressed", String(on)); if (!fpv) { camera.fov = on ? PARFOV : (camera.aspect < 0.9 ? 46 : 36); camera.updateProjectionMatrix(); } try { localStorage.setItem("dsb-par", on ? "1" : "0"); } catch (_) {} };
+    parBtn.addEventListener("click", () => setPar(!par));
+    try { if (localStorage.getItem("dsb-par") === "1") setPar(true); } catch (_) {}
     S_fpvKey = (e) => { if (e.code === "KeyV" && !e.repeat && !e.metaKey && !e.ctrlKey && !e.altKey && !typing(e) && !document.body.classList.contains("locked") && !document.body.classList.contains("news-open")) setFpv(!fpv); };
     window.addEventListener("keydown", S_fpvKey);
     root.querySelector("#gReset").addEventListener("click", () => { yaw = view0.yaw; elev = view0.elev; dist = view0.dist; stopAuto(); });
@@ -2088,7 +2095,7 @@
     const resize = () => {
       const w = root.clientWidth || innerWidth, h = root.clientHeight || innerHeight;
       renderer.setSize(w, h, false); cv.style.width = "100%"; cv.style.height = "100%";
-      camera.aspect = w / h; camera.fov = w / h < 0.9 ? 46 : 36; camera.updateProjectionMatrix();
+      camera.aspect = w / h; camera.fov = fpv ? 72 : par ? PARFOV : (w / h < 0.9 ? 46 : 36); camera.updateProjectionMatrix();
     };
     resize(); window.addEventListener("resize", resize);
 
@@ -2250,7 +2257,7 @@
       const rcC = inside >= 0 ? (inside === sPB ? { x: sxOf(inside), z: 0 } : L2W(inside, 0, -3.2)) : null, bx = rcC ? (rcC.x - pos.x) * 0.4 : 0, bz = rcC ? (rcC.z - pos.z) * 0.4 : 0;
       bias.x = lerp(bias.x, bx, Math.min(1, dt * 3)); bias.z = lerp(bias.z, bz, Math.min(1, dt * 3));
       camT.x = lerp(camT.x, pos.x + bias.x, Math.min(1, dt * 5)); camT.z = lerp(camT.z, pos.z + bias.z, Math.min(1, dt * 5)); camT.y = lerp(camT.y, 0.9 + py, Math.min(1, dt * 4));
-      const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * 1, hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
+      const dd = dist * (camera.aspect < 0.9 ? 1.3 : 1) * (par && !fpv ? Math.tan((camera.aspect < 0.9 ? 46 : 36) * Math.PI / 360) / Math.tan(PARFOV * Math.PI / 360) : 1), hd = Math.cos(elev) * dd, vd = Math.sin(elev) * dd;
       camera.position.set(camT.x + Math.sin(yaw) * hd, camT.y + vd, camT.z + Math.cos(yaw) * hd);
       if (fpv) {
         const eyeY = lerp(py + jy, POOL.surface - 0.02, swimT) + (sitting >= 0 ? 1.2 : 1.6), cp = Math.cos(fpPitch), dx = -Math.sin(yaw), dz = -Math.cos(yaw);
