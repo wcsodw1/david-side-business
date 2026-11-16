@@ -132,9 +132,11 @@ window.PROJECTS = [
     category: "Work",
     status: "building",
     progress: 50,
+    wbDefault: { status: "TODO", note: "Ryan 來信：請提供相關測試與報告給 Pierre Team。建議 OrientAI 針對 RAG 與 skills 的相關 E2E 情境做效能測試，以及多 sessions 的併發測試。", noteAt: "2026-11-16", next: "整理 RAG / skills E2E 情境效能測試與多 sessions 併發測試的計畫與報告，提供給 Pierre Team。" },
     summary: "TPI 辦公室：本業工作的進度、待辦與會議整理。",
     links: [],
     updates: [
+      { date: "2026-11-16", title: "新事項：測試與報告給 Pierre Team", text: "Ryan 來信：請提供相關測試與報告給 Pierre Team。建議 OrientAI 針對 RAG 與 skills 的 E2E 情境做效能測試，以及多 sessions 的併發測試。" },
       { date: "2026-11-16", title: "辦公室建立", text: "加入平台，新增 TPI 辦公室房間，之後在這裡記錄工作進度。" },
     ],
   },
