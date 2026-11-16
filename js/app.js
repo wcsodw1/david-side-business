@@ -17,9 +17,10 @@
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   const GUEST_HASH = "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec";   // 訪客密碼 guest（不分大小寫，只存雜湊）：只能在二樓房間走動，看不到屋外，不能進辦公室 / 白板 / NEWS
   const LYJ_HASH = "de6d23fe62808d9e7e3e324d94db6cffefba6994f935aa630c0826801d6f8f6d";   // 訪客「林晏如」的密碼 LYJ（不分大小寫，只存雜湊）；登入後歡迎詞顯示她的名字
-  const GUEST_ALT = [LYJ_HASH];
+  const DG_HASH = "953e94c8759bc230f2ca27c3448f66741ce8e7cd4424f89dd605844a67b343d1";   // 訪客「David Guest」的密碼（不分大小寫，只存雜湊）：一般訪客權限（只能在 3D 二樓房間走動）
+  const GUEST_ALT = [LYJ_HASH, DG_HASH];
   const AGENT_HASH = "3cce5ca57826b4509c7d1ffea69aaa803428a73c7838065a249c9c44f3d0e89e";   // 房仲 David 的密碼 guest-agent（只存雜湊）：跟訪客同一個二樓空間；沒人登入時，房仲 David 站在門口講解
-  const VIEWER_HASH = "953e94c8759bc230f2ca27c3448f66741ce8e7cd4424f89dd605844a67b343d1";   // 客人（唯讀）密碼 david-guest（不分大小寫，只存雜湊）：只能看辦公室儀表板 / 專案進度表 / 進度總覽 / 專案頁，不能改任何資料、沒有 AI 總管 / NEWS / 3D 藝廊
+  const VIEWER_HASH = "";   // （唯讀客人模式已停用：david-guest 改為一般訪客，專案進度 / AI / 機器人只有 admin 能用）   // 客人（唯讀）密碼 david-guest（不分大小寫，只存雜湊）：只能看辦公室儀表板 / 專案進度表 / 進度總覽 / 專案頁，不能改任何資料、沒有 AI 總管 / NEWS / 3D 藝廊
   window.PERSONA = "david"; window.GUESTLIKE = false; window.VIEWER = false;
   const setViewer = () => { window.PERSONA = "viewer"; window.VIEWER = true; window.GUESTLIKE = false; document.body.classList.add("viewer"); };
 
@@ -222,11 +223,10 @@
         const rows = [
           ["David（ADMIN）", "本人", Y, Y, Y, Y, Y, "全部功能；辦公室需再輸入辦公室密碼"],
           ["ARIES（朋友）", "Aeris 玩家模式", Y, Y, Y, Y, Y, "粉色角色；看不到「專案目標」欄；辦公室需辦公室密碼"],
-          ["客人（VIEWER）", "唯讀客人", N, Y, R, R, N, "只有進度總覽 / 辦公室儀表板 / 專案進度表 / 專案頁；不能改任何資料；沒有 AI 總管、NEWS、3D 藝廊"],
-          ["訪客（GUEST）", "含林晏如", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
+          ["訪客（GUEST）", "林晏如、David Guest", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
           ["房仲（AGENT）", "David（房仲）", N, N, N, N, N, "跟訪客同一個二樓空間；站在門口講解；穿紫色禮賓員制服"],
         ];
-        return `<div class="sch-scroll"><table class="sch-t pm-t"><thead><tr><th>角色</th><th>對象</th><th>3D 藝廊</th><th>進度總覽 / 專案頁</th><th>辦公室儀表板</th><th>專案進度表</th><th>改資料 / AI 總管 / NEWS</th><th>說明</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="nm">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div><p class="sch-empty">密碼不顯示在這裡（網站只存雜湊）。「改資料」= 白板 / 更新 / 時程表編輯、AI 總管、NEWS。</p>`;
+        return `<div class="sch-scroll"><table class="sch-t pm-t"><thead><tr><th>角色</th><th>對象</th><th>3D 藝廊</th><th>進度總覽 / 專案頁</th><th>辦公室儀表板</th><th>專案進度表</th><th>改資料 / AI 總管 / NEWS</th><th>說明</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="nm">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div><p class="sch-empty">密碼不顯示在這裡（網站只存雜湊）。機器人、AI 總管、專案進度（白板 / 時程 / 進度總覽）只有 admin（David）能用；訪客、房仲都只進得了 3D 二樓房間。</p>`;
       };
       const cols = ["backlog", "idea", "building", "live", "paused"];
       // 儀表板整合看板：每個類型條列式，每個專案一行「一句話目前狀態」；右邊的 ✎ 滑鼠移過去會向左展開，直接填更新。
@@ -526,6 +526,6 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   let ok = false;
-  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === AGENT_HASH || k === VIEWER_HASH; if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === DG_HASH || k === AGENT_HASH; if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === DG_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();
