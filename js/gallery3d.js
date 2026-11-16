@@ -1794,7 +1794,7 @@
 
     /* ----- 人物 ----- */
     const GUEST = !!window.GUESTLIKE, AGENT = window.PERSONA === "agent";   // 訪客（含房仲 David）：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
-    const av = GUEST && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts("david") : undefined); if (GUEST && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david"); scene.add(av.root);
+    const av = GUEST && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts(AGENT ? "agent" : "david") : undefined); if (GUEST && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, AGENT ? "agent" : "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];

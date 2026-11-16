@@ -38,8 +38,8 @@
     unmount();
     const { THREE, scene, hooks, camera } = ctx;
     const me = PAIR[window.PERSONA] ? window.PERSONA : "david", other = PAIR[me], initiator = me === "david" || me === "agent", isGuestPair = me === "guest" || me === "agent";
-    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : other === "guest" ? ctx.buildAvatar(window.Faces ? window.Faces.opts("guest") : undefined) : ctx.buildAvatar(window.Faces ? window.Faces.opts("david") : undefined);
-    if (other === "guest" && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (other !== "aeris" && window.Faces) window.Faces.apply(THREE, av, "david");
+    const av = other === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => ctx.buildAvatar(o)) : other === "guest" ? ctx.buildAvatar(window.Faces ? window.Faces.opts("guest") : undefined) : ctx.buildAvatar(window.Faces ? window.Faces.opts(other === "agent" ? "agent" : "david") : undefined);
+    if (other === "guest" && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (other !== "aeris" && window.Faces) window.Faces.apply(THREE, av, other === "agent" ? "agent" : "david");
     const W = new THREE.Group(); W.add(av.root); scene.add(W);
 
     const tagTex = (txt, fill, stroke, ink) => {

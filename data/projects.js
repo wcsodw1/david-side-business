@@ -41,6 +41,13 @@ window.PROJECTS = [
     progress: 30,
     wbDefault: { status: "ON PROCESS", note: "三份字幕（日文、雙語、繁中）都已產出並修正，每份 503 段，時間軸一致。", noteAt: "2026-11-14", next: "校對繁中翻譯，並對著影片檢查時間軸，再重新匯入 Filmora。" },   // 白板預設值（來自 Luka Film session 的最新進度）
     summary: "以影像說故事的創作品牌。",
+    tasks: [
+      {name:"繁中翻譯校對",pri:"P0",owner:"David",status:"Doing",progress:60,start:"2026-11-14",end:"2026-11-18",note:"三份字幕 503 段逐段校對"},
+      {name:"對照影片檢查時間軸",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-18",end:"2026-11-21",note:""},
+      {name:"重新匯入 Filmora",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-21",end:"2026-11-23",note:""},
+      {name:"剪輯與調色",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-23",end:"2026-12-04",note:""},
+      {name:"輸出成片與封面",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-04",end:"2026-12-11",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入 David's Side Business 平台，之後在這裡記錄進度。" },
@@ -54,6 +61,13 @@ window.PROJECTS = [
     status: "building",
     progress: 40,
     summary: "以 LINE 為入口的輕量 ERP，處理訂單、庫存與客戶。",
+    tasks: [
+      {name:"需求與資料表設計",pri:"P0",owner:"David",status:"Done",progress:100,start:"2026-11-09",end:"2026-11-13",note:"訂單、庫存、客戶"},
+      {name:"LINE Bot 訊息流程",pri:"P0",owner:"David",status:"Doing",progress:50,start:"2026-11-16",end:"2026-11-27",note:""},
+      {name:"庫存進出貨功能",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-30",end:"2026-12-11",note:""},
+      {name:"訂單與客戶查詢",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-12-14",end:"2026-12-23",note:""},
+      {name:"內部測試與上線",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-28",end:"2027-01-08",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充目前開發進度。" },
@@ -67,6 +81,12 @@ window.PROJECTS = [
     status: "live",
     progress: 80,
     summary: "房屋出租管理與租客資訊整理。",
+    tasks: [
+      {name:"租客資料整理",pri:"P1",owner:"David",status:"Done",progress:100,start:"2026-11-09",end:"2026-11-13",note:""},
+      {name:"租金收款記錄",pri:"P1",owner:"David",status:"Doing",progress:60,start:"2026-11-16",end:"2026-11-20",note:""},
+      {name:"合約到期提醒",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-11-23",end:"2026-11-27",note:""},
+      {name:"房屋修繕追蹤",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-11-30",end:"2026-12-04",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充出租狀況。" },
@@ -80,6 +100,12 @@ window.PROJECTS = [
     status: "building",
     progress: 50,
     summary: "Bugs & Bar 訂單與營運整理。",
+    tasks: [
+      {name:"訂單整理流程（Google Sheet）",pri:"P0",owner:"David",status:"Doing",progress:70,start:"2026-11-09",end:"2026-11-20",note:"多行訂單合併成固定格式"},
+      {name:"菜單與成本表",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-23",end:"2026-12-04",note:""},
+      {name:"營運數據週報",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-12-07",end:"2026-12-11",note:""},
+      {name:"活動與推廣企劃",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-14",end:"2026-12-25",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充營運進度。" },
@@ -93,6 +119,12 @@ window.PROJECTS = [
     status: "building",
     progress: 35,
     summary: "ZINZINO 事業經營與客戶追蹤。",
+    tasks: [
+      {name:"客戶名單與追蹤表",pri:"P0",owner:"David",status:"Doing",progress:60,start:"2026-11-09",end:"2026-11-20",note:""},
+      {name:"健康檢測推廣流程",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-23",end:"2026-12-04",note:""},
+      {name:"每週跟進與回訪",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-12-07",end:"2026-12-18",note:""},
+      {name:"內容與社群經營",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-07",end:"2026-12-25",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充經營進度。" },
@@ -106,6 +138,12 @@ window.PROJECTS = [
     status: "building",
     progress: 45,
     summary: "在 Gumroad 販售的數位商品與模板。",
+    tasks: [
+      {name:"商品清單與定價",pri:"P0",owner:"David",status:"Done",progress:100,start:"2026-11-09",end:"2026-11-13",note:""},
+      {name:"模板設計與製作",pri:"P0",owner:"David",status:"Doing",progress:50,start:"2026-11-16",end:"2026-11-27",note:""},
+      {name:"Gumroad 上架與文案",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-30",end:"2026-12-08",note:""},
+      {name:"宣傳與首批銷售",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-09",end:"2026-12-23",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充商品上架進度。" },
@@ -120,6 +158,13 @@ window.PROJECTS = [
     progress: 5,
     wbDefault: { status: "TODO", note: "咖啡豆報價已拿到：兩份，一份曼特寧 / 曼巴等經典豆（半磅 $220–450），一份衣索比亞 / 中南美精品豆 12 款（一磅 $800–1,200）。", noteAt: "2026-11-14", next: "各挑 2–3 款主打（經典 + 精品），算成本與售價，先用半磅開始。" },
     summary: "咖啡廳籌備：豆子選品、成本與菜單。",
+    tasks: [
+      {name:"咖啡豆報價比較",pri:"P0",owner:"David",status:"Doing",progress:60,start:"2026-11-14",end:"2026-11-18",note:"兩份報價：經典豆 / 精品豆"},
+      {name:"挑選主打 2–3 款",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-18",end:"2026-11-20",note:""},
+      {name:"成本與售價試算",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-20",end:"2026-11-25",note:"先用半磅開始"},
+      {name:"菜單與品牌雛形",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-11-26",end:"2026-12-09",note:""},
+      {name:"場地與設備評估",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-10",end:"2026-12-30",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-14", title: "專案頁建立", text: "加入平台，開始整理咖啡豆報價與品項。" },
@@ -134,6 +179,12 @@ window.PROJECTS = [
     progress: 50,
     wbDefault: { status: "TODO", note: "Ryan 來信：請提供相關測試與報告給 Pierre Team。建議 OrientAI 針對 RAG 與 skills 的相關 E2E 情境做效能測試，以及多 sessions 的併發測試。", noteAt: "2026-11-16", next: "整理 RAG / skills E2E 情境效能測試與多 sessions 併發測試的計畫與報告，提供給 Pierre Team；另外安排 Sean 會議（時間、議題待確認）。" },
     summary: "TPI 辦公室：本業工作的進度、待辦與會議整理。",
+    tasks: [
+      {name:"整理 RAG / skills E2E 效能測試計畫",pri:"P0",owner:"David",status:"Doing",progress:30,start:"2026-11-16",end:"2026-11-20",note:"Ryan 來信需求"},
+      {name:"多 sessions 併發測試",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-20",end:"2026-11-26",note:""},
+      {name:"測試報告給 Pierre Team",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-26",end:"2026-11-30",note:""},
+      {name:"安排 Sean 會議（時間、議題待確認）",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-16",end:"2026-11-18",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-16", title: "新事項：安排 Sean 會議", text: "待安排與 Sean 的會議（時間、議題待確認）。" },
@@ -149,6 +200,11 @@ window.PROJECTS = [
     status: "backlog",
     progress: 15,
     summary: "匹克球相關活動與商機。",
+    tasks: [
+      {name:"市場與場地調查",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-23",end:"2026-12-04",note:""},
+      {name:"活動型態構想（教學 / 賽事）",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-07",end:"2026-12-18",note:""},
+      {name:"成本與合作對象",pri:"P2",owner:"David",status:"To Do",progress:0,start:"2026-12-21",end:"2027-01-08",note:""},
+    ],   // 預設時程（草案，可在白板「時程」分頁改）
     links: [],
     updates: [
       { date: "2026-11-12", title: "專案頁建立", text: "加入平台，待補充想法與進度。" },

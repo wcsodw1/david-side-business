@@ -15,6 +15,8 @@
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const load = () => { try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { data = {}; } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} };
+  const SEED_V = 1;   // 預設時程（data/projects.js 的 tasks）每台瀏覽器只灌一次；之後以你在白板上改的為準
+  const seedTasks = () => { P.forEach((p) => { const r = rec(p.id); if ((r.seedV || 0) < SEED_V) { if (!r.tasks.length && Array.isArray(p.tasks0)) r.tasks = p.tasks0.map((t) => ({ id: Math.random().toString(36).slice(2, 8), ...t })); r.seedV = SEED_V; } }); save(); };
   const rec = (pid) => { const r = (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "", tasks: [] }); if (!r.tasks) r.tasks = []; return r; };
   const emit = (detail) => window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null }));
   const bc = (msg) => { try { window.Presence && window.Presence.broadcast && window.Presence.broadcast({ kind: "proj", who: window.PERSONA || "david", ...msg }); } catch (_) {} };   // 兩人同時在線時，專案更新也傳給對方
@@ -53,7 +55,7 @@
   }
 
   const api = (window.Store = {
-    init(projects) { P = projects; load(); P.forEach(apply); },
+    init(projects) { P = projects; P.forEach((p) => { if (Array.isArray(p.tasks) && p.tasks0 === undefined) { p.tasks0 = p.tasks; } }); load(); seedTasks(); P.forEach(apply); },
     today,
     daysSinceUpdate(p) {
       const real = (p.updates || []).filter((u) => !/專案頁建立/.test(u.title));
