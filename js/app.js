@@ -477,6 +477,13 @@
   function enter() {
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
+    // 「逛藝廊」＝跟任意門一樣：直接跳到美術館入口（原本只是回首頁，沒什麼意義）
+    { const gal = nav.querySelector('.nav-link[href="#/"]');
+      if (gal && !gal.dataset.toEntry) {
+        gal.dataset.toEntry = "1";
+        const toEntry = () => { let n = 0; const t = setInterval(() => { const D = window.Gallery3D && window.Gallery3D.active && window.Gallery3D.debug; if (D) { clearInterval(t); try { D.closeBoard && D.closeBoard(); D.exitRoom && D.exitRoom(); D.skipIntro && D.skipIntro(); D.teleport(23.6, 0, 0); } catch (_) {} } else if (++n > 40) clearInterval(t); }, 150); };
+        gal.addEventListener("click", (e) => { if (window.GUESTLIKE || window.GALLERYGUEST) return; if (/^#?\/?$/.test(location.hash)) e.preventDefault(); toEntry(); });
+      } }
     if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
     if (window.GUESTLIKE || window.GALLERYGUEST) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
