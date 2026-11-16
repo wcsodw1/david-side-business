@@ -10,7 +10,7 @@
      ============================================================ */
   const PASS_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";
   const KEY = "dsb-unlocked";
-  const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e35cb0b39a3c9730ea7744c873ba8708f63d7f663acf56223045ab88f3167a1c";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
+  const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e6207542afa9e43cb59bf41af439c06ebb9a5b1c0652e3dcdb14b0b81931873a";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
   let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
