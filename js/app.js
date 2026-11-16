@@ -482,6 +482,8 @@
       if (gal && !gal.dataset.toEntry) {
         gal.dataset.toEntry = "1";
         const toEntry = () => { let n = 0; const t = setInterval(() => { const D = window.Gallery3D && window.Gallery3D.active && window.Gallery3D.debug; if (D) { clearInterval(t); try { D.closeBoard && D.closeBoard(); D.exitRoom && D.exitRoom(); D.skipIntro && D.skipIntro(); D.teleport(23.6, 0, 0); } catch (_) {} } else if (++n > 40) clearInterval(t); }, 150); };
+        const f5 = nav.querySelector("#navFloor5");   // 「五樓」＝David 的家（原本的一樓）：快捷鍵，直接跳進家裡
+        if (f5) f5.addEventListener("click", (e) => { if (window.GUESTLIKE || window.GALLERYGUEST) return; if (/^#?\/?$/.test(location.hash)) e.preventDefault(); let n = 0; const t = setInterval(() => { const D = window.Gallery3D && window.Gallery3D.active && window.Gallery3D.debug; if (D) { clearInterval(t); try { D.closeBoard && D.closeBoard(); D.exitRoom && D.exitRoom(); D.skipIntro && D.skipIntro(); D.teleport(6.0, -2.6, 0); } catch (_) {} } else if (++n > 40) clearInterval(t); }, 150); });
         gal.addEventListener("click", (e) => { if (window.GUESTLIKE || window.GALLERYGUEST) return; if (/^#?\/?$/.test(location.hash)) e.preventDefault(); toEntry(); });
       } }
     if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
