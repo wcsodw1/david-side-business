@@ -450,6 +450,47 @@
           for (let k = 0; k < 4; k++) box(0.04, 0.3, 0.22, M([0xff90e8, 0xffd23f, 0x23a094, 0x111111][k], 0.7), 0.0, 0.95, -0.7 + k * 0.45, { p: q, r: [0, 0.2 * k, 0] }); obs(-2.9, -5.0, 0.2, 0.9); }
         sph(0.34, M(0xffd23f, 0.85), -2.35, 0.2, -2.0, { s: [1.2, 0.62, 1], k: 1 }); obs(-2.35, -2.0, 0.4, 0.34, 0.4);
       },
+
+      /* ===== TPI：辦公室（工位、雙螢幕、白板看板、會議桌、盆栽） ===== */
+      "tpi"(K) {
+        const { M, E, box, cyl, sph, pln, tx, obs } = K;
+        const BLUE = "#1f5fbf", NAVY = "#14264a";
+        K.floor((c, w, h, X, Z, pxm, ft) => {
+          c.fillStyle = "#b9bfc9"; c.fillRect(0, 0, w, h);
+          const s0 = 0.5 * pxm; for (let y = 0; y < h; y += s0) for (let x = 0; x < w; x += s0) { if (((x / s0 + y / s0) | 0) % 2) { c.fillStyle = "rgba(255,255,255,.18)"; c.fillRect(x, y, s0, s0); } }
+          c.fillStyle = BLUE; c.fillRect(X(-0.15), 0, 0.12 * pxm, h);
+          c.fillStyle = "rgba(20,38,74,.7)"; c.font = "800 90px 'Arial Black', Arial"; c.textAlign = "center"; ft("TPI", X(0.9), Z(-2.05));
+        });
+        K.walls((c, w, h) => { c.fillStyle = "#f2f4f8"; c.fillRect(0, 0, w, h); c.fillStyle = BLUE; c.fillRect(0, h * 0.62, w, h * 0.06); c.fillStyle = NAVY; c.fillRect(0, h - 22, w, 22); });
+        // 後牆：TPI 招牌 + 白板看板（TODO / DOING / DONE）
+        pln(1.6, 0.4, K.label("TPI  SOFTWARE", 800, 200, { bg: NAVY, fg: "#fff", fs: 78, font: "Arial Black, Arial" }), -1.9, 1.2, -6.1, 0, { glow: 0.3 });
+        pln(2.4, 0.9, tx(960, 360, (c, w, h) => {
+          c.fillStyle = "#fff"; c.fillRect(0, 0, w, h); c.strokeStyle = "#8a93a3"; c.lineWidth = 10; c.strokeRect(5, 5, w - 10, h - 10);
+          [["TODO", "#e5484d"], ["DOING", "#f5a524"], ["DONE", "#2fb36d"]].forEach(([t, col], i) => {
+            const x0 = 20 + i * 306; c.fillStyle = col; c.fillRect(x0, 20, 290, 56); c.fillStyle = "#fff"; c.font = "800 36px Arial"; c.textAlign = "center"; c.fillText(t, x0 + 145, 60);
+            for (let k = 0; k < 3 - (i === 1 ? 1 : 0); k++) { c.fillStyle = ["#ffe9a8", "#cfe8ff", "#d6f5df"][(k + i) % 3]; c.fillRect(x0 + 10, 96 + k * 80, 270, 66); }
+          });
+        }), 0.9, 1.15, -6.1, 0, { glow: 0.25 });
+        // 左側：兩張工位（桌 + 雙螢幕 + 椅子）
+        for (const z of [-3.0, -4.8]) {
+          const q = K.grp(-2.4, 0, z);
+          box(0.8, 0.05, 1.5, M(0xe9e2d4, 0.5), 0, 0.74, 0, { p: q, k: 1 }); for (const dz of [-0.68, 0.68]) box(0.7, 0.72, 0.05, M(0x59606e, 0.5), 0, 0.37, dz, { p: q });
+          for (const dz of [-0.36, 0.36]) { const m = K.grp(-0.2, 0.78, dz, PI / 2 + (dz < 0 ? -0.2 : 0.2), q); box(0.5, 0.3, 0.03, M(0x15171c, 0.4), 0, 0.22, 0, { p: m, k: 1 }); pln(0.46, 0.26, tx(320, 180, (c, w, h) => { c.fillStyle = "#101826"; c.fillRect(0, 0, w, h); c.fillStyle = "#7ee787"; c.font = "600 18px monospace"; for (let k = 0; k < 7; k++) c.fillText((k % 2 ? "  " : "") + "const tpi = () => {};".slice(0, 18 + (k % 3) * 2), 12, 28 + k * 22); }), 0, 0.22, 0.017, 0, { p: m, glow: 0.8 }); box(0.05, 0.14, 0.05, M(0x333333, 0.4, 0.5), 0, 0.07, 0, { p: m }); }
+          box(0.14, 0.012, 0.42, M(0x20242c, 0.5), 0.15, 0.77, 0, { p: q });
+          const ch = K.grp(-1.7, 0, z, -PI / 2); cyl(0.2, 0.2, 0.05, M(0x14264a, 0.6), 0, 0.45, 0, { p: ch, k: 1 }, 18); box(0.4, 0.4, 0.05, M(0x14264a, 0.6), 0, 0.72, -0.18, { p: ch, r: [0.12, 0, 0], k: 1 }); cyl(0.02, 0.02, 0.4, M(0x333333, 0.4, 0.6), 0, 0.22, 0, { p: ch }, 8);
+          obs(-2.4, z, 0.45, 0.78); obs(-1.7, z, 0.24, 0.24, 0.5);
+        }
+        // 右側：會議桌 + 椅子 + 螢幕牆
+        { const q = K.grp(2.1, 0, -3.9);
+          box(1.1, 0.06, 2.2, M(0xd9c7a3, 0.5), 0, 0.74, 0, { p: q, k: 1 }); for (const dz of [-0.85, 0.85]) box(0.9, 0.7, 0.07, M(0x59606e, 0.5), 0, 0.37, dz, { p: q });
+          for (const dz of [-0.7, 0, 0.7]) for (const sx of [-1, 1]) { const ch = K.grp(sx * 0.82, 0, dz, sx * PI / 2, q); cyl(0.17, 0.17, 0.05, M(0x1f5fbf, 0.6), 0, 0.44, 0, { p: ch, k: 1 }, 16); box(0.34, 0.34, 0.05, M(0x1f5fbf, 0.6), 0, 0.68, -0.15, { p: ch, r: [0.1, 0, 0], k: 1 }); cyl(0.02, 0.02, 0.4, M(0x333333, 0.4, 0.6), 0, 0.22, 0, { p: ch }, 8); }
+          box(0.3, 0.015, 0.2, M(0xf5f5f5, 0.5), 0, 0.775, 0.1, { p: q, r: [0, 0.3, 0] });
+          obs(2.1, -3.9, 0.7, 1.15); }
+        pln(1.7, 0.95, tx(640, 360, (c, w, h) => { c.fillStyle = NAVY; c.fillRect(0, 0, w, h); c.fillStyle = "#fff"; c.font = "800 56px Arial"; c.textAlign = "center"; c.fillText("TPI", w / 2, 120); c.font = "600 30px Arial"; c.fillText("Daily Stand-up  10:00", w / 2, 190); c.fillStyle = "#4da3ff"; c.fillRect(120, 230, w - 240, 8); for (let k = 0; k < 4; k++) { c.fillStyle = "#4da3ff"; c.fillRect(120 + k * 110, 300 - [30, 55, 40, 80][k], 70, [30, 55, 40, 80][k]); } }), 3.12, 1.2, -3.9, -PI / 2, { glow: 0.5 });
+        // 盆栽 + 飲水機
+        cyl(0.2, 0.15, 0.36, M(0xc0794a, 0.7), 2.7, 0.18, -5.8, {}, 14); sph(0.3, M(0x3f9a6a, 0.8), 2.7, 0.62, -5.8, { s: [1, 1.2, 1] }); obs(2.7, -5.8, 0.3, 0.3);
+        box(0.3, 1.0, 0.3, M(0xeaeef5, 0.5), -0.3, 0.5, -5.85, { k: 1 }); cyl(0.1, 0.1, 0.3, M(0x9fd4ff, 0.2), -0.3, 1.15, -5.85, {}, 12); obs(-0.3, -5.85, 0.2, 0.2);
+      },
     };
 
     // 鑰匙：圓環 + 柄 + 齒

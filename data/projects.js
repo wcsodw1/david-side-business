@@ -126,6 +126,19 @@ window.PROJECTS = [
     ],
   },
   {
+    id: "tpi",
+    name: "TPI",
+    zh: "TPI 辦公室",
+    category: "Work",
+    status: "building",
+    progress: 50,
+    summary: "TPI 辦公室：本業工作的進度、待辦與會議整理。",
+    links: [],
+    updates: [
+      { date: "2026-11-16", title: "辦公室建立", text: "加入平台，新增 TPI 辦公室房間，之後在這裡記錄工作進度。" },
+    ],
+  },
+  {
     id: "pickleball",
     name: "PickleBall",
     zh: "匹克球",
