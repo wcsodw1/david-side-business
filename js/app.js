@@ -438,6 +438,28 @@
         const y = scrollY; render(); scrollTo(0, y);
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
+      // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（任務 + 迷你甘特）
+      (() => {
+        const old = $("#kbTip"); if (old) old.parentNode.removeChild(old);
+        const tip = document.createElement("div"); tip.id = "kbTip"; tip.hidden = true; document.body.appendChild(tip);
+        const ts = (x) => new Date(x + "T00:00:00").getTime(), okd = (x) => /^\d{4}-\d{2}-\d{2}$/.test(String(x || ""));
+        const build = (p) => {
+          const L = (p.tasks || []).filter((t) => okd(t.start) && okd(t.end)), c = accent(P.indexOf(p));
+          if (!L.length) return `<h4 style="--c:${c}">${esc(p.name)}<span>${p.progress ?? 0}%</span></h4><p class="kt-none">還沒有任務。到白板「時程」分頁新增。</p>`;
+          const a0 = Math.min(...L.map((t) => ts(t.start))), b0 = Math.max(...L.map((t) => ts(t.end))) + 86400000, span = Math.max(b0 - a0, 86400000), now = Date.now();
+          const nowPct = now >= a0 && now <= b0 ? ((now - a0) / span) * 100 : -1, done = L.filter((t) => t.status === "Done").length;
+          return `<h4 style="--c:${c}">${esc(p.name)}<span>完成度 ${p.progress ?? 0}% · 任務 ${done}/${L.length} 完成</span></h4>
+            <div class="kt-rows">${L.map((t) => `<div class="kt-r"><b class="kt-n" title="${esc(t.name)}">${esc(t.name)}</b><i class="kt-pri kt-${esc(t.pri)}">${esc(t.pri)}</i><em class="kt-st kt-s-${esc(String(t.status).replace(/\s/g, ""))}">${esc(t.status)}</em><span class="kt-bar"><u style="width:${+t.progress || 0}%"></u></span><span class="kt-d">${esc(t.start.slice(5).replace("-", "/"))}–${esc(t.end.slice(5).replace("-", "/"))}</span><span class="kt-tl"><u style="left:${((ts(t.start) - a0) / span) * 100}%;width:${Math.max(((ts(t.end) + 86400000 - ts(t.start)) / span) * 100, 2)}%"></u>${nowPct >= 0 ? `<s style="left:${nowPct}%"></s>` : ""}</span></div>`).join("")}</div>`;
+        };
+        const place = (row) => { const r = row.getBoundingClientRect(), w = Math.min(760, innerWidth - 24); tip.style.width = w + "px"; tip.style.left = Math.max(12, Math.min(r.left + 24, innerWidth - w - 12)) + "px"; tip.hidden = false; const h = tip.offsetHeight; tip.style.top = (r.bottom + 8 + h <= innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + "px"; };
+        let timer; const hide = () => { clearTimeout(timer); tip.hidden = true; };
+        $$(".kb-row[data-pid]", app).forEach((row) => {
+          row.addEventListener("mouseenter", () => { const p = P.find((x) => x.id === row.dataset.pid); if (!p) return; clearTimeout(timer); timer = setTimeout(() => { tip.innerHTML = build(p); place(row); }, 120); });
+          row.addEventListener("mouseleave", hide);
+          row.addEventListener("click", hide);
+        });
+        window.addEventListener("scroll", hide, { passive: true }); window.addEventListener("hashchange", hide, { once: true });
+      })();
       // AI 總管不再嵌在辦公室頁下方（David 2026-11-15：辦公室只留更新區）；要聊天點 NEWS 下的聖誕老人或 3D 辦公室的機器人
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
       tick(); clockTimer = setInterval(tick, 1000);

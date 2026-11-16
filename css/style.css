@@ -1252,3 +1252,20 @@ body.viewer .kb-btn, body.viewer .kb-form, body.viewer .sch-add, body.viewer [da
 body.viewer .sch-t input, body.viewer .sch-t select { pointer-events: none; border-color: transparent; background: transparent; appearance: none; }
 body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display: none !important; }
 .pm-t td { vertical-align: top; } .pm-y { color: #2e9b63; } .pm-n { color: #b9b0c4; } .pm-r { font-size: 12px; color: #c47a12; font-weight: 700; }
+
+/* 滑過專案列 → 浮出該專案的進度表 */
+#kbTip { position: fixed; z-index: 9000; pointer-events: none; padding: 14px 16px 12px; border-radius: 16px; background: #fffdf7; color: #2a2038; border: 1px solid #d9ccb6; box-shadow: 0 18px 48px rgba(20,10,40,.35); font: 500 13px var(--font); }
+#kbTip[hidden] { display: none; }
+#kbTip h4 { margin: 0 0 8px; font: 700 16px var(--font); display: flex; align-items: baseline; gap: 10px; padding-left: 10px; border-left: 5px solid var(--c, #e3651d); }
+#kbTip h4 span { font: 600 12px var(--font); color: #8a7a98; }
+.kt-none { margin: 4px 0; color: #8a7a98; }
+.kt-r { display: grid; grid-template-columns: minmax(120px, 1.6fr) 34px 54px 64px 82px minmax(110px, 1.4fr); gap: 8px; align-items: center; padding: 5px 0; border-top: 1px solid #efe6d4; }
+.kt-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.kt-pri { font-style: normal; font-size: 11px; font-weight: 800; text-align: center; border-radius: 6px; padding: 1px 0; background: #eee; }
+.kt-P0 { background: #f9d5da; color: #b02a3c; } .kt-P1 { background: #fbecc6; color: #9a6a0a; } .kt-P2 { background: #d6efe0; color: #2a7a4b; }
+.kt-st { font-style: normal; font-size: 11px; font-weight: 700; text-align: center; border-radius: 99px; padding: 1px 6px; background: #e8e4f0; color: #5a4c70; }
+.kt-s-Doing { background: #dbe7ff; color: #2a56b8; } .kt-s-Done { background: #d6efe0; color: #2a7a4b; } .kt-s-Blocked { background: #f9d5da; color: #b02a3c; }
+.kt-bar { height: 7px; border-radius: 9px; background: #e6dfcf; overflow: hidden; } .kt-bar u { display: block; height: 100%; background: #4b78e0; }
+.kt-d { font-size: 11.5px; color: #6a5c7a; }
+.kt-tl { position: relative; height: 12px; border-radius: 6px; background: #f1ead9; } .kt-tl u { position: absolute; top: 2px; bottom: 2px; border-radius: 5px; background: var(--c, #6b83e0); } .kt-tl s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #e3651d; }
+@media (max-width: 760px) { .kt-r { grid-template-columns: 1fr 34px 54px; } .kt-bar, .kt-d, .kt-tl { display: none; } }
