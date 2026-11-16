@@ -112,7 +112,7 @@
         : `<p class="sch-empty">還沒有任務。到任一專案的白板，切到「時程」分頁新增，這裡就會長出整體甘特圖。</p>`}
     </div>`;
   }
-  function bindOffice(el, P) { el.querySelector("[data-sch-office-copy]")?.addEventListener("click", () => copy(tsv(P))); }
+  function bindOffice(el, P) { if (!el) return; el.querySelector("[data-sch-office-copy]")?.addEventListener("click", () => copy(tsv(P))); }
 
   window.Schedule = { panel, bind, officeHtml, bindOffice, tsv };
 })();

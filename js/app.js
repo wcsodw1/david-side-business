@@ -17,11 +17,13 @@
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   const GUEST_HASH = "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec";   // 訪客密碼 guest（不分大小寫，只存雜湊）：只能在二樓房間走動，看不到屋外，不能進辦公室 / 白板 / NEWS
   const LYJ_HASH = "de6d23fe62808d9e7e3e324d94db6cffefba6994f935aa630c0826801d6f8f6d";   // 訪客「林晏如」的密碼 LYJ（不分大小寫，只存雜湊）；登入後歡迎詞顯示她的名字
-  const DG_HASH = "953e94c8759bc230f2ca27c3448f66741ce8e7cd4424f89dd605844a67b343d1";   // 訪客「David Guest」的密碼（不分大小寫，只存雜湊）：一般訪客權限（只能在 3D 二樓房間走動）
-  const GUEST_ALT = [LYJ_HASH, DG_HASH];
+  const HOUSE_HASH = "36b940ab36b32cd70ef1d0922cff8233bff581f67d7b9a00658df21a35b30d00";   // 訪客「guest-house」密碼（不分大小寫，只存雜湊）：只能在 3D 二樓房間走動
+  const GALLERY_HASH = "549fdf0c2549bbdefb86167a8a822ec88fc03bd4caedb060b62a2050bf71636a";   // 訪客「guest-gallery」密碼（不分大小寫，只存雜湊）：可逛 3D 藝廊，但沒有機器人 / AI 總管 / 專案進度 / 辦公室 / NEWS
+  const GUEST_ALT = [LYJ_HASH, HOUSE_HASH];
   const AGENT_HASH = "3cce5ca57826b4509c7d1ffea69aaa803428a73c7838065a249c9c44f3d0e89e";   // 房仲 David 的密碼 guest-agent（只存雜湊）：跟訪客同一個二樓空間；沒人登入時，房仲 David 站在門口講解
   const VIEWER_HASH = "";   // （唯讀客人模式已停用：david-guest 改為一般訪客，專案進度 / AI / 機器人只有 admin 能用）   // 客人（唯讀）密碼 david-guest（不分大小寫，只存雜湊）：只能看辦公室儀表板 / 專案進度表 / 進度總覽 / 專案頁，不能改任何資料、沒有 AI 總管 / NEWS / 3D 藝廊
-  window.PERSONA = "david"; window.GUESTLIKE = false; window.VIEWER = false;
+  window.PERSONA = "david"; window.GUESTLIKE = false; window.VIEWER = false; window.GALLERYGUEST = false;
+  const setGallery = () => { window.PERSONA = "gallery"; window.GALLERYGUEST = true; window.GUESTLIKE = false; window.GUEST_NAME = "訪客"; };
   const setViewer = () => { window.PERSONA = "viewer"; window.VIEWER = true; window.GUESTLIKE = false; document.body.classList.add("viewer"); };
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -223,7 +225,8 @@
         const rows = [
           ["David（ADMIN）", "本人", Y, Y, Y, Y, Y, "全部功能；辦公室需再輸入辦公室密碼"],
           ["ARIES（朋友）", "Aeris 玩家模式", Y, Y, Y, Y, Y, "粉色角色；看不到「專案目標」欄；辦公室需辦公室密碼"],
-          ["訪客（GUEST）", "林晏如、David Guest", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
+          ["訪客・藝廊（guest-gallery）", "訪客", Y, N, N, N, N, "可以逛 3D 藝廊與各專案房間；沒有機器人 / AI 總管 / 專案進度 / 辦公室 / NEWS"],
+          ["訪客・房間（guest-house）", "林晏如等", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
           ["房仲（AGENT）", "David（房仲）", N, N, N, N, N, "跟訪客同一個二樓空間；站在門口講解；穿紫色禮賓員制服"],
         ];
         return `<div class="sch-scroll"><table class="sch-t pm-t"><thead><tr><th>角色</th><th>對象</th><th>3D 藝廊</th><th>進度總覽 / 專案頁</th><th>辦公室儀表板</th><th>專案進度表</th><th>改資料 / AI 總管 / NEWS</th><th>說明</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="nm">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div><p class="sch-empty">密碼不顯示在這裡（網站只存雜湊）。機器人、AI 總管、專案進度（白板 / 時程 / 進度總覽）只有 admin（David）能用；訪客、房仲都只進得了 3D 二樓房間。</p>`;
@@ -386,9 +389,9 @@
 
   let clockTimer;
   // 瀏覽器分頁標題前面標上帳號類型：ADMIN（David）/ GUEST（訪客）/ ARIES，開多個分頁時一眼分得出來
-  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", viewer: "[VIEWER] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
+  const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", gallery: "[GALLERY] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
   function render() {
-    let hash = window.GUESTLIKE ? "" : location.hash.replace(/^#\/?/, "");
+    let hash = window.GUESTLIKE || window.GALLERYGUEST ? "" : location.hash.replace(/^#\/?/, "");
     if (window.VIEWER && !/^(overview|office|p\/)/.test(hash)) { hash = "overview"; if (location.hash !== "#/overview") history.replaceState(null, "", "#/overview"); }   // 客人：沒有 3D 藝廊 / 最新動態，一律回進度總覽   // 訪客永遠只看得到 3D 房子
     const [seg, arg] = hash.split("/");
     if (window.Gallery) window.Gallery.unmount();
@@ -405,7 +408,7 @@
     document.body.classList.toggle("dim", !home);
     if (home) layers.forEach((l) => (l.style.transform = ""));
     app.innerHTML = html + `<footer class="foot-note">© ${new Date().getFullYear()} David's Side Business</footer>`;
-    const GH = { hue, st, esc, go: (id) => { location.hash = "#/p/" + id; }, office: () => { location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) };
+    const GH = { hue, st, esc, go: (id) => { if (!window.GALLERYGUEST) location.hash = "#/p/" + id; }, office: () => { if (!window.GALLERYGUEST) location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) };
     if (home) {
       let ok = false;
       if (window.Gallery3D && window.Gallery3D.supported()) { try { ok = window.Gallery3D.mount($("#gallery"), P, GH); } catch (err) { console.error("3D 藝廊失敗，改用 2D：", err); window.Gallery3D.unmount(); } }
@@ -475,10 +478,10 @@
     document.body.classList.remove("locked");
     nav.hidden = false; app.hidden = false;
     if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
-    if (window.GUESTLIKE) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
+    if (window.GUESTLIKE || window.GALLERYGUEST) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
     buildMega();
-    if (window.News && !window.GUESTLIKE && !window.VIEWER) window.News.mount(P, {});
+    if (window.News && !window.GUESTLIKE && !window.GALLERYGUEST) window.News.mount(P, {});
     render();
   }
   function lock() {
@@ -497,12 +500,12 @@
     const v = $("#pw").value;
     if (!v) return;
     const hv = await sha256(v.trim()), ha = await sha256(v.trim().toLowerCase());   // Aeris 的密碼不分大小寫
-    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha) || ha === AGENT_HASH || ha === VIEWER_HASH) {
-      window.PERSONA = hv === PASS_HASH ? "david" : ha === VIEWER_HASH ? "viewer" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
+    if (hv === PASS_HASH || ha === AERIS_HASH || AERIS_ALT.includes(ha) || ha === GUEST_HASH || GUEST_ALT.includes(ha) || ha === AGENT_HASH || ha === GALLERY_HASH) {
+      window.PERSONA = hv === PASS_HASH ? "david" : ha === GALLERY_HASH ? "gallery" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
       window.GUESTLIKE = window.PERSONA === "guest" || window.PERSONA === "agent";
-      if (window.PERSONA === "viewer") setViewer();
+      if (window.PERSONA === "gallery") setGallery();
       if (window.PERSONA === "guest") window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : "訪客"; else if (window.PERSONA === "agent") window.GUEST_NAME = "David（房仲）";
-      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE || window.VIEWER ? ha : PASS_HASH); } catch (_) {}
+      try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE || window.GALLERYGUEST ? ha : PASS_HASH); } catch (_) {}
       { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } }
       enter();
     } else {
@@ -526,6 +529,6 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   let ok = false;
-  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === DG_HASH || k === AGENT_HASH; if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === DG_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === AGENT_HASH || k === GALLERY_HASH; if (k === GALLERY_HASH) setGallery(); if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
 })();

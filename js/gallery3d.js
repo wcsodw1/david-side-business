@@ -163,8 +163,8 @@
     let t = lu ? `最新：${lu.title}` : "尚無進度紀錄"; while (g.measureText(t).width > W - 520 && t.length > 4) t = t.slice(0, -2) + "…"; g.fillText(t, 80, 262);
     g.textAlign = "right"; g.fillStyle = stt.color; g.beginPath(); g.arc(W - 330, 78, 14, 0, 7); g.fill();
     g.fillStyle = "#f6f1ff"; g.font = "600 40px 'Noto Sans TC', sans-serif"; g.fillText(stt.label, W - 60, 92);
-    g.font = "800 128px Georgia, serif"; g.fillStyle = `hsl(${h} 80% 68%)`; g.fillText(pr + "%", W - 60, 214);
-    g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(W - 420, 244, 360, 14); g.fillStyle = `hsl(${h} 80% 62%)`; g.fillRect(W - 420, 244, 360 * pr / 100, 14);
+    g.font = "800 128px Georgia, serif"; g.fillStyle = `hsl(${h} 80% 68%)`; if (!window.GALLERYGUEST) g.fillText(pr + "%", W - 60, 214);
+    g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(W - 420, 244, 360, 14); g.fillStyle = `hsl(${h} 80% 62%)`; if (!window.GALLERYGUEST) g.fillRect(W - 420, 244, 360 * pr / 100, 14);
     return c;
   }
 
@@ -204,9 +204,9 @@
     g.fillText(p.name, 60, artH + 160);
     const stt = H.st(p), pr = p.progress ?? 0;
     g.fillStyle = stt.color; g.beginPath(); g.arc(74, artH + 212, 13, 0, 7); g.fill();
-    g.fillStyle = "#5b4c70"; g.font = "600 34px -apple-system, 'Noto Sans TC', sans-serif"; g.fillText(`${stt.label}  ·  ${pr}%`, 100, artH + 224);
+    g.fillStyle = "#5b4c70"; g.font = "600 34px -apple-system, 'Noto Sans TC', sans-serif"; g.fillText(window.GALLERYGUEST ? stt.label : `${stt.label}  ·  ${pr}%`, 100, artH + 224);
     g.fillStyle = "#ddd3bf"; g.fillRect(60, artH + 242, W - 120, 10);
-    g.fillStyle = `hsl(${h} 78% 52%)`; g.fillRect(60, artH + 242, (W - 120) * pr / 100, 10);
+    g.fillStyle = `hsl(${h} 78% 52%)`; if (!window.GALLERYGUEST) g.fillRect(60, artH + 242, (W - 120) * pr / 100, 10);
     return c;
   }
 
@@ -227,8 +227,8 @@
     // 進度圓環
     const cx = W - 190, cy = 150, r = 86;
     g.lineWidth = 20; g.lineCap = "round"; g.strokeStyle = "#e4dfd2"; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke();
-    g.strokeStyle = `hsl(${h} 78% 50%)`; g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pr / 100); g.stroke();
-    g.fillStyle = "#1f1a33"; g.font = "800 62px Georgia, serif"; g.textAlign = "center"; g.fillText(pr + "%", cx, cy + 22); g.textAlign = "left";
+    g.strokeStyle = `hsl(${h} 78% 50%)`; g.beginPath(); g.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (window.GALLERYGUEST ? 0 : pr) / 100); g.stroke();
+    g.fillStyle = "#1f1a33"; g.font = "800 62px Georgia, serif"; g.textAlign = "center"; if (!window.GALLERYGUEST) g.fillText(pr + "%", cx, cy + 22); g.textAlign = "left";
     g.strokeStyle = "#1f1a33"; g.lineWidth = 3; g.beginPath(); g.moveTo(60, 272); g.lineTo(W - 60, 272); g.stroke();
     g.fillStyle = "#8a7a98"; g.font = "700 28px -apple-system, 'Noto Sans TC', sans-serif"; if ("letterSpacing" in g) g.letterSpacing = "6px"; g.fillText("最新進度 · LATEST", 60, 322); if ("letterSpacing" in g) g.letterSpacing = "0px";
     const ups = (p.updates || []).slice(0, 4);
@@ -1660,10 +1660,10 @@
         c.fillStyle = "#0e0c22"; c.fillRect(0, 0, w, h);
         c.fillStyle = "#ffe9b8"; c.font = "700 40px -apple-system, sans-serif"; c.fillText("SIDE BUSINESS", 40, 70);
         const avg = Math.round(P.reduce((a, p) => a + (p.progress || 0), 0) / (N || 1));
-        c.fillStyle = "#9aa3b2"; c.font = "500 30px 'Noto Sans TC', sans-serif"; c.fillText(`平均進度 ${avg}%`, 40, 112);
+        c.fillStyle = "#9aa3b2"; c.font = "500 30px 'Noto Sans TC', sans-serif"; if (!window.GALLERYGUEST) c.fillText(`平均進度 ${avg}%`, 40, 112);
         P.forEach((p, i) => {
           const y = 150 + i * 58; c.fillStyle = "rgba(255,255,255,.08)"; c.fillRect(40, y, w - 80, 20);
-          c.fillStyle = `hsl(${H.hue(i)} 90% 70%)`; c.fillRect(40, y, (w - 80) * (p.progress || 0) / 100, 20);
+          c.fillStyle = `hsl(${H.hue(i)} 90% 70%)`; if (!window.GALLERYGUEST) c.fillRect(40, y, (w - 80) * (p.progress || 0) / 100, 20);
           c.fillStyle = "#fff"; c.font = "500 24px -apple-system, sans-serif"; c.fillText(p.name, 40, y - 6);
         });
       }), aniso);
@@ -1793,8 +1793,8 @@
     }
 
     /* ----- 人物 ----- */
-    const GUEST = !!window.GUESTLIKE, AGENT = window.PERSONA === "agent";   // 訪客（含房仲 David）：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
-    const av = GUEST && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts(AGENT ? "agent" : "david") : undefined); if (GUEST && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, AGENT ? "agent" : "david"); scene.add(av.root);
+    const GUEST = !!window.GUESTLIKE, AGENT = window.PERSONA === "agent", GG = !!window.GALLERYGUEST;   // 訪客（含房仲 David）：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
+    const av = (GUEST || GG) && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts(AGENT ? "agent" : "david") : undefined); if ((GUEST || GG) && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, AGENT ? "agent" : "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
@@ -1825,7 +1825,7 @@
     const spawn = api.lastId === "__office" ? 0 : (api.lastId ? P.findIndex((p) => p.id === api.lastId) + 1 : -1);
     const bedZ = window.PERSONA === "aeris" ? -3.15 : -4.05;                         // 開場：躺在二樓雙人床上（David 睡北側、ARIES 睡南側）
     const standZ = window.PERSONA === "aeris" ? -2.0 : -5.2, standX = 4.5;           // 起床後站在自己那一側的床邊
-    const pos = GUEST ? (AGENT ? { x: 10.7, z: -0.55 } : { x: 8.8, z: -3.6 }) : spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
+    const pos = GG ? { x: ENTRY - 2.4, z: 0 } : GUEST ? (AGENT ? { x: 10.7, z: -0.55 } : { x: 8.8, z: -3.6 }) : spawn >= 0 ? { ...anchor(spawn) } : { x: 4.4, z: bedZ };
     let yaw = -0.55, elev = 38 * Math.PI / 180, dist = 10.5, facing = Math.PI;
     const view0 = { yaw, elev, dist };
     if (spawn < 0) facing = Math.PI / 2;
@@ -1841,7 +1841,7 @@
     let keys = { l: 0, r: 0, u: 0, d: 0, q: 0, e: 0 }, run = false, touch = { l: 0, r: 0, u: 0, d: 0 }, rotHold = 0, auto = false;
     let boardArmed = true, officeArmed = true;
     let lvl = 0, lvlS = 0, py = 0, swimT = 0, wasSwim = false, jy = 0, jv = 0, jumpReq = false;
-    let wake = spawn < 0 && !GUEST ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
+    let wake = spawn < 0 && !GUEST && !GG ? { t: 0 } : null;                                           // 開場動畫：躺床 → 起身 → 走去餐桌（ARIES 先下樓）
     if (wake || GUEST) { lvl = 1; py = UY; lvlS = 1; }   // 開場在二樓
     camT.y = 0.9 + py;   // jy：跳起的高度（Space）   // 樓層（0 = 一樓 / 1 = 二樓）、平滑樓層、目前高度
     let sitting = -1, sitA = 0, insM = pos.x > ENTRY + 0.4 ? 1 : 0, insH = (pos.x > HOUSE.x0 && pos.x < HOUSE.x1 && pos.z > HOUSE.z0 && pos.z < HOUSE.z1) ? 1 : 0;
@@ -1850,6 +1850,7 @@
 
     if (AGENT) root.insertAdjacentHTML("beforeend", '<div class="g-start">你是 <b>David（房仲）</b>：平常站在門口介紹這個房間；訪客進來時你們在同一個空間。</div>');
     else if (GUEST) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎，<b>' + (window.GUEST_NAME || "訪客") + '</b>！你可以在二樓的客廳、主臥室與浴室走動參觀。</div>');
+    else if (GG) root.insertAdjacentHTML("beforeend", '<div class="g-start">歡迎來到 <b>David\'s Gallery</b>！用 WASD 或點地面走路，逛逛各專案的房間。</div>');
     else if (spawn < 0) root.insertAdjacentHTML("beforeend", '<div class="g-start">你在自己的家裡。往東走出家門，沿著小徑走到<b>美術館入口</b>，再走進去。</div>');
     const prompt = root.querySelector("#gPrompt"), dots = [...root.querySelectorAll("#gMap button")], ov = root.querySelector("#gBoardOv");
     const infoEl = root.querySelector("#gInfo"); let lastInfoS = 0, dwell = 0, dwellS = -1;
@@ -1874,7 +1875,7 @@
       if (window.Journal) { ov.innerHTML = window.Journal.card(p, i, H); window.Journal.bind(ov, p, i, H, { close: closeBoard, rerender: renderBoard }); }
       else ov.innerHTML = `<div class="wb-card"><button class="wb-x" data-x>✕</button><h2>${H.esc(p.name)}</h2></div>`;
     };
-    const openBoard = (s) => { boardS = s; if (typeof clearKeys === "function") clearKeys(); renderBoard(); ov.hidden = false; document.body.classList.add("board-open"); };
+    const openBoard = (s) => { if (GG) return; boardS = s; if (typeof clearKeys === "function") clearKeys(); renderBoard(); ov.hidden = false; document.body.classList.add("board-open"); };
     ov.addEventListener("click", (e) => { if (e.target === ov || e.target.closest("[data-x]")) closeBoard(); });
     const refreshBoardTexture = (s) => {
       const p = P[s - 1]; if (!p) return;
@@ -2290,7 +2291,7 @@
           prompt.innerHTML = inside >= 0
             ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ← 或滾輪下滑出門</small>`
             : nn === 0 ? `<kbd>Enter</kbd> 進入 <b>辦公室</b> · 儀表板總覽 <small>　滾輪上滑</small>`
-              : `<kbd>Enter</kbd> 進入 <b>${H.esc(P[nn - 1].name)}</b> 房間 · ${P[nn - 1].progress ?? 0}% <small>　滾輪上滑</small>`;
+              : `<kbd>Enter</kbd> 進入 <b>${H.esc(P[nn - 1].name)}</b> 房間${GG ? "" : " · " + (P[nn - 1].progress ?? 0) + "%"} <small>　滾輪上滑</small>`;
           prompt.hidden = false;
         } else prompt.hidden = true;
       }
@@ -2333,16 +2334,16 @@
       const bb = new THREE.Box3(), gx0 = HOUSE.x0 - 1.0, gx1 = HOUSE.x1 + 0.5, gz0 = HOUSE.z0 - 0.5, gz1 = HOUSE.z1 + 0.5;
       for (const o of scene.children) { if (o.isLight || o === av.root || o === sun || o === sun.target) continue; bb.setFromObject(o); if (bb.isEmpty()) continue; if (!(bb.min.x >= gx0 && bb.max.x <= gx1 && bb.min.z >= gz0 && bb.max.z <= gz1 && bb.max.y > UY - 0.1)) o.visible = false, o._gh = true; }
     }
-    if (window.Director && !GUEST) window.Director.mount(ctx);
-    if (window.Aeris && !GUEST) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
+    if (window.Director && !GUEST && !GG) window.Director.mount(ctx);
+    if (window.Aeris && !GUEST && !GG) try { window.Aeris.mount(ctx); } catch (err) { console.error("Aeris 載入失敗：", err); }
     if (window.Lights) try { window.Lights.mount(ctx); } catch (err) { console.error("燈光載入失敗：", err); }
     if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
     if (window.Ship && !GUEST) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
-    if (window.Robot && !GUEST) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
+    if (window.Robot && !GUEST && !GG) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
     if (window.Rooms && !GUEST) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
     if (window.Animals && !GUEST) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
-    if (window.Presence) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
+    if (window.Presence && !GG) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }
 
     S = {
       root, cv, renderer, fpvKey: S_fpvKey, raf: () => cancelAnimationFrame(raf), onKey, clearKeys, resize, refreshBangs, onStore, scene, closeBoard, camera, sun, openBoard, teleport: (x, z, up) => { pos.x = x; pos.z = z; camT.x = x; camT.z = z; if (up !== undefined) { lvl = up ? 1 : 0; py = lvl * UY; } }, getState: () => ({ x: +pos.x.toFixed(2), z: +pos.z.toFixed(2), y: +py.toFixed(2), jy: +jy.toFixed(2), lvl, inside, nearIdx, route: route.length, tgt: route[0] ? [+route[0].x.toFixed(2), +route[0].z.toFixed(2)] : null, sitting, overlay: !ov.hidden, armed: boardArmed }), obstacles, exitRoom: () => { if (inside >= 0) { exitRoom(); return true; } return false; }, skipIntro: () => { if (wake) { wake.skipped = true; wake.t = 99; } }, walkTo: (x, z) => { sitting >= 0 && stand(); goRoute(sternRoute({ x, z })); }, setHour: (h) => { hourOverride = h; applyTime(clockHour()); }, getHour: () => hourNow, stepFrames: (n = 1, ms = 50, cb) => { let nowT = Math.max(performance.now(), last + 1); for (let i = 0; i < n; i++) { nowT += ms; const keep = raf; tick(nowT); cancelAnimationFrame(raf); raf = keep; if (cb) cb(i); } },   // 測試用：面板被藏起來時手動推進畫面
