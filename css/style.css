@@ -1269,3 +1269,11 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .kt-d { font-size: 11.5px; color: #6a5c7a; }
 .kt-tl { position: relative; height: 12px; border-radius: 6px; background: #f1ead9; } .kt-tl u { position: absolute; top: 2px; bottom: 2px; border-radius: 5px; background: var(--c, #6b83e0); } .kt-tl s { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #e3651d; }
 @media (max-width: 760px) { .kt-r { grid-template-columns: 1fr 34px 54px; } .kt-bar, .kt-d, .kt-tl { display: none; } }
+
+/* 辦公室權限閘（機器人 / AI 總管） */
+#ogOv { position: fixed; inset: 0; z-index: 99999; background: rgba(8,6,20,.55); display: grid; place-items: center; }
+.og-card { width: min(340px, calc(100vw - 32px)); padding: 22px 22px 18px; border-radius: 18px; background: #fffdf7; color: #2a2038; box-shadow: 0 24px 60px rgba(0,0,0,.45); font: 500 14px var(--font); }
+.og-card h3 { margin: 0 0 6px; font: 700 18px var(--font); } .og-card p { margin: 0 0 12px; color: #6a5c7a; }
+.og-card input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 1px solid #d9ccb6; font: 500 15px var(--font); }
+.og-err { min-height: 18px; margin-top: 6px; color: #b02a3c; font-size: 13px; }
+.og-b { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; } .og-b button { padding: 8px 16px; border-radius: 99px; border: 1px solid #d9ccb6; background: transparent; font: 700 13px var(--font); cursor: pointer; } .og-b button[type=submit] { background: #2a2038; color: #fff; border-color: #2a2038; }

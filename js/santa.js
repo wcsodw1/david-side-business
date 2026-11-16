@@ -26,6 +26,7 @@
   const close = () => { if (!box) return; box.remove(); box = null; document.body.classList.remove("robot-open"); fab && fab.classList.remove("is-open"); };
   const open = () => {
     if (box || !window.AIChat) return;
+    if (window.OfficeGate && !window.OfficeGate.isOpen()) { window.OfficeGate.require(open); return; }   // AI 總管要辦公室權限（輸入過就不再問）
     // 3D 辦公室的機器人對話開著的話先關掉，避免疊兩個
     const other = document.querySelector(".robot-chat [data-x]"); if (other) other.click();
     box = document.createElement("div"); box.className = "robot-chat santa-chat";

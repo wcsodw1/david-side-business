@@ -13,6 +13,22 @@
   const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e6207542afa9e43cb59bf41af439c06ebb9a5b1c0652e3dcdb14b0b81931873a";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
   let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
+  // 辦公室權限閘：機器人 / AI 總管也要先輸入辦公室密碼（這個分頁輸入過一次就不再問）
+  window.OfficeGate = {
+    isOpen: () => officeOpen(),
+    require(cb) {
+      if (officeOpen()) return cb();
+      if (document.getElementById("ogOv")) return;
+      const ov = document.createElement("div"); ov.id = "ogOv";
+      ov.innerHTML = `<form class="og-card" autocomplete="off"><h3>🔒 辦公室權限</h3><p>機器人 / AI 總管在辦公室裡，請輸入辦公室密碼。</p><input type="password" placeholder="辦公室密碼" aria-label="辦公室密碼"><div class="og-err"></div><div class="og-b"><button type="button" data-no>取消</button><button type="submit">進入</button></div></form>`;
+      document.body.appendChild(ov);
+      const f = ov.querySelector("form"), inp = ov.querySelector("input"), err = ov.querySelector(".og-err"), done = () => { ov.parentNode && ov.parentNode.removeChild(ov); };
+      ["keydown", "keyup", "keypress"].forEach((t) => ov.addEventListener(t, (e) => { e.stopPropagation(); if (t === "keydown" && e.key === "Escape") done(); }));
+      ov.querySelector("[data-no]").addEventListener("click", done);
+      f.addEventListener("submit", async (e) => { e.preventDefault(); const v = inp.value.trim(); if (!v) return; if (await sha256(v) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} done(); cb(); } else { err.textContent = "密碼不正確"; f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake"); inp.select(); } });
+      setTimeout(() => inp.focus(), 30);
+    },
+  };
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
   const AERIS_ALT = ["d66a93cd9ae701f79c00514fff5ac6846623e5b61c3113b0a1482369b4861a6c"];                    // 常見的另一種拼法                     // 朋友用的密碼（Aeris 玩家模式），只存雜湊
   const GUEST_HASH = "84983c60f7daadc1cb8698621f802c0d9f9a3c3c295c810748fb048115c186ec";   // 訪客密碼 guest（不分大小寫，只存雜湊）：只能在二樓房間走動，看不到屋外，不能進辦公室 / 白板 / NEWS

@@ -66,6 +66,7 @@
     const close = () => { if (!R || !R.box) return; R.box.remove(); R.box = null; document.body.classList.remove("robot-open"); };
     const open = () => {
       if (!R || R.box) return;
+      if (window.OfficeGate && !window.OfficeGate.isOpen()) { window.OfficeGate.require(open); return; }   // 機器人要辦公室權限（輸入過就不再問）
       if (!window.AIChat) return;
       const box = document.createElement("div"); box.className = "robot-chat";
       box.innerHTML = `<section class="office-ai"><header class="rc-h"><b>🤖 AI 總管</b><span>我看得到所有專案的目標、狀態與 Next Step</span><button type="button" data-fs aria-label="全螢幕" title="全螢幕（F）">⤢</button><button type="button" data-x aria-label="關閉">✕</button></header><div class="ai-mount" data-m></div></section>`;
