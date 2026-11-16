@@ -230,7 +230,7 @@
   const LOCALAPI = API.startsWith('/'), sb = $('lkStart');
   $('lkHintTxt').textContent = LOCALAPI ? '工具還沒啟動（只在你的 Mac 本機跑，不會上傳）。' : '尚未連線：這個網址沒辦法替你啟動工具，請在 Mac 執行 START_LUKA_FILM.command；若瀏覽器跳出「連線到本機網路裝置」請按允許。（建議改用 http://localhost:5180 開網站，那裡有啟動按鈕）';
   sb.hidden = !LOCALAPI;
-  sb.addEventListener('click', async () => { sb.disabled = true; sb.textContent = '啟動中…'; try { const r = await fetch('/luka/start', {method: 'POST'}); const v = await r.json(); if (!v.ok) toast(v.error || '啟動失敗', true); } catch (e) { toast('啟動失敗：' + e.message, true); } sb.disabled = false; sb.textContent = '▶ 啟動工具'; poll(); });
+  sb.addEventListener('click', async () => { sb.disabled = true; sb.textContent = '啟動中…'; try { const r = await fetch('/luka/start', {method: 'POST'}); const ct = r.headers.get('content-type') || ''; if (!ct.includes('json')) { toast('辦公室啟動器還是舊版：請關掉「AISO1 辦公室 AI.command」的視窗，再重新雙擊開一次', true); } else { const v = await r.json(); if (!v.ok) toast(v.error || '啟動失敗', true); } } catch (e) { toast('啟動失敗：' + e.message, true); } sb.disabled = false; sb.textContent = '▶ 啟動工具'; poll(); });
   poll(); const iv = setInterval(poll, 1000); setTimeout(buildLights, 60);
   return () => { clearInterval(iv); removeEventListener('resize', onRs); };
 }
