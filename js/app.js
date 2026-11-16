@@ -354,7 +354,7 @@
 
     project(id) {
       const i = P.findIndex((p) => p.id === id);
-      if (i < 0) return `<section class="page"><div class="page-head"><h1>找不到這個專案</h1><p><a href="#/overview" style="color:var(--accent)">← 回到總覽</a></p></div></section>`;
+      if (i < 0) return `<section class="page"><div class="page-head"><h1>找不到這個專案</h1><p><a href="#/office" style="color:var(--accent)">← 回到總覽</a></p></div></section>`;
       const p = P[i], prev = P[(i - 1 + P.length) % P.length], next = P[(i + 1) % P.length], c = accent(i);
       const ups = p.updates || [];
       return `
@@ -362,7 +362,7 @@
           <div class="proj-hero" style="--g:${grad(i)}">
             <div class="crumb">
               <a class="back-btn" href="#/" id="backBtn">← 返回藝廊 <kbd>Esc</kbd></a><br>
-              <a href="#/overview">Side Business</a> / ${esc(p.category)}
+              <a href="#/office">Side Business</a> / ${esc(p.category)}
             </div>
             <h1>${esc(p.name)}</h1>
             <p class="zh">${esc(p.zh)}</p>
@@ -399,7 +399,7 @@
     clearInterval(clockTimer);
     let html, home = false;
     if (!seg) { html = views.home(); home = true; }
-    else if (seg === "overview") html = views.overview();
+    else if (seg === "overview") { location.replace("#/office"); return; }   // 進度總覽已移除：舊連結導去辦公室
     else if (seg === "updates") html = views.updates();
     else if (seg === "office") html = views.office();
     else if (seg === "p") html = views.project(decodeURIComponent(arg || ""));
