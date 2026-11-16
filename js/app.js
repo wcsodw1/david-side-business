@@ -111,13 +111,12 @@
   /* ---------- Mega menu ---------- */
   function buildMega() {
     $("#megaGrid").innerHTML = P.map((p, i) => `
-      <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}">
-        <span class="mega-dot" style="background:${accent(i)}">${initial(p)}</span>
-        <span class="mega-text">
-          <span class="mega-name">${esc(p.name)}</span>
-          <span class="mega-meta"><i class="pill-dot" style="background:${st(p).color}"></i>${esc(st(p).label)} · ${p.progress ?? 0}%</span>
-        </span>
+      <a class="mega-item" role="menuitem" href="#/p/${esc(p.id)}" style="--c:${accent(i)}">
+        <span class="mega-name">${esc(p.name)}</span>
+        <span class="mega-meta"><i class="pill-dot" style="background:${st(p).color}"></i>${esc(st(p).label)}</span>
+        <span class="mega-pg" title="完成度 ${p.progress ?? 0}%"><i style="width:${p.progress ?? 0}%"></i><b>${p.progress ?? 0}%</b></span>
       </a>`).join("");
+    if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip($("#megaGrid"), ".mega-item", (el) => { const id = decodeURIComponent((el.getAttribute("href") || "").replace("#/p/", "")); return P.find((x) => x.id === id); }, (p) => accent(P.indexOf(p)));   // 選單裡滑過專案 → 浮出它自己的進度表
     const h3 = $(".mega-intro h3");
     if (h3) h3.textContent = `${P.length} 個正在長大的夢`;
   }
@@ -219,9 +218,11 @@
             <p class="og-err" id="officeErr" role="alert"></p>
           </form>
         </section>`;
-      const n = P.length || 1;
-      const avg = Math.round(P.reduce((a, p) => a + (p.progress || 0), 0) / n);
-      const by = (k) => P.filter((p) => p.status === k);
+      const PS = P.filter((p) => p.category !== "Work");   // Side Business 儀表板不含 TPI（本業，另外獨立一塊）
+      const tpi = P.find((p) => p.id === "tpi");
+      const n = PS.length || 1;
+      const avg = Math.round(PS.reduce((a, p) => a + (p.progress || 0), 0) / n);
+      const by = (k) => PS.filter((p) => p.status === k);
       const allUps = P.flatMap((p, i) => (p.updates || []).map((u) => ({ ...u, p, i })))
                       .sort((a, b) => String(b.date).localeCompare(String(a.date))).slice(0, 6);
       const R = 34, C = 2 * Math.PI * R;
@@ -254,7 +255,7 @@
       const CLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH", BACKLOG: "BACKLOG" };
       const chip = (e) => `<span class="ps-chip ps-${CLS[e] || "TODO"}">${esc(e === "ON PROCESS" ? "ON-PROCESS" : e)}</span>`;
       const bucket = (p) => { const e = eff(p); return e === "ON PROCESS" ? "proc" : e === "TODO" ? "todo" : e === "BACKLOG" ? "back" : "other"; };
-      const inB = (b) => P.filter((p) => bucket(p) === b);
+      const inB = (b) => PS.filter((p) => bucket(p) === b);
       const OPTS = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"];
       const lastReal = (p) => (p.updates || []).find((u) => !/專案頁建立/.test(u.title));   // 最近一筆真正的更新（略過自動建立的那筆）
       // 沒有進度一句話時，至少顯示目標（AI 總管只設目標時，這列才不會看起來「沒改」）
@@ -286,7 +287,7 @@
             ${sect("其他", "#9aa3b2", inB("other"), true)}
           </div>
           <div class="wb-page" data-wbpage="2" ${wbPage === 2 ? "" : "hidden"}>
-            <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(P, accent) : ""}</section>
+            <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(PS, accent) : ""}</section>
           </div>
           ${window.VIEWER ? "" : `<div class="wb-page" data-wbpage="3" ${wbPage === 3 ? "" : "hidden"}>${permHtml()}</div>`}
         </div>`;
@@ -305,7 +306,7 @@
               <div class="bezel">
                 <div class="mon-top"><span><i class="led on"></i> SIDE BUSINESS 儀表板</span><time id="clock"></time></div>
                 <div class="kpis">
-                  <div><b>${P.length}</b><span>專案</span></div>
+                  <div><b>${PS.length}</b><span>專案</span></div>
                   <div><b>${by("live").length}</b><span>已上線</span></div>
                   <div><b>${by("building").length}</b><span>進行中</span></div>
                   <div><b>${by("idea").length}</b><span>發想中</span></div>
@@ -323,6 +324,19 @@
             </div>
 
           </div>
+          ${tpi ? `<section class="tpi-zone" id="tpiZone" style="--c:${accent(P.indexOf(tpi))}">
+            <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span></div>
+            <div class="tz-grid">
+              <div class="tz-prog">
+                <div class="tz-top"><a class="tz-name" href="#/p/tpi">TPI</a>${chip(eff(tpi))}<span class="tz-pct">${tpi.progress ?? 0}%</span></div>
+                <div class="kb-pg tz-bar"><i style="width:${tpi.progress ?? 0}%"></i></div>
+                <p class="tz-now">${esc(tpi.wbNote || "（還沒有更新）")}</p>
+                ${tpi.next ? `<p class="tz-next"><b>NEXT</b>${esc(tpi.next)}</p>` : ""}
+                <div class="plan-mount" data-tpi-plan>${window.Schedule ? window.Schedule.panel(tpi) : ""}</div>
+              </div>
+              <div class="tz-ai"><h3>🤖 TPI 專屬 AI</h3><div id="tpiAI"></div></div>
+            </div>
+          </section>` : ""}
         </section>`;
     },
 
@@ -457,6 +471,9 @@
         const y = scrollY; render(); scrollTo(0, y);
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
+      { const tp = P.find((x) => x.id === "tpi"), pm = $("[data-tpi-plan]", app);   // TPI 獨立區：專案進度表（可編輯）+ 專屬 AI
+        if (tp && pm && window.Schedule) { const again = () => { const y = scrollY; render(); scrollTo(0, y); }; window.Schedule.bind(pm, tp, again); }
+        const ai = $("#tpiAI", app); if (tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } } }
       // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（辦公室儀表板與 AI 總管視窗共用同一個浮窗）
       if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip(app, ".kb-row[data-pid]", (row) => P.find((x) => x.id === row.dataset.pid), (p) => accent(P.indexOf(p)));
       // AI 總管不再嵌在辦公室頁下方（David 2026-11-15：辦公室只留更新區）；要聊天點 NEWS 下的聖誕老人或 3D 辦公室的機器人

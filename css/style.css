@@ -1277,3 +1277,38 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .og-card input { width: 100%; box-sizing: border-box; padding: 11px 12px; border-radius: 10px; border: 1px solid #d9ccb6; font: 500 15px var(--font); }
 .og-err { min-height: 18px; margin-top: 6px; color: #b02a3c; font-size: 13px; }
 .og-b { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; } .og-b button { padding: 8px 16px; border-radius: 99px; border: 1px solid #d9ccb6; background: transparent; font: 700 13px var(--font); cursor: pointer; } .og-b button[type=submit] { background: #2a2038; color: #fff; border-color: #2a2038; }
+
+/* 專案選單（滑過「辦公室」展開）：跟辦公室儀表板同一套 Hermès 羊皮紙風格 */
+.mega { background: #f7f2e8; backdrop-filter: none; -webkit-backdrop-filter: none; border-bottom: 1px solid #d9ccb6; color: #2a1f17; box-shadow: 0 24px 60px rgba(8,6,20,.35); }
+.mega::after { content: ""; position: absolute; left: 0; right: 0; top: var(--nav-h); height: 3px; background: #e3651d; }
+.mega .eyebrow { color: #e3651d; font: 600 12px var(--font); letter-spacing: .32em; }
+.mega-intro h3 { font: 700 28px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; color: #2a1f17; }
+.mega-intro p { color: #6b5a4a; }
+.mega-all { color: #c4520f; }
+.mega-grid { gap: 8px 22px; }
+.mega-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "n p" "m p"; align-items: center; column-gap: 14px; row-gap: 2px; padding: 10px 14px; border-radius: 14px; border: 0; background: color-mix(in srgb, var(--c) 16%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); }
+.mega-item:hover { background: color-mix(in srgb, var(--c) 28%, #fffdf8); border-color: transparent; transform: none; }
+.mega-name { grid-area: n; font: 700 18px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; color: #2a1f17; }
+.mega-meta { grid-area: m; color: #6b5a4a; margin: 0; }
+.mega-pg { grid-area: p; position: relative; width: 84px; height: 22px; border-radius: 99px; background: #efe6d6; overflow: hidden; display: inline-flex; align-items: center; }
+.mega-pg i { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); }
+.mega-pg b { position: relative; width: 100%; text-align: center; font-size: 12px; font-weight: 800; color: #2a1f17; }
+@media (max-width: 1100px) { .mega-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .mega-grid { grid-template-columns: 1fr; } }
+.mega::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: var(--nav-h); background: #120f28; }
+
+/* TPI 獨立工作區（辦公室頁下方） */
+.tpi-zone { margin-top: 28px; padding: 30px 34px; border-radius: 28px; background: #f7f2e8; color: #2a1f17; border: 1px solid #d9ccb6; position: relative; overflow: hidden; }
+.tpi-zone::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: var(--c, #e3651d); }
+.tz-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.tz-head .eyebrow { color: #e3651d; font: 600 12px var(--font); letter-spacing: .32em; margin: 0; }
+.tz-head h2 { margin: 0; font: 700 30px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; }
+.tz-head span { color: #6b5a4a; font-size: 14px; }
+.tz-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.tz-prog, .tz-ai { background: #fffdf8; border: 1px solid #d9ccb6; border-radius: 18px; padding: 18px 20px; min-width: 0; }
+.tz-top { display: flex; align-items: center; gap: 12px; } .tz-name { font: 700 24px "Noto Serif TC", serif; color: #2a1f17; text-decoration: none; padding: 4px 14px; border-radius: 12px; background: color-mix(in srgb, var(--c) 18%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); } .tz-pct { margin-left: auto; font: 700 22px "Cormorant Garamond", serif; }
+.tz-bar { width: 100%; height: 14px; margin: 10px 0 12px; background: #efe6d6; } .tz-bar i { background: linear-gradient(90deg, var(--c), color-mix(in srgb, var(--c) 60%, #fff)); opacity: 1; }
+.tz-now { margin: 0 0 6px; font-weight: 600; } .tz-next { margin: 0 0 12px; color: #6b5a4a; } .tz-next b { color: #c4520f; letter-spacing: .14em; font-size: 11px; margin-right: 8px; }
+.tz-ai h3 { margin: 0 0 10px; font: 700 16px var(--font); } #tpiAI { min-height: 360px; max-height: 70vh; overflow: auto; }
+.tpi-zone .sch { margin-top: 8px; }
+@media (max-width: 960px) { .tz-grid { grid-template-columns: 1fr; } .tpi-zone { padding: 22px 16px; } }
