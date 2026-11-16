@@ -1254,7 +1254,7 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .pm-t td { vertical-align: top; } .pm-y { color: #2e9b63; } .pm-n { color: #b9b0c4; } .pm-r { font-size: 12px; color: #c47a12; font-weight: 700; }
 
 /* 滑過專案列 → 浮出該專案的進度表 */
-#kbTip { position: fixed; z-index: 9000; pointer-events: none; padding: 14px 16px 12px; border-radius: 16px; background: #fffdf7; color: #2a2038; border: 1px solid #d9ccb6; box-shadow: 0 18px 48px rgba(20,10,40,.35); font: 500 13px var(--font); }
+#kbTip { position: fixed; z-index: 2147483000; pointer-events: none; padding: 14px 16px 12px; border-radius: 16px; background: #fffdf7; color: #2a2038; border: 1px solid #d9ccb6; box-shadow: 0 18px 48px rgba(20,10,40,.35); font: 500 13px var(--font); }
 #kbTip[hidden] { display: none; }
 #kbTip h4 { margin: 0 0 8px; font: 700 16px var(--font); display: flex; align-items: baseline; gap: 10px; padding-left: 10px; border-left: 5px solid var(--c, #e3651d); }
 #kbTip h4 span { font: 600 12px var(--font); color: #8a7a98; }

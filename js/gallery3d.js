@@ -2340,7 +2340,7 @@
     if (window.Doors) try { window.Doors.mount(ctx); } catch (err) { console.error("自動門載入失敗：", err); }
     if (window.Music) try { window.Music.mount(ctx); } catch (err) { console.error("音樂載入失敗：", err); }
     if (window.Ship && !GUEST) try { window.Ship.mount(ctx); } catch (err) { console.error("郵輪載入失敗：", err); }
-    if (window.Robot && !GUEST && !GG) try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
+    if (window.Robot && !GUEST && !GG && window.PERSONA !== "aeris") try { window.Robot.mount(ctx); } catch (err) { console.error("機器人載入失敗：", err); }
     if (window.Rooms && !GUEST) try { window.Rooms.mount(ctx); } catch (err) { console.error("主題房間載入失敗：", err); }
     if (window.Animals && !GUEST) try { window.Animals.mount(ctx); } catch (err) { console.error("動物載入失敗：", err); }
     if (window.Presence && !GG) try { window.Presence.mount(ctx); } catch (err) { console.error("兩人同步載入失敗：", err); }

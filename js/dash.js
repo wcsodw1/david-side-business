@@ -61,6 +61,7 @@
     const refresh = () => { if (!box.isConnected) { window.removeEventListener("ai:applied", refresh); window.removeEventListener("store:change", refresh); return; } draw(true); };
     window.addEventListener("ai:applied", refresh); window.addEventListener("store:change", refresh);
     draw(false);
+    if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip(pane, ".dh-row", (row) => { const a = row.querySelector(".dh-name"), id = a && decodeURIComponent((a.getAttribute("href") || "").replace("#/p/", "")); return (getP() || []).find((p) => p.id === id); }, (p) => `hsl(${(((getP() || []).indexOf(p)) * 47) % 360} 75% 58%)`);   // 滑過專案 → 浮出它自己的進度表
   }
   window.Dash = { html, attach };
 })();

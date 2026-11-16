@@ -240,7 +240,7 @@
         const Y = '<b class="pm-y">✓</b>', N = '<span class="pm-n">✕</span>', R = '<span class="pm-r">唯讀</span>';
         const rows = [
           ["David（ADMIN）", "本人", Y, Y, Y, Y, Y, "全部功能；辦公室需再輸入辦公室密碼"],
-          ["ARIES（朋友）", "Aeris 玩家模式", Y, Y, Y, Y, Y, "粉色角色；看不到「專案目標」欄；辦公室需辦公室密碼"],
+          ["ARIES（朋友）", "Aeris 玩家模式", Y, N, N, N, N, "粉色角色；可逛 3D 藝廊與家；不能進辦公室、用機器人 / AI 總管（辦公室密碼不對她開放）"],
           ["訪客・藝廊（guest-gallery）", "訪客", Y, N, N, N, N, "可以逛 3D 藝廊與各專案房間；沒有機器人 / AI 總管 / 專案進度 / 辦公室 / NEWS"],
           ["訪客・房間（guest-house）", "林晏如等", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
           ["房仲（AGENT）", "David（房仲）", N, N, N, N, N, "跟訪客同一個二樓空間；站在門口講解；穿紫色禮賓員制服"],
@@ -407,7 +407,7 @@
   // 瀏覽器分頁標題前面標上帳號類型：ADMIN（David）/ GUEST（訪客）/ ARIES，開多個分頁時一眼分得出來
   const acctTag = () => ({ david: "[ADMIN] ", guest: "[GUEST] ", gallery: "[GALLERY] ", agent: "[AGENT] ", aeris: "[ARIES] " }[window.PERSONA] || "");
   function render() {
-    let hash = window.GUESTLIKE || window.GALLERYGUEST ? "" : location.hash.replace(/^#\/?/, "");
+    let hash = window.GUESTLIKE || window.GALLERYGUEST || (window.PERSONA === "aeris" && /^#?\/?office/.test(location.hash)) ? "" : location.hash.replace(/^#\/?/, "");
     if (window.VIEWER && !/^(overview|office|p\/)/.test(hash)) { hash = "overview"; if (location.hash !== "#/overview") history.replaceState(null, "", "#/overview"); }   // 客人：沒有 3D 藝廊 / 最新動態，一律回進度總覽   // 訪客永遠只看得到 3D 房子
     const [seg, arg] = hash.split("/");
     if (window.Gallery) window.Gallery.unmount();
@@ -424,7 +424,7 @@
     document.body.classList.toggle("dim", !home);
     if (home) layers.forEach((l) => (l.style.transform = ""));
     app.innerHTML = html + `<footer class="foot-note">© ${new Date().getFullYear()} David's Side Business</footer>`;
-    const GH = { hue, st, esc, go: (id) => { if (!window.GALLERYGUEST) location.hash = "#/p/" + id; }, office: () => { if (!window.GALLERYGUEST) location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) };
+    const GH = { hue, st, esc, go: (id) => { if (!window.GALLERYGUEST) location.hash = "#/p/" + id; }, office: () => { if (!window.GALLERYGUEST && window.PERSONA !== "aeris") location.hash = "#/office"; }, unread: (pid) => (window.News ? window.News.unreadCount(pid) : 0) };
     if (home) {
       let ok = false;
       if (window.Gallery3D && window.Gallery3D.supported()) { try { ok = window.Gallery3D.mount($("#gallery"), P, GH); } catch (err) { console.error("3D 藝廊失敗，改用 2D：", err); window.Gallery3D.unmount(); } }
@@ -457,28 +457,8 @@
         const y = scrollY; render(); scrollTo(0, y);
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
-      // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（任務 + 迷你甘特）
-      (() => {
-        const old = $("#kbTip"); if (old) old.parentNode.removeChild(old);
-        const tip = document.createElement("div"); tip.id = "kbTip"; tip.hidden = true; document.body.appendChild(tip);
-        const ts = (x) => new Date(x + "T00:00:00").getTime(), okd = (x) => /^\d{4}-\d{2}-\d{2}$/.test(String(x || ""));
-        const build = (p) => {
-          const L = (p.tasks || []).filter((t) => okd(t.start) && okd(t.end)), c = accent(P.indexOf(p));
-          if (!L.length) return `<h4 style="--c:${c}">${esc(p.name)}<span>${p.progress ?? 0}%</span></h4><p class="kt-none">還沒有任務。到白板「時程」分頁新增。</p>`;
-          const a0 = Math.min(...L.map((t) => ts(t.start))), b0 = Math.max(...L.map((t) => ts(t.end))) + 86400000, span = Math.max(b0 - a0, 86400000), now = Date.now();
-          const nowPct = now >= a0 && now <= b0 ? ((now - a0) / span) * 100 : -1, done = L.filter((t) => t.status === "Done").length;
-          return `<h4 style="--c:${c}">${esc(p.name)}<span>完成度 ${p.progress ?? 0}% · 任務 ${done}/${L.length} 完成</span></h4>
-            <div class="kt-rows">${L.map((t) => `<div class="kt-r"><b class="kt-n" title="${esc(t.name)}">${esc(t.name)}</b><i class="kt-pri kt-${esc(t.pri)}">${esc(t.pri)}</i><em class="kt-st kt-s-${esc(String(t.status).replace(/\s/g, ""))}">${esc(t.status)}</em><span class="kt-bar"><u style="width:${+t.progress || 0}%"></u></span><span class="kt-d">${esc(t.start.slice(5).replace("-", "/"))}–${esc(t.end.slice(5).replace("-", "/"))}</span><span class="kt-tl"><u style="left:${((ts(t.start) - a0) / span) * 100}%;width:${Math.max(((ts(t.end) + 86400000 - ts(t.start)) / span) * 100, 2)}%"></u>${nowPct >= 0 ? `<s style="left:${nowPct}%"></s>` : ""}</span></div>`).join("")}</div>`;
-        };
-        const place = (row) => { const r = row.getBoundingClientRect(), w = Math.min(760, innerWidth - 24); tip.style.width = w + "px"; tip.style.left = Math.max(12, Math.min(r.left + 24, innerWidth - w - 12)) + "px"; tip.hidden = false; const h = tip.offsetHeight; tip.style.top = (r.bottom + 8 + h <= innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + "px"; };
-        let timer; const hide = () => { clearTimeout(timer); tip.hidden = true; };
-        $$(".kb-row[data-pid]", app).forEach((row) => {
-          row.addEventListener("mouseenter", () => { const p = P.find((x) => x.id === row.dataset.pid); if (!p) return; clearTimeout(timer); timer = setTimeout(() => { tip.innerHTML = build(p); place(row); }, 120); });
-          row.addEventListener("mouseleave", hide);
-          row.addEventListener("click", hide);
-        });
-        window.addEventListener("scroll", hide, { passive: true }); window.addEventListener("hashchange", hide, { once: true });
-      })();
+      // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（辦公室儀表板與 AI 總管視窗共用同一個浮窗）
+      if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip(app, ".kb-row[data-pid]", (row) => P.find((x) => x.id === row.dataset.pid), (p) => accent(P.indexOf(p)));
       // AI 總管不再嵌在辦公室頁下方（David 2026-11-15：辦公室只留更新區）；要聊天點 NEWS 下的聖誕老人或 3D 辦公室的機器人
       const tick = () => { const c = $("#clock"); if (c) c.textContent = new Date().toLocaleTimeString("zh-TW", { hour12: false }); };
       tick(); clockTimer = setInterval(tick, 1000);
@@ -503,6 +483,7 @@
         gal.addEventListener("click", (e) => { if (window.GUESTLIKE || window.GALLERYGUEST) return; if (/^#?\/?$/.test(location.hash)) e.preventDefault(); toEntry(); });
       } }
     if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
+    if (window.PERSONA === "aeris") { const ml = $("#megaLink"), mt = $("#megaTrigger"); if (ml) ml.hidden = true; if (mt) mt.hidden = true; }   // ARIES：沒有辦公室入口
     if (window.GUESTLIKE || window.GALLERYGUEST) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
     if (window.Store) window.Store.init(P);
     buildMega();

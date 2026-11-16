@@ -49,7 +49,7 @@
   // 跟著 NEWS 報紙出現 / 消失（解鎖後才有報紙）
   const sync = () => {
     const news = document.querySelector(".news-fab");
-    if (news && !fab) {
+    if (news && !fab && window.PERSONA !== "aeris") {   // ARIES 不能用 AI 總管
       fab = document.createElement("button"); fab.type = "button"; fab.className = "santa-fab"; fab.setAttribute("aria-label", "找 AI 總管聊天（聖誕老人機器人）");
       fab.innerHTML = SVG + `<span class="santa-tip">AI 總管</span>`;
       fab.addEventListener("click", () => (box ? close() : open()));

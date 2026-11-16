@@ -114,5 +114,25 @@
   }
   function bindOffice(el, P) { if (!el) return; el.querySelector("[data-sch-office-copy]")?.addEventListener("click", () => copy(tsv(P))); }
 
-  window.Schedule = { panel, bind, officeHtml, bindOffice, tsv };
+
+  /* ---------- 滑過專案列 → 浮出該專案自己的進度表（辦公室儀表板 / AI 總管視窗共用） ---------- */
+  function attachTip(root, sel, projOf, colorOf) {
+    if (!root || root.__tip) return; root.__tip = true;
+    let tip = document.getElementById("kbTip"); if (!tip) { tip = document.createElement("div"); tip.id = "kbTip"; tip.hidden = true; document.body.appendChild(tip); }
+    const ts = (x) => new Date(x + "T00:00:00").getTime();
+    const build = (p) => {
+      const L = (p.tasks || []).filter((t) => valid(t.start) && valid(t.end)), c = colorOf ? colorOf(p) : "#e3651d";
+      if (!L.length) return `<h4 style="--c:${c}">${esc(p.name)}<span>${p.progress ?? 0}%</span></h4><p class="kt-none">還沒有任務。到白板「時程」分頁新增。</p>`;
+      const a0 = Math.min(...L.map((t) => ts(t.start))), b0 = Math.max(...L.map((t) => ts(t.end))) + 86400000, span = Math.max(b0 - a0, 86400000), now = Date.now();
+      const nowPct = now >= a0 && now <= b0 ? ((now - a0) / span) * 100 : -1, done = L.filter((t) => t.status === "Done").length;
+      return `<h4 style="--c:${c}">${esc(p.name)}<span>完成度 ${p.progress ?? 0}% · 任務 ${done}/${L.length} 完成</span></h4>
+        <div class="kt-rows">${L.map((t) => `<div class="kt-r"><b class="kt-n" title="${esc(t.name)}">${esc(t.name)}</b><i class="kt-pri kt-${esc(t.pri)}">${esc(t.pri)}</i><em class="kt-st kt-s-${esc(String(t.status).replace(/\s/g, ""))}">${esc(t.status)}</em><span class="kt-bar"><u style="width:${+t.progress || 0}%"></u></span><span class="kt-d">${esc(t.start.slice(5).replace("-", "/"))}–${esc(t.end.slice(5).replace("-", "/"))}</span><span class="kt-tl"><u style="left:${((ts(t.start) - a0) / span) * 100}%;width:${Math.max(((ts(t.end) + 86400000 - ts(t.start)) / span) * 100, 2)}%"></u>${nowPct >= 0 ? `<s style="left:${nowPct}%"></s>` : ""}</span></div>`).join("")}</div>`;
+    };
+    const place = (row) => { const r = row.getBoundingClientRect(), w = Math.min(760, innerWidth - 24); tip.style.width = w + "px"; tip.style.left = Math.max(12, Math.min(r.left + 24, innerWidth - w - 12)) + "px"; tip.hidden = false; const h = tip.offsetHeight; tip.style.top = (r.bottom + 8 + h <= innerHeight ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + "px"; };
+    let timer, cur = null; const hide = () => { clearTimeout(timer); cur = null; tip.hidden = true; };
+    root.addEventListener("mouseover", (e) => { const row = e.target.closest && e.target.closest(sel); if (!row || row === cur || !root.contains(row)) return; const p = projOf(row); if (!p) return; cur = row; clearTimeout(timer); timer = setTimeout(() => { tip.innerHTML = build(p); place(row); }, 120); });
+    root.addEventListener("mouseout", (e) => { const row = e.target.closest && e.target.closest(sel); if (!row || (e.relatedTarget && row.contains(e.relatedTarget))) return; hide(); });
+    root.addEventListener("click", hide); root.addEventListener("scroll", hide, true); window.addEventListener("hashchange", hide);
+  }
+  window.Schedule = { panel, bind, officeHtml, bindOffice, tsv, attachTip };
 })();
