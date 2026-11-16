@@ -242,6 +242,7 @@
           <div class="wb-pager" role="tablist">
             <button type="button" data-wbp="0" class="${wbPage === 0 ? "on" : ""}" role="tab">1 · 進行中 / 待辦</button>
             <button type="button" data-wbp="1" class="${wbPage === 1 ? "on" : ""}" role="tab">2 · Backlog</button>
+            <button type="button" data-wbp="2" class="${wbPage === 2 ? "on" : ""}" role="tab">3 · 專案進度表</button>
           </div>
           <div class="wb-page" data-wbpage="0" ${wbPage === 0 ? "" : "hidden"}>
             ${sect("ON-PROCESS", "#2f7be0", inB("proc"))}
@@ -250,6 +251,9 @@
           <div class="wb-page" data-wbpage="1" ${wbPage === 1 ? "" : "hidden"}>
             ${sect("Backlog", S.backlog ? S.backlog.color : "#7fb4ff", inB("back"))}
             ${sect("其他", "#9aa3b2", inB("other"), true)}
+          </div>
+          <div class="wb-page" data-wbpage="2" ${wbPage === 2 ? "" : "hidden"}>
+            <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(P, accent) : ""}</section>
           </div>
         </div>`;
       const seg = cols.map((k) => `<i style="flex:${by(k).length};background:${S[k].color}" title="${esc(S[k].label)} ${by(k).length}"></i>`).join("");
@@ -285,7 +289,6 @@
             </div>
 
           </div>
-          <section class="office-sched" aria-label="時程表">${window.Schedule ? window.Schedule.officeHtml(P, accent) : ""}</section>
         </section>`;
     },
 
