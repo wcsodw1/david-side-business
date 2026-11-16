@@ -279,7 +279,7 @@
     }
     for (let ia = 0; ia < nA; ia++) for (let it = 0; it < nT; it++) { const a = ia * (nT + 1) + it, b = a + nT + 1; idx.push(a, b, a + 1, b, b + 1, a + 1); }
     const bg = new THREE.BufferGeometry(); bg.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); bg.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2)); bg.setIndex(idx); bg.computeVertexNormals();
-    const back = new THREE.Mesh(bg, mat); back.castShadow = true; grp.add(back);
+    const back = new THREE.Mesh(bg, mat); back.castShadow = true; back.userData.soft = "curtain"; grp.add(back);
     // 臉兩側的長髮束：從頭頂中分線 → 沿著頭皮到太陽穴 → 垂過肩膀落在胸前（一綹一綹，有波浪）
     const nL = 12;
     for (const sx of [-1, 1]) for (let i = 0; i < nL; i++) {
@@ -293,7 +293,7 @@
       pts.push(new THREE.Vector3(sx * (0.138 + 0.014 * u + w(2)), -0.17 + 0.02 * (L + 0.3), 0.118 + 0.01 * u));
       pts.push(new THREE.Vector3(sx * (0.142 + 0.016 * u + w(3) + 0.4 * fl), L * 0.8, 0.124 + 0.008 * u));
       pts.push(new THREE.Vector3(sx * (0.145 + 0.016 * u + w(4) + fl), L, 0.122 + 0.012 * (i % 3)));
-      ribbon(pts, 0.05 + 0.005 * (i % 2), 40, 0.8);
+      ribbon(pts, 0.05 + 0.005 * (i % 2), 40, 0.8).userData.soft = "ribbon";   // 會飄的髮束
     }
     // 通透的空氣瀏海：從中分線往兩側帶開，髮尾落在眉毛到顴骨之間（細髮絲，看得到額頭）
     const nB = 17;
@@ -303,6 +303,44 @@
       ribbon(pts, 0.015, 22, 0.8);
     }
     return grp;
+  }
+
+  /* ----- 軟髮物理：長髮會受重力下垂、跟著頭部移動慢半拍地搖擺（躺下時髮尾會落向地面）----- */
+  const rigs = []; let rafId = 0;
+  function softHair(THREE, head, hair) {
+    const parts = [];
+    hair.traverse((m) => {
+      if (!m.isMesh || !m.userData.soft) return;
+      const pos = m.geometry.attributes.position, uv = m.geometry.attributes.uv, curtain = m.userData.soft === "curtain", w = new Float32Array(pos.count);
+      for (let i = 0; i < pos.count; i++) { const t = curtain ? 1 - uv.getY(i) : uv.getY(i) / 2; w[i] = curtain ? Math.pow(clamp((t - 0.12) / 0.88, 0, 1), 1.5) : Math.pow(clamp((t - 0.5) / 0.5, 0, 1), 1.4); }
+      parts.push({ pos, base: pos.array.slice(), w });
+    });
+    if (!parts.length) return;
+    rigs.push({ head, parts, o: new THREE.Vector3(), v: new THREE.Vector3(), last: new THREE.Vector3(), has: false, p: new THREE.Vector3(), q: new THREE.Quaternion(), sc: new THREE.Vector3(), THREE });
+    if (!rafId) rafId = requestAnimationFrame(stepHair);
+  }
+  let lastT = 0;
+  function stepHair(now) {
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastT) / 1000)); lastT = now;
+    for (let r = rigs.length - 1; r >= 0; r--) {
+      const R = rigs[r], T = R.THREE; let top = R.head; while (top.parent) top = top.parent;
+      if (!top.isScene) { rigs.splice(r, 1); continue; }   // 角色已不在場景裡
+      R.head.updateWorldMatrix(true, false); R.head.matrixWorld.decompose(R.p, R.q, R.sc);
+      if (R.has) R.o.sub(R.p.clone().sub(R.last)); R.has = true; R.last.copy(R.p);   // 頭動了，髮絲留在原地 → 相對往後拖
+      const K = 70, C = 7.5; R.v.addScaledVector(R.o, -K * dt).addScaledVector(R.v, -C * dt); R.o.addScaledVector(R.v, dt);
+      if (R.o.length() > 0.14) R.o.setLength(0.14);
+      const qi = R.q.clone().invert(), gl = new T.Vector3(0, -1, 0).applyQuaternion(qi), ol = R.o.clone().applyQuaternion(qi);
+      const dx = (gl.x - 0) * 0.42 + ol.x * 1.7, dy = (gl.y + 1) * 0.42 + ol.y * 1.7, dz = gl.z * 0.42 + ol.z * 1.7;
+      for (const P of R.parts) {
+        const a = P.pos.array, b = P.base, w = P.w;
+        for (let i = 0, n = w.length; i < n; i++) {
+          const k = w[i]; if (k < 0.002) continue; const j = i * 3, sw = Math.sin(now / 1100 + b[j] * 22 + b[j + 2] * 9) * 0.006 * k;
+          a[j] = b[j] + dx * k + sw; a[j + 1] = b[j + 1] + dy * k; a[j + 2] = b[j + 2] + dz * k + sw * 0.6;
+        }
+        P.pos.needsUpdate = true;
+      }
+    }
+    rafId = rigs.length ? requestAnimationFrame(stepHair) : 0;
   }
 
   function apply(THREE, av, who) {
@@ -319,7 +357,7 @@
     const skinM = new THREE.MeshStandardMaterial({ color: new THREE.Color(shade(s.skin, -14)), roughness: 0.6 });
     for (const sx of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 10), skinM); ear.position.set(sx * (s.W - 0.002), 0.075, -0.004); ear.scale.set(0.5, 1.15, 0.85); head.add(ear); }
     seed = 23;
-    const hair = who === "david" ? davidHair(THREE, s) : who === "guest" ? guestHair(THREE, s) : aerisHair(THREE, s); head.add(hair);
+    const hair = who === "david" ? davidHair(THREE, s) : who === "guest" ? guestHair(THREE, s) : aerisHair(THREE, s); head.add(hair); if (who === "aeris") softHair(THREE, head, hair);
     const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.25, metalness: 0.9 });
     if (who === "guest") for (const sx of [-1, 1]) { const gold = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.25, metalness: 0.9 }); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0017, 8, 24), gold); ring.position.set(sx * (s.W + 0.003), 0.055, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小金圈耳環
     if (who === "aeris") for (const sx of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0016, 8, 28), silver); ring.position.set(sx * (s.W + 0.004), 0.028, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小耳環
