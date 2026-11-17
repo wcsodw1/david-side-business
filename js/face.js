@@ -68,22 +68,28 @@
     };
     const saved = () => get();
     const paintBtns = () => {
-      o.btns.innerHTML = `<button type="button" class="fc-go">${saved() ? "重新登錄（會取代舊的）" : "開始登錄"}</button>${saved() ? `<button type="button" class="fc-add">＋ 再加一種樣子（戴 / 不戴眼鏡）</button><button type="button" class="fc-del">刪除已登錄的臉與密碼</button>` : ""}`;
-      o.btns.querySelector(".fc-del")?.addEventListener("click", () => { try { localStorage.removeItem(KEY); } catch (_) {} o.status("已刪除。"); paintBtns(); });
+      const has = !!saved(), fld = o.ov.querySelector(".fc-f"), pr = o.ov.querySelector(".fc-p");
+      if (fld) fld.hidden = has && !o.redo; if (pr) pr.hidden = has && !o.redo;   // 登錄過就不用再輸入密碼
+      o.btns.innerHTML = has && !o.redo
+        ? `<button type="button" class="fc-add fc-main">＋ 再加一種樣子（戴 / 不戴眼鏡）</button><button type="button" class="fc-done">完成</button><button type="button" class="fc-redo">重新登錄（要重新輸入密碼）</button><button type="button" class="fc-del">刪除已登錄的臉與密碼</button>`
+        : `<button type="button" class="fc-go">開始登錄</button>${has ? `<button type="button" class="fc-done">取消</button>` : ""}`;
+      o.btns.querySelector(".fc-done")?.addEventListener("click", () => o.close());
+      o.btns.querySelector(".fc-redo")?.addEventListener("click", () => { o.redo = true; o.status("請輸入密碼後重新登錄。"); paintBtns(); });
+      o.btns.querySelector(".fc-del")?.addEventListener("click", () => { try { localStorage.removeItem(KEY); } catch (_) {} o.redo = false; o.status("已刪除。"); paintBtns(); });
       o.btns.querySelector(".fc-add")?.addEventListener("click", async (e) => {
         const btn = e.target; btn.disabled = true;
         try { o.status("載入辨識模型…"); const cur = saved(); const d = await grab(5, "加入新樣子"); if (!d) { btn.disabled = false; return; }
-          cur.d = cur.d.concat(d).slice(-24); localStorage.setItem(KEY, JSON.stringify(cur)); o.status(`✅ 已加入新樣子（共 ${cur.d.length} 筆特徵）。`); btn.disabled = false;
+          cur.d = cur.d.concat(d).slice(-24); localStorage.setItem(KEY, JSON.stringify(cur)); o.status(`✅ 已加入新樣子（共 ${cur.d.length} 筆特徵）。可以按「完成」了。`); btn.disabled = false;
         } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
       });
-      o.btns.querySelector(".fc-go").addEventListener("click", async (e) => {
+      o.btns.querySelector(".fc-go")?.addEventListener("click", async (e) => {
         const btn = e.target; btn.disabled = true;
         try {
           const pw = q("pw").value.trim(), op = q("op").value.trim(), tp = q("tp").value.trim(), tk = q("tk").value.trim();
           const err = opts && opts.verify ? await opts.verify(pw, tp, tk, op) : ""; if (err) { o.status(err); btn.disabled = false; return; }
           o.status("載入辨識模型…"); const d = await grab(6, "登錄中（目前的樣子）"); if (!d) { btn.disabled = false; return; }
-          localStorage.setItem(KEY, JSON.stringify({ d, pw, op, tp, tk, at: Date.now() }));
-          o.status("✅ 已登錄。現在請換一種樣子（拿下或戴上眼鏡），按「＋ 再加一種樣子」。"); paintBtns();
+          localStorage.setItem(KEY, JSON.stringify({ d, pw, op, tp, tk, at: Date.now() })); ["pw", "op", "tp", "tk"].forEach((n) => { q(n).value = ""; });
+          o.redo = false; o.status("✅ 已登錄，以後不用再輸入密碼。想更穩可以換一種樣子（拿下／戴上眼鏡）再加一次，不需要就按「完成」。"); paintBtns();
         } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
       });
     };

@@ -1587,3 +1587,4 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 @media (max-width: 760px) { .sch-split .sch-l th:nth-child(9), .sch-split .sch-l td:nth-child(9) { display: none; } }
 .fc-b .fc-add { background: #f4efe3; }
 .fc-f { grid-template-columns: 1fr 1fr; } .fc-f input { min-width: 0; }
+.fc-b .fc-main { background: #8b1e3f; color: #fff; border-color: #8b1e3f; } .fc-b .fc-done { background: #fff; }
