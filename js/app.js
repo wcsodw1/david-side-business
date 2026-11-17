@@ -497,9 +497,12 @@
       // 上方 Gallery / TPI：滑鼠移過去就切換（也可以點）
       { const sw = (k) => { officeTab = k; $$("[data-otb]", app).forEach((x) => x.classList.toggle("on", x.dataset.otb === k)); $$("[data-ot]", app).forEach((x) => (x.hidden = x.dataset.ot !== k)); };
         $$("[data-otb]", app).forEach((b) => { b.addEventListener("mouseenter", () => sw(b.dataset.otb)); b.addEventListener("click", () => sw(b.dataset.otb)); b.addEventListener("focus", () => sw(b.dataset.otb)); }); }
-      { const tp = P.find((x) => x.id === "tpi"), pm = $("[data-tpi-plan]", app);   // TPI 獨立區：專案進度表（可編輯）+ 專屬 AI
-        if (tp && pm && window.Schedule) { const again = () => { const y = scrollY; render(); scrollTo(0, y); }; window.Schedule.bind(pm, tp, again); }
-        const ai = $("#tpiAI", app); if (tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } } }
+      { const tz = $(".tz-grid", app), V = window.TpiVault;   // TPI 內容加密：沒解鎖就只顯示輸入密碼的表單
+        if (tz && V && V.has && V.locked) { tz.innerHTML = `<form class="tz-lock" autocomplete="off"><h3>🔒 TPI 內容已加密</h3><p>請輸入 TPI 密碼與金鑰（只記在這個分頁，關掉就失效）。</p><input type="password" name="pw" placeholder="TPI 密碼" autocomplete="off"><input type="password" name="key" placeholder="金鑰" autocomplete="off"><button type="submit">解鎖</button><span class="tz-err" hidden>密碼或金鑰不對</span></form>`;
+          const f = tz.querySelector("form"); f.addEventListener("submit", async (e) => { e.preventDefault(); const ok = await V.unlock(f.pw.value, f.key.value); if (ok) { if (window.Store) window.Store.init(P); buildMega(); render(); } else f.querySelector(".tz-err").hidden = false; }); } }
+      { const tp = P.find((x) => x.id === "tpi"), pm = $("[data-tpi-plan]", app); const LK = window.TpiVault && window.TpiVault.has && window.TpiVault.locked;    // TPI 獨立區：專案進度表（可編輯）+ 專屬 AI
+        if (!LK && tp && pm && window.Schedule) { const again = () => { const y = scrollY; render(); scrollTo(0, y); }; window.Schedule.bind(pm, tp, again); }
+        const ai = $("#tpiAI", app); if (!LK && tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } } }
       // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（辦公室儀表板與 AI 總管視窗共用同一個浮窗）
       if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip(app, ".kb-row[data-pid]", (row) => P.find((x) => x.id === row.dataset.pid), (p) => accent(P.indexOf(p)));
       // AI 總管不再嵌在辦公室頁下方（David 2026-11-15：辦公室只留更新區）；要聊天點 NEWS 下的聖誕老人或 3D 辦公室的機器人
@@ -532,6 +535,7 @@
     buildMega();
     if (window.News && !window.GUESTLIKE && !window.GALLERYGUEST) window.News.mount(P, {});
     render();
+    if (window.TpiVault) window.TpiVault.ready.then((ok) => { if (ok) { if (window.Store) window.Store.init(P); buildMega(); render(); } });
   }
   function lock() {
     document.title = SITE.name || "David's Side Business";

@@ -177,20 +177,10 @@ window.PROJECTS = [
     category: "Work",
     status: "building",
     progress: 50,
-    wbDefault: { status: "TODO", note: "Ryan 來信：請提供相關測試與報告給 Pierre Team。建議 OrientAI 針對 RAG 與 skills 的相關 E2E 情境做效能測試，以及多 sessions 的併發測試。", noteAt: "2026-11-16", next: "整理 RAG / skills E2E 情境效能測試與多 sessions 併發測試的計畫與報告，提供給 Pierre Team；另外安排 Sean 會議（時間、議題待確認）。" },
-    summary: "TPI 辦公室：本業工作的進度、待辦與會議整理。",
-    tasks: [
-      {name:"整理 RAG / skills E2E 效能測試計畫",pri:"P0",owner:"David",status:"Doing",progress:30,start:"2026-11-16",end:"2026-11-20",note:"Ryan 來信需求"},
-      {name:"多 sessions 併發測試",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-20",end:"2026-11-26",note:""},
-      {name:"測試報告給 Pierre Team",pri:"P0",owner:"David",status:"To Do",progress:0,start:"2026-11-26",end:"2026-11-30",note:""},
-      {name:"安排 Sean 會議（時間、議題待確認）",pri:"P1",owner:"David",status:"To Do",progress:0,start:"2026-11-16",end:"2026-11-18",note:""},
-    ],   // 預設時程（草案，可在白板「時程」分頁改）
+    summary: "TPI 辦公室：內容已加密，到辦公室輸入 TPI 密碼與金鑰後顯示。",
+    tasks: [],   // 實際內容在 data/tpi.enc.js（AES-GCM 加密）
     links: [],
-    updates: [
-      { date: "2026-11-16", title: "新事項：安排 Sean 會議", text: "待安排與 Sean 的會議（時間、議題待確認）。" },
-      { date: "2026-11-16", title: "新事項：測試與報告給 Pierre Team", text: "Ryan 來信：請提供相關測試與報告給 Pierre Team。建議 OrientAI 針對 RAG 與 skills 的 E2E 情境做效能測試，以及多 sessions 的併發測試。" },
-      { date: "2026-11-16", title: "辦公室建立", text: "加入平台，新增 TPI 辦公室房間，之後在這裡記錄工作進度。" },
-    ],
+    updates: [],
   },
   {
     id: "pickleball",

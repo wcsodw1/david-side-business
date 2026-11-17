@@ -1354,3 +1354,41 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 body.dim .painting-shade { background: linear-gradient(180deg, rgba(74,12,32,.82), rgba(52,8,24,.88)); mix-blend-mode: normal; }
 body.dim .painting { filter: blur(22px) saturate(.7) hue-rotate(-25deg); }
 body.dim .nav::before, .nav.mega-open::before { background: rgba(44,8,20,.82); }
+
+/* ===== 風格 E：日式無印 × 和紙（取代上面的酒紅暗背景；3D 藝廊與登入畫面不受影響）===== */
+body.dim:not(.gl3d) {
+  --bg: #f1ede3; --ink: #2b2723; --ink-2: rgba(43,39,35,.68); --ink-3: rgba(43,39,35,.46); --line: rgba(43,39,35,.14);
+  --glass: rgba(251,249,243,.8); --accent: #8b1e3f; color-scheme: light;
+  background-color: #f1ede3;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9 .06' numOctaves='3' seed='4'/><feColorMatrix values='0 0 0 0 .55  0 0 0 0 .5  0 0 0 0 .42  0 0 0 .13 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+body.dim:not(.gl3d) .painting, body.dim:not(.gl3d) .painting-shade { display: none; }
+body.dim:not(.gl3d) .nav::before, body.dim:not(.gl3d) .nav.mega-open::before { background: rgba(241,237,227,.94); border-bottom: 1px solid #d9d2c3; backdrop-filter: blur(10px); }
+body.dim:not(.gl3d) .nav-link { text-shadow: none; color: #2b2723; }
+body.dim:not(.gl3d) .nav-link:hover, body.dim:not(.gl3d) .has-mega.hot .nav-link { background: rgba(139,30,63,.08); }
+body.dim:not(.gl3d) .nav-link.ghost, body.dim:not(.gl3d) .brand { color: #2b2723; }
+body.dim:not(.gl3d) .brand-dot { background: #8b1e3f; box-shadow: none; width: 12px; height: 12px; }
+body.dim:not(.gl3d) .page-head h1, body.dim:not(.gl3d) .office-room h2 { font-weight: 500; letter-spacing: .04em; }
+/* 面板：平、細線、小圓角、無陰影 */
+body.dim:not(.gl3d) .office-room .kb, body.dim:not(.gl3d) .office-dash, body.dim:not(.gl3d) .tpi-zone, body.dim:not(.gl3d) .tz-card { box-shadow: none !important; border: 1px solid #d9d2c3; background: #fbf9f3; border-radius: 8px; }
+body.dim:not(.gl3d) .office-ai { background: #fbf9f3; border: 1px solid #d9d2c3; color: #2b2723; border-radius: 8px; }
+body.dim:not(.gl3d) .office-ai .oa-sub { color: rgba(43,39,35,.7); }
+body.dim:not(.gl3d) .ot-switch button, body.dim:not(.gl3d) .mega-opts button { background: transparent; border: 1px solid #cfc7b6; color: #2b2723; border-radius: 4px; box-shadow: none; }
+body.dim:not(.gl3d) .ot-switch button.on, body.dim:not(.gl3d) .mega-opts button.on, body.dim:not(.gl3d) .ot-switch button[aria-pressed="true"] { background: #8b1e3f; border-color: #8b1e3f; color: #fff; }
+body.dim:not(.gl3d) .ot-switch button *, body.dim:not(.gl3d) .mega-opts button * { color: inherit; }
+body.dim:not(.gl3d) .sch-t th { background: #3a342d; }
+body.dim:not(.gl3d) .sch-t th.g { background: #d8cdb6; color: #3a2f1c; }
+body.dim:not(.gl3d) .sch-scroll { border-color: #d9d2c3; border-radius: 6px; }
+body.dim:not(.gl3d) .sch-add button { background: #8b1e3f; }
+body.dim:not(.gl3d) .sch-t .bar i, body.dim:not(.gl3d) .kb-pg i { opacity: .9; }
+body.dim:not(.gl3d) .back-btn, body.dim:not(.gl3d) .ghost-btn { color: #2b2723; border-color: #cfc7b6; background: transparent; }
+
+/* TPI 解鎖表單 + 和紙風浮窗 */
+.tz-lock { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 26px 22px; border: 1px dashed #cfc7b6; border-radius: 8px; background: #fbf9f3; color: #2b2723; }
+.tz-lock h3 { flex: 1 0 100%; font-size: 16px; font-weight: 600; }
+.tz-lock p { flex: 1 0 100%; font-size: 13px; opacity: .7; }
+.tz-lock input { flex: 1 1 200px; font: 500 14px var(--font); padding: 9px 11px; border: 1px solid #cfc7b6; border-radius: 6px; background: #fff; color: #2b2723; }
+.tz-lock button { padding: 9px 22px; border: 0; border-radius: 6px; background: #8b1e3f; color: #fff; font: 700 14px var(--font); cursor: pointer; }
+.tz-err { color: #b3122f; font-size: 13px; }
+body.dim:not(.gl3d) #kbTip { background: #fbf9f3; border: 1px solid #d9d2c3; box-shadow: 0 8px 24px rgba(60,40,30,.12); border-radius: 8px; color: #2b2723; }
+body.dim:not(.gl3d) #kbTip .kt-bar i, body.dim:not(.gl3d) #kbTip .bar i { background: #8b1e3f; }
