@@ -92,7 +92,7 @@
 ` +
     `以下是目前所有專案的白板資料（需要時再引用，不要整份複述）：\n` +
     (p.projects || []).map((q) => `- ${q.name}${q.zh ? "（" + q.zh + "）" : ""}｜目標：${q.goal || "未設定"}｜狀態：${q.wbStatus || "未設定"}${q.wbNote ? "（" + q.wbNote + "）" : ""}｜Next Step：${q.next || "未設定"}｜完成度：${q.progress ?? 0}%${(q.milestones || []).length ? "（里程碑：" + q.milestones.map((m) => (m.done ? "✓" : "○") + m.text).join("、") + "）" : ""}`).join("\n");
-  const sysPrompt = (p) => p.office ? officePrompt(p) : `你是「${p.name}${p.zh ? "（" + p.zh + "）" : ""}」這個專案白板上的助理，用繁體中文、簡潔直接地回答。` +
+  const sysPrompt = (p) => p.sys ? (typeof p.sys === "function" ? p.sys() : String(p.sys)) : p.office ? officePrompt(p) : `你是「${p.name}${p.zh ? "（" + p.zh + "）" : ""}」這個專案白板上的助理，用繁體中文、簡潔直接地回答。` +
     `專案目標：${p.goal || "尚未設定"}。目前狀態：${p.wbStatus || "未設定"}${p.wbNote ? "（" + p.wbNote + "）" : ""}。Next Step：${p.next || "尚未設定"}。需要時可以參考這些資訊，不需要時不要複述。`;
   const dataParts = (u) => { const m = /^data:(.*?);base64,(.*)$/.exec(u) || []; return { type: m[1] || "image/jpeg", data: m[2] || "" }; };
 
@@ -209,7 +209,7 @@
       return { text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"), imgs: [] };
     }
     if (isLocal()) {
-      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store && !opt.compare, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
+      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store && !opt.compare && !p.noTools, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
       for (const m of hist) {
         if (m.role === "user") {
           const noEyes = cfg.provider === "aiso1" && aiso.vision === false;   // 目前的模型不能看圖：不要把圖送過去（不然整段對話都會報錯），改成文字說明
