@@ -281,7 +281,8 @@
       const CLS = { TODO: "TODO", PENDING: "PENDING", BLOCK: "BLOCK", "ON PROCESS": "ON-PROCESS", FINISH: "FINISH", BACKLOG: "BACKLOG" };
       const chip = (e) => `<span class="ps-chip ps-${CLS[e] || "TODO"}">${esc(e === "ON PROCESS" ? "ON-PROCESS" : e)}</span>`;
       const bucket = (p) => { const e = eff(p); return e === "ON PROCESS" ? "proc" : e === "TODO" ? "todo" : e === "BACKLOG" ? "back" : "other"; };
-      const inB = (b) => PS.filter((p) => bucket(p) === b);
+      const lastAt = (p) => { let m = 0; (p.updates || []).forEach((u) => { if (/專案頁建立/.test(u.title || "")) return; m = Math.max(m, u.at || Date.parse((u.date || "1970-01-01") + "T00:00:00") || 0); }); if (p.wbNoteAt) m = Math.max(m, Date.parse(p.wbNoteAt + "T00:00:00") || 0); try { const a = window.Store && window.Store.acts && window.Store.acts(p.id)[0]; if (a) m = Math.max(m, a.at); } catch (_) {} return m; };
+      const inB = (b) => PS.map((p, i) => ({ p, i, t: lastAt(p) })).filter((x) => bucket(x.p) === b).sort((a, c) => c.t - a.t || a.i - c.i).map((x) => x.p);   // 有更新的跳到最上面
       const OPTS = ["TODO", "ON PROCESS", "PENDING", "BLOCK", "FINISH"];
       const lastReal = (p) => (p.updates || []).find((u) => !/專案頁建立/.test(u.title));   // 最近一筆真正的更新（略過自動建立的那筆）
       // 沒有進度一句話時，至少顯示目標（AI 總管只設目標時，這列才不會看起來「沒改」）

@@ -39,7 +39,7 @@
   /* ---------- 單一專案的時程分頁 ---------- */
   function panel(p) {
     const tasks = p.tasks || [], ws = weeksFor(tasks), who = window.PERSONA === "aeris" ? "ARIES" : "David";
-    const G = p.id === "tpi", seq = G ? GRPS.flatMap((g) => { const L = tasks.filter((t) => grpOf(p, t) === g); return L.length ? [{ h: g, n: L.length }, ...L] : []; }) : tasks;
+    const G = p.id === "tpi", seq = G ? GRPS.flatMap((g) => { const L = tasks.map((t, i) => ({ t, i })).filter((x) => grpOf(p, x.t) === g).sort((a, b) => (+b.t.updAt || Date.parse(updOf(b.t, p) + "T00:00:00") || 0) - (+a.t.updAt || Date.parse(updOf(a.t, p) + "T00:00:00") || 0) || a.i - b.i).map((x) => x.t); return L.length ? [{ h: g, n: L.length }, ...L] : []; }) : tasks;
     const rowL = (t) => `
       <tr data-tid="${esc(t.id)}">
         <td class="nm"><input data-f="name" value="${esc(t.name)}" aria-label="任務"></td>
