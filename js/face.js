@@ -53,28 +53,41 @@
 
   /* 登錄：先驗證密碼（verify 回傳空字串=通過，否則是錯誤訊息），再拍 6 張特徵 */
   async function enroll(opts) {
-    const o = panel("👤 人臉登錄", `<p class="fc-p">登錄後，這台電腦開啟網站會用鏡頭自動進入，並自動解鎖 TPI。<br>網站密碼、辦公室密碼、TPI 密碼與金鑰會存在這個瀏覽器（localStorage），請確認這是你自己的電腦。</p>
+    const o = panel("👤 人臉登錄", `<p class="fc-p">登錄後，這台電腦開啟網站會用鏡頭自動進入，並自動解鎖 TPI。<br>建議拍兩種樣子（例如戴眼鏡、不戴眼鏡），認得比較穩。<br>網站密碼、辦公室密碼、TPI 密碼與金鑰會存在這個瀏覽器（localStorage），請確認這是你自己的電腦。</p>
       <div class="fc-f"><input type="password" name="pw" placeholder="網站密碼" autocomplete="off"><input type="password" name="op" placeholder="辦公室密碼" autocomplete="off"><input type="password" name="tp" placeholder="TPI 密碼" autocomplete="off"><input type="password" name="tk" placeholder="金鑰" autocomplete="off"></div>`);
     const q = (n) => o.ov.querySelector(`[name=${n}]`);
-    o.status(get() ? "已登錄過，可重新登錄或刪除。" : "尚未登錄。");
-    o.btns.innerHTML = `<button type="button" class="fc-go">開始登錄</button>${get() ? `<button type="button" class="fc-del">刪除已登錄的臉與密碼</button>` : ""}`;
-    o.btns.querySelector(".fc-del")?.addEventListener("click", () => { try { localStorage.removeItem(KEY); } catch (_) {} o.status("已刪除。"); o.btns.querySelector(".fc-del").remove(); });
-    o.btns.querySelector(".fc-go").addEventListener("click", async (e) => {
-      const btn = e.target; btn.disabled = true;
-      try {
-        const pw = q("pw").value.trim(), op = q("op").value.trim(), tp = q("tp").value.trim(), tk = q("tk").value.trim();
-        const err = opts && opts.verify ? await opts.verify(pw, tp, tk, op) : ""; if (err) { o.status(err); btn.disabled = false; return; }
-        o.status("載入辨識模型…"); const f = await load(); if (o.dead) return;
-        o.status("開啟鏡頭…"); await camera(o); if (o.dead) return;
-        const d = []; const t0 = Date.now();
-        while (!o.dead && d.length < 6 && Date.now() - t0 < 40000) {
-          const r = await detect(f, o.video).catch(() => null);
-          if (r) { d.push(Array.from(r.descriptor)); o.status(`登錄中 ${d.length}/6（稍微轉動頭部）`); await sleep(600); } else { o.status("沒看到臉，請正對鏡頭"); await sleep(300); }
-        }
-        if (o.dead) return; if (d.length < 6) { o.status("拍攝不足，請重試"); btn.disabled = false; return; }
-        localStorage.setItem(KEY, JSON.stringify({ d, pw, op, tp, tk, at: Date.now() })); o.status("✅ 登錄完成。下次開啟網站會自動辨識。"); await sleep(1500); o.close();
-      } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
-    });
+    const grab = async (n, label) => {   // 拍 n 張特徵；回傳陣列或 null
+      const f = await load(); if (o.dead) return null; if (!o.stream) { o.status("開啟鏡頭…"); await camera(o); if (o.dead) return null; }
+      const d = [], t0 = Date.now();
+      while (!o.dead && d.length < n && Date.now() - t0 < 40000) {
+        const r = await detect(f, o.video).catch(() => null);
+        if (r) { d.push(Array.from(r.descriptor)); o.status(`${label} ${d.length}/${n}（稍微轉動頭部）`); await sleep(600); } else { o.status("沒看到臉，請正對鏡頭"); await sleep(300); }
+      }
+      return o.dead ? null : d.length < n ? (o.status("拍攝不足，請重試"), null) : d;
+    };
+    const saved = () => get();
+    const paintBtns = () => {
+      o.btns.innerHTML = `<button type="button" class="fc-go">${saved() ? "重新登錄（會取代舊的）" : "開始登錄"}</button>${saved() ? `<button type="button" class="fc-add">＋ 再加一種樣子（戴 / 不戴眼鏡）</button><button type="button" class="fc-del">刪除已登錄的臉與密碼</button>` : ""}`;
+      o.btns.querySelector(".fc-del")?.addEventListener("click", () => { try { localStorage.removeItem(KEY); } catch (_) {} o.status("已刪除。"); paintBtns(); });
+      o.btns.querySelector(".fc-add")?.addEventListener("click", async (e) => {
+        const btn = e.target; btn.disabled = true;
+        try { o.status("載入辨識模型…"); const cur = saved(); const d = await grab(5, "加入新樣子"); if (!d) { btn.disabled = false; return; }
+          cur.d = cur.d.concat(d).slice(-24); localStorage.setItem(KEY, JSON.stringify(cur)); o.status(`✅ 已加入新樣子（共 ${cur.d.length} 筆特徵）。`); btn.disabled = false;
+        } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
+      });
+      o.btns.querySelector(".fc-go").addEventListener("click", async (e) => {
+        const btn = e.target; btn.disabled = true;
+        try {
+          const pw = q("pw").value.trim(), op = q("op").value.trim(), tp = q("tp").value.trim(), tk = q("tk").value.trim();
+          const err = opts && opts.verify ? await opts.verify(pw, tp, tk, op) : ""; if (err) { o.status(err); btn.disabled = false; return; }
+          o.status("載入辨識模型…"); const d = await grab(6, "登錄中（目前的樣子）"); if (!d) { btn.disabled = false; return; }
+          localStorage.setItem(KEY, JSON.stringify({ d, pw, op, tp, tk, at: Date.now() }));
+          o.status("✅ 已登錄。現在請換一種樣子（拿下或戴上眼鏡），按「＋ 再加一種樣子」。"); paintBtns();
+        } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
+      });
+    };
+    o.status(saved() ? "已登錄過。可再加一種樣子，或重新登錄。" : "尚未登錄。");
+    paintBtns();
   }
   window.FaceLogin = { enrolled: () => !!get(), hasOffice: () => !!(get() && get().op), scan, enroll };
 })();

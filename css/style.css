@@ -1585,3 +1585,5 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 
 .sch-split .sch-l td.upd { font-size: 13.5px; color: #7a6a55; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 760px) { .sch-split .sch-l th:nth-child(9), .sch-split .sch-l td:nth-child(9) { display: none; } }
+.fc-b .fc-add { background: #f4efe3; }
+.fc-f { grid-template-columns: 1fr 1fr; } .fc-f input { min-width: 0; }
