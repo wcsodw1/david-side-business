@@ -531,6 +531,7 @@
     if (window.VIEWER) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { const a = el.matches("a") ? el : null; if (a && /^#\/(updates)?$/.test(a.getAttribute("href") || "")) el.hidden = true; });   // 客人：拿掉「逛藝廊」「最新動態」
     if (window.PERSONA === "aeris") { const ml = $("#megaLink"), mt = $("#megaTrigger"); if (ml) ml.hidden = true; if (mt) mt.hidden = true; }   // ARIES：沒有辦公室入口
     if (window.GUESTLIKE || window.GALLERYGUEST) [...nav.querySelectorAll(".nav-links > *")].forEach((el) => { if (!el.contains($("#lockBtn"))) el.hidden = true; });   // 訪客：選單只留「鎖定」
+    { const fe = $("#faceEnroll"); if (fe) fe.hidden = window.PERSONA !== "david"; }
     if (window.Store) window.Store.init(P);
     buildMega();
     if (window.News && !window.GUESTLIKE && !window.GALLERYGUEST) window.News.mount(P, {});
@@ -539,7 +540,7 @@
   }
   function lock() {
     document.title = SITE.name || "David's Side Business";
-    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); } catch (_) {}
+    try { sessionStorage.removeItem(KEY); localStorage.removeItem(KEY); sessionStorage.removeItem(OFFICE_KEY); sessionStorage.removeItem("dsb-tpi"); } catch (_) {}
     location.hash = "";
     if (window.News) window.News.unmount();
     app.hidden = true; nav.hidden = true; app.innerHTML = "";
@@ -581,7 +582,12 @@
   // AI 總管直接改了白板資料（狀態 / Next Step / 時程表…）→ 重畫目前頁面，看板與甘特圖立刻反映（3D 藝廊自己會聽 store:change）
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
+  /* ---------- 人臉解鎖（方便功能；詳見 js/face.js）---------- */
+  const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); $("#pw").value = c.pw; $("#gateForm").requestSubmit(); };
+  { const F = window.FaceLogin, row = $("#gateForm");
+    if (F && row && !$("#faceBtn")) { const b = document.createElement("button"); b.type = "button"; b.id = "faceBtn"; b.className = "face-btn"; b.textContent = "👤 人臉解鎖"; b.hidden = !F.enrolled(); row.after(b); b.addEventListener("click", faceGo); } }
+  { const fe = $("#faceEnroll"); if (fe) fe.addEventListener("click", () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; window.FaceLogin.enroll({ verify: async (pw, tp, tk) => { if (!pw || await sha256(pw) !== PASS_HASH) return "網站密碼不對"; if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); }); }); }
   let ok = false;
   try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === AGENT_HASH || k === GALLERY_HASH; if (k === GALLERY_HASH) setGallery(); if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
-  if (ok) enter(); else setTimeout(() => $("#pw").focus(), 50);
+  if (ok) enter(); else { setTimeout(() => $("#pw").focus(), 50); let sw2 = false; try { sw2 = sessionStorage.getItem(SW_KEY) === "1"; } catch (_) {} if (!sw2 && window.FaceLogin && window.FaceLogin.enrolled()) faceGo(); }
 })();
