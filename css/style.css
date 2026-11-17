@@ -1349,3 +1349,8 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .sch-t td.g.on.pri-P0 { background: #e0536b; }
 .sch-t td.g.on.st-Done { background: #5fbf92; }
 .sch-t td.g.on.st-Blocked { background: #9a9aae; }
+
+/* 背景酒紅 */
+body.dim .painting-shade { background: linear-gradient(180deg, rgba(74,12,32,.82), rgba(52,8,24,.88)); mix-blend-mode: normal; }
+body.dim .painting { filter: blur(22px) saturate(.7) hue-rotate(-25deg); }
+body.dim .nav::before, .nav.mega-open::before { background: rgba(44,8,20,.82); }
