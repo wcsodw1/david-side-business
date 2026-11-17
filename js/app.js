@@ -94,6 +94,19 @@
   }
 
   /* ---------- 資料 ---------- */
+  /* TPI「最近新增」：新的在上，滑過去展開，可往下捲看更早的；時間到分鐘 */
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const stamp = (ms, dateOnly) => { const d = new Date(ms); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` + (dateOnly ? "" : ` ${pad2(d.getHours())}:${pad2(d.getMinutes())}`); };
+  const feedHtml = (p) => {
+    const it = [];
+    ((window.Store && window.Store.acts && window.Store.acts(p.id)) || []).forEach((a) => it.push({ at: a.at, text: a.text }));
+    (p.updates || []).forEach((u) => { if (/專案頁建立|辦公室建立/.test(u.title || "")) return; const at = u.at || new Date((u.date || "1970-01-01") + "T00:00:00").getTime(); if (!u.local || !u.at) it.push({ at, day: !u.at, text: (u.title || "") + (u.text && u.text !== u.title ? "：" + u.text : "") }); });
+    (p.tasks || []).forEach((t) => (t.log || []).forEach((l) => { if (!l.at) it.push({ at: new Date((l.d || "1970-01-01") + "T00:00:00").getTime(), day: true, text: `${t.name}：${l.k || "狀態"} ${l.text}` }); }));
+    it.sort((a, b) => b.at - a.at);
+    const last = it[0];
+    return `<div class="tz-feed" tabindex="0"><div class="tf-bar"><b>最近新增</b><span class="tf-last">${last ? esc(stamp(last.at, last.day)) + " · " + esc(last.text) : "還沒有新增事件"}</span><i>${it.length} 筆 ▾</i></div>${it.length ? `<ul class="tf-list">${it.map((x) => `<li><time>${esc(stamp(x.at, x.day))}</time><span>${esc(x.text)}</span></li>`).join("")}</ul>` : ""}</div>`;
+  };
+
   const P = window.PROJECTS || [];
   const S = window.STATUS || {};
   const SITE = window.SITE || {};
@@ -308,9 +321,8 @@
         <section class="page office">
           <a class="back-btn" href="#/" data-office-back>← 返回藝廊 <kbd>Esc</kbd></a>
           <div class="page-head">
-            <p class="eyebrow">OFFICE</p>
-            <h1>David 的辦公室</h1>
-            <p>每個 Side Business 的即時現況，都貼在這間辦公室裡。</p>
+            <h1>OFFICE</h1>
+            <p class="office-sub">TPI &amp; SIDE-BUSINESS</p>
           </div>
           ${tpi ? `<div class="ot-switch" role="tablist" aria-label="辦公室類型">
             <button type="button" role="tab" data-otb="tpi" class="${officeTab === "tpi" ? "on" : ""}">TPI<small>本業工作區</small></button>
@@ -344,10 +356,7 @@
             <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span></div>
             <div class="tz-grid">
               <div class="tz-prog">
-                <div class="tz-top"><span class="tz-name">TPI</span>${chip(eff(tpi))}<span class="tz-pct">${tpi.progress ?? 0}%</span></div>
-                <div class="kb-pg tz-bar"><i style="width:${tpi.progress ?? 0}%"></i></div>
-                <p class="tz-now">${esc(tpi.wbNote || "（還沒有更新）")}</p>
-                ${tpi.next ? `<p class="tz-next"><b>NEXT</b>${esc(tpi.next)}</p>` : ""}
+                ${feedHtml(tpi)}
                 <div class="plan-mount" data-tpi-plan>${window.Schedule ? window.Schedule.panel(tpi) : ""}</div>
               </div>
               <div class="tz-ai"><h3>🤖 TPI 專屬 AI</h3><div id="tpiAI"></div></div>

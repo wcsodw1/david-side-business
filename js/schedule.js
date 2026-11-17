@@ -120,7 +120,7 @@
       const fld = sec.dataset.fld, inp = sec.querySelector("input"), ask = sec.querySelector(".td-ask");
       const apply = (saveOld) => {
         const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(), patch = { [fld]: nv, [fld + "At"]: iso(new Date()) };
-        if (saveOld && old) patch.log = [...(t.log || []), { d: t[fld + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: L[fld] }];
+        if (saveOld && old) patch.log = [...(t.log || []), { at: Date.now(), d: t[fld + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: L[fld] }];
         S.updateTask(p.id, tid, patch); ask.hidden = true; paint(true); again && again(true);
       };
       const go = () => { const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(); if (nv === old) return; if (!old) return apply(false);
@@ -137,7 +137,7 @@
           const t = get(); if (!t) return { ok: false, error: "任務不存在" }; const patch = {}, done = [], keep = a.archive_old !== false, log = [...(t.log || [])];
           if (ST.includes(a.status) && a.status !== t.status) { patch.status = a.status; done.push("狀態 → " + a.status); }
           if (a.progress !== undefined && !isNaN(+a.progress)) { patch.progress = Math.max(0, Math.min(100, +a.progress)); done.push("進度 → " + patch.progress + "%"); }
-          for (const [k, lab] of [["cur", "目前狀態"], ["next", "Next Step"]]) { if (a[k] === undefined) continue; const nv = String(a[k]).trim(), old = String(t[k] || "").trim(); if (nv === old) continue; if (keep && old) log.push({ d: t[k + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: lab }); patch[k] = nv; patch[k + "At"] = iso(new Date()); done.push(lab + " → " + (nv || "（清空）") + (keep && old ? "（舊的已存進歷史）" : "")); }
+          for (const [k, lab] of [["cur", "目前狀態"], ["next", "Next Step"]]) { if (a[k] === undefined) continue; const nv = String(a[k]).trim(), old = String(t[k] || "").trim(); if (nv === old) continue; if (keep && old) log.push({ at: Date.now(), d: t[k + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: lab }); patch[k] = nv; patch[k + "At"] = iso(new Date()); done.push(lab + " → " + (nv || "（清空）") + (keep && old ? "（舊的已存進歷史）" : "")); }
           if (a.note !== undefined && String(a.note).trim() !== String(t.note || "").trim()) { patch.note = String(a.note).trim(); done.push("備註已更新"); }
           if (!done.length) return { ok: true, text: "沒有需要改的" };
           if (log.length !== (t.log || []).length) patch.log = log;
@@ -164,7 +164,7 @@
       card.querySelector(".st-open").addEventListener("click", () => { card.hidden = true; cur = null; openTask(p, t.id, again); });
       card.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault(); const f = new FormData(e.target), pg = Math.max(0, Math.min(100, +f.get("progress") || 0)), st = String(f.get("status")), text = String(f.get("text")).trim(); if (!text) return;
-        S.updateTask(p.id, t.id, { status: st, progress: pg, cur: text, curAt: iso(new Date()), log: [...(t.log || []), { d: iso(new Date()), s: st, p: pg, text, k: "狀態" }] }); card.hidden = true; cur = null; again();
+        S.updateTask(p.id, t.id, { status: st, progress: pg, cur: text, curAt: iso(new Date()), log: [...(t.log || []), { at: Date.now(), d: iso(new Date()), s: st, p: pg, text, k: "狀態" }] }); card.hidden = true; cur = null; again();
       });
     };
     el.addEventListener("mouseover", (e) => { const tr = e.target.closest && e.target.closest("tr[data-tid]"); if (!tr || tr === cur || !el.contains(tr) || tr.contains(document.activeElement) && document.activeElement.matches("input,select")) return; show(tr); });

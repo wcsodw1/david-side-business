@@ -18,7 +18,8 @@
   const SEED_V = 2;   // 預設時程（data/projects.js 的 tasks）每台瀏覽器只灌一次；之後以你在白板上改的為準
   const seedTasks = () => { P.forEach((p) => { const r = rec(p.id); if ((r.seedV || 0) < SEED_V) { if ((!r.tasks.length || (p.id === "tpi" && (r.seedV || 0) < 2 && r.tasks.every((t) => /^(整理 RAG|多 sessions|測試報告給|安排 Sean)/.test(t.name)))) && Array.isArray(p.tasks0)) r.tasks = p.tasks0.map((t) => ({ id: Math.random().toString(36).slice(2, 8), ...t })); if (p.id !== "tpi" || (p.tasks0 && p.tasks0.length)) r.seedV = SEED_V; } }); save(); };
   const rec = (pid) => { const r = (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "", tasks: [] }); if (!r.tasks) r.tasks = []; return r; };
-  const emit = (detail) => window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null }));
+  const ACT_L = { goal: "目標：", status: "白板狀態：", next: "Next Step：" };
+  const emit = (detail) => { try { if (detail && detail.pid && detail.text) { const r = rec(detail.pid); r.acts = r.acts || []; r.acts.unshift({ at: Date.now(), kind: detail.kind || "", text: (ACT_L[detail.kind] || "") + detail.text, remote: !!detail.remote }); if (r.acts.length > 200) r.acts.length = 200; save(); } } catch (_) {} window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null })); };
   const bc = (msg) => { try { window.Presence && window.Presence.broadcast && window.Presence.broadcast({ kind: "proj", who: window.PERSONA || "david", ...msg }); } catch (_) {} };   // 兩人同時在線時，專案更新也傳給對方
 
   const norm = (s) => String(s || "").toLowerCase().replace(/[\s,.;:!?，。；：！？、'"()（）\-_/]+/g, "");
@@ -57,6 +58,7 @@
   const api = (window.Store = {
     init(projects) { if (window.VIEWER) ["addUpdate","setGoal","setStatus","setNext","setNote","setProgress","addMilestone","addMilestones","toggleMilestone","removeMilestone","addTask","updateTask","removeTask"].forEach((k) => { if (typeof api[k] === "function") api[k] = () => null; }); P = projects; P.forEach((p) => { if (Array.isArray(p.tasks) && p.tasks0 === undefined) { p.tasks0 = p.tasks; } }); load(); seedTasks(); P.forEach(apply); },
     today,
+    acts: (pid) => (rec(pid).acts || []).slice(),
     daysSinceUpdate(p) {
       const real = (p.updates || []).filter((u) => !/專案頁建立/.test(u.title));
       if (!real.length) return null;
@@ -108,7 +110,10 @@
     },
     updateTask(pid, id, patch) {
       const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid), t = r.tasks.find((x) => x.id === id); if (!t) return;
-      Object.assign(t, patch); if (t.progress >= 100) t.status = "Done"; save(); apply(p); emit({ pid, kind: "tasks", text: "更新任務：" + t.name }); bc({ pid, tasks: r.tasks });
+      const before = { ...t }; Object.assign(t, patch); if (t.progress >= 100) t.status = "Done"; save(); apply(p);
+      const L = { status: "狀態", progress: "進度", cur: "目前狀態", next: "Next Step", note: "備註", grp: "區塊", owner: "負責人", start: "開始", end: "結束", pri: "優先", name: "名稱" }, parts = Object.keys(patch).filter((k) => L[k] && String(before[k] ?? "") !== String(t[k] ?? "")).map((k) => k === "note" ? "備註更新" : `${L[k]} → ${String(t[k]).length > 40 ? String(t[k]).slice(0, 40) + "…" : t[k]}${k === "progress" ? "%" : ""}`);
+      if (patch.log && patch.log.length > (before.log || []).length && !parts.length) parts.push("歷史新增一筆");
+      if (parts.length) emit({ pid, kind: "tasks", text: `${t.name}：${parts.join("；")}` }); bc({ pid, tasks: r.tasks });
     },
     removeTask(pid, id) { const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid); r.tasks = r.tasks.filter((x) => x.id !== id); save(); apply(p); emit({ pid, kind: "tasks", text: "刪除了一個任務" }); bc({ pid, tasks: r.tasks }); },
     exportText() {
