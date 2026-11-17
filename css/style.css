@@ -175,7 +175,7 @@ main { position: relative; z-index: 1; }
 .proj-hero h1 { font-size: clamp(32px, 5vw, 60px); font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
 .proj-hero .zh { font-size: 18px; color: rgba(255,255,255,.82); margin-top: 6px; }
 .proj-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 32px; margin-top: 32px; align-items: start; }
-.panel { border: 1px solid var(--line); background: rgba(255,255,255,.045); border-radius: 18px; padding: 26px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.proj-grid:has(> .jmount:only-child) { grid-template-columns: minmax(0, 1fr); }.panel { border: 1px solid var(--line); background: rgba(255,255,255,.045); border-radius: 18px; padding: 26px; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .panel h2 { font-size: 13px; letter-spacing: .22em; color: var(--ink-3); font-weight: 600; margin-bottom: 18px; text-transform: uppercase; }
 .side .row { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
 .side .row:last-of-type { border-bottom: 0; }

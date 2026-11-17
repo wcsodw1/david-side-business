@@ -121,7 +121,7 @@
       </a>`;
     const grids = {
       gallery: PS.map(item).join(""),
-      tpi: tpi ? item(tpi) + `<a class="mega-item mega-wide" role="menuitem" href="#/office" data-mego="tpi" style="--c:${accent(P.indexOf(tpi))}"><span class="mega-name">TPI 工作區</span><span class="mega-meta">專案進度 + 專屬 AI</span><span class="mega-pg"><b>進入 →</b></span></a>` + (tpi.next ? `<p class="mega-note"><b>NEXT</b>${esc(tpi.next)}</p>` : "") : "",
+      tpi: tpi ? `<a class="mega-item mega-wide" role="menuitem" href="#/office" data-mego="tpi" style="--c:${accent(P.indexOf(tpi))}"><span class="mega-name">TPI 工作區</span><span class="mega-meta">專案進度 + 專屬 AI</span><span class="mega-pg"><b>進入 →</b></span></a>` + (tpi.next ? `<p class="mega-note"><b>NEXT</b>${esc(tpi.next)}</p>` : "") : "",
     };
     const heads = { gallery: `${PS.length} 個正在長大的夢`, tpi: "TPI · 本業工作" };
     const grid = $("#megaGrid"), h3 = $(".mega-intro h3");
@@ -344,7 +344,7 @@
             <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span></div>
             <div class="tz-grid">
               <div class="tz-prog">
-                <div class="tz-top"><a class="tz-name" href="#/p/tpi">TPI</a>${chip(eff(tpi))}<span class="tz-pct">${tpi.progress ?? 0}%</span></div>
+                <div class="tz-top"><span class="tz-name">TPI</span>${chip(eff(tpi))}<span class="tz-pct">${tpi.progress ?? 0}%</span></div>
                 <div class="kb-pg tz-bar"><i style="width:${tpi.progress ?? 0}%"></i></div>
                 <p class="tz-now">${esc(tpi.wbNote || "（還沒有更新）")}</p>
                 ${tpi.next ? `<p class="tz-next"><b>NEXT</b>${esc(tpi.next)}</p>` : ""}
@@ -420,7 +420,7 @@
           </div>
           <div class="proj-grid">
             <div class="jmount" data-jmount="${esc(p.id)}"></div>
-            <aside class="panel side">
+            ${p.id === "tpi" ? "" : `<aside class="panel side">
               <h2>專案資訊</h2>
               <div class="row"><span>狀態</span><span class="status"><i class="pill-dot" style="background:${st(p).color}"></i>${esc(st(p).label)}</span></div>
               <div class="row"><span>類別</span><span>${esc(p.category)}</span></div>
@@ -428,7 +428,7 @@
               <div class="bar"><i data-w="${p.progress ?? 0}"></i></div>
               ${p.summary ? `<p style="margin-top:20px;color:var(--ink-2);font-size:14px">${esc(p.summary)}</p>` : ""}
               ${(p.links || []).length ? `<div class="links">${p.links.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"><span>${esc(l.label)}</span><span>↗</span></a>`).join("")}</div>` : ""}
-            </aside>
+            </aside>`}
           </div>
           <nav class="pager" aria-label="上下一個專案">
             <a href="#/p/${esc(prev.id)}"><small>← 上一個</small>${esc(prev.name)}</a>
