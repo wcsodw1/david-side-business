@@ -1576,3 +1576,9 @@ body.dim:not(.gl3d) .sch-t td.g.on { background: #b9ad96; } body.dim:not(.gl3d) 
 .og-face { display: block; margin: 10px auto 0; padding: 10px 22px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); background: transparent; color: inherit; font: 600 14px var(--font); cursor: pointer; }
 body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 @media (max-width: 860px) { .nav-more > button { display: none !important; } }
+
+#faceNudge { position: fixed; right: 18px; bottom: 18px; z-index: 2147483000; width: min(340px, calc(100vw - 36px)); padding: 16px 18px; background: #fbf9f3; color: #2b2723; border: 1px solid #cfc7b6; border-radius: 10px; box-shadow: 0 14px 36px rgba(60,40,30,.22); display: grid; gap: 6px; font-size: 14px; }
+#faceNudge span { opacity: .7; font-size: 13px; } #faceNudge div { display: flex; gap: 8px; margin-top: 6px; }
+#faceNudge button { height: 36px; padding: 0 16px; border-radius: 6px; border: 1px solid #cfc7b6; background: #fff; color: #2b2723; font: 600 14px var(--font); cursor: pointer; }
+#faceNudge button[data-y] { background: #8b1e3f; border-color: #8b1e3f; color: #fff; }
+@media (max-width: 860px) { #faceNav { display: none; } }
