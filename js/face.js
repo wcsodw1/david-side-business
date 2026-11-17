@@ -29,6 +29,7 @@
     o.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480 }, audio: false });
     o.video.srcObject = o.stream; await o.video.play();
   }
+  const safeDetect = async (f, v) => { try { return await detect(f, v); } catch (_) { return null; } };
   const detect = (f, v) => f.detectSingleFace(v, new f.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks(true).withFaceDescriptor();
 
   /* 辨識：比對成功回傳 {pw,tp,tk}，取消 / 逾時回傳 null */
@@ -41,7 +42,7 @@
       o.status("開啟鏡頭…"); await camera(o); if (o.dead) return null;
       o.status("請看著鏡頭"); let hits = 0; const t0 = Date.now();
       while (!o.dead && Date.now() - t0 < 45000) {
-        const r = await detect(f, o.video).catch(() => null);
+        const r = await safeDetect(f, o.video);
         if (r) { const m = Math.min(...saved.d.map((d) => dist(d, r.descriptor))); hits = m < TH ? hits + 1 : 0; o.status(m < TH ? "確認中…" : "不是已登錄的人"); if (hits >= 3) { o.close(); return { pw: saved.pw, tp: saved.tp, tk: saved.tk, op: saved.op || "" }; } }
         else { hits = 0; o.status("沒看到臉，請正對鏡頭"); }
         await sleep(350);
@@ -60,7 +61,7 @@
       const f = await load(); if (o.dead) return null; if (!o.stream) { o.status("開啟鏡頭…"); await camera(o); if (o.dead) return null; }
       const d = [], t0 = Date.now();
       while (!o.dead && d.length < n && Date.now() - t0 < 40000) {
-        const r = await detect(f, o.video).catch(() => null);
+        const r = await safeDetect(f, o.video);
         if (r) { d.push(Array.from(r.descriptor)); o.status(`${label} ${d.length}/${n}（稍微轉動頭部）`); await sleep(600); } else { o.status("沒看到臉，請正對鏡頭"); await sleep(300); }
       }
       return o.dead ? null : d.length < n ? (o.status("拍攝不足，請重試"), null) : d;
