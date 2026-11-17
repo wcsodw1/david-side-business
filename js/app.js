@@ -129,7 +129,7 @@
     const go = (k) => { officeTab = k; if (location.hash === "#/office") render(); else location.hash = "#/office"; };
     $$("[data-mo]", $("#mega")).forEach((b) => { if (b.__mo) return; b.__mo = true; b.addEventListener("mouseenter", () => show(b.dataset.mo)); b.addEventListener("focus", () => show(b.dataset.mo)); b.addEventListener("click", () => go(b.dataset.mo)); });
     if (!grid.__mg) { grid.__mg = true; grid.addEventListener("click", (e) => { const a = e.target.closest && e.target.closest("[data-mego]"); if (a) { e.preventDefault(); go(a.dataset.mego); } }); }
-    show("gallery");
+    show(tpi ? "tpi" : "gallery");
     if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip($("#megaGrid"), ".mega-item[href^='#/p/']", (el) => { const id = decodeURIComponent((el.getAttribute("href") || "").replace("#/p/", "")); return P.find((x) => x.id === id); }, (p) => accent(P.indexOf(p)));   // 選單裡滑過專案 → 浮出它自己的進度表
   }
 
