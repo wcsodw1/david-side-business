@@ -1422,3 +1422,15 @@ body.dim:not(.gl3d) #kbTip .kt-bar i, body.dim:not(.gl3d) #kbTip .bar i { backgr
 #stTip input[name=progress] { width: 56px; } #stTip input[name=text] { flex: 1; min-width: 0; }
 #stTip button { height: 34px; padding: 0 16px; border: 0; border-radius: 6px; background: #8b1e3f; color: #fff; font: 700 14px var(--font); cursor: pointer; }
 #stTip .st-l { list-style: none; margin-top: 10px; border-top: 1px dashed #d9d2c3; padding-top: 8px; display: grid; gap: 4px; font-size: 13px; } #stTip .st-l em { font-style: normal; opacity: .55; }
+
+/* 辦公室 Gallery / TPI 切換：放右側直排（兩個一樣大，滑過就切換） */
+.page.office { display: grid; grid-template-columns: minmax(0, 1fr) 180px; column-gap: 22px; align-items: start; max-width: 1560px; }
+.page.office > * { grid-column: 1; min-width: 0; }
+.page.office > .ot-switch { grid-column: 2; grid-row: 1 / span 12; position: sticky; top: calc(var(--nav-h) + 24px); flex-direction: column; gap: 14px; margin: 0; }
+.page.office > .ot-switch button { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; padding: 18px 16px; border-radius: 8px; font-size: 22px; }
+.page.office > .ot-switch button small { font-size: 12px; letter-spacing: .1em; }
+@media (max-width: 860px) {
+  .page.office { grid-template-columns: minmax(0, 1fr); }
+  .page.office > .ot-switch { grid-column: 1; grid-row: auto; position: static; flex-direction: row; order: 0; margin-bottom: 14px; }
+  .page.office > .ot-switch button { flex: 1; }
+}
