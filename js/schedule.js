@@ -78,38 +78,53 @@
   }
 
 
-  /* 任務詳細：完整的狀態歷史 + 新增狀態 + 這個任務自己的獨立 AI Session（對話紀錄以任務為單位存） */
+  /* 任務詳細：目前狀態 / Next Step / 備註 / 歷史 + 這個任務自己的獨立 AI Session。
+     更新「目前狀態」或「Next Step」時，若舊的有內容，會問你要不要把舊的丟進歷史。 */
   function openTask(p, tid, again) {
     const S = window.Store, get = () => (p.tasks || []).find((x) => x.id === tid); if (!S || !get()) return;
+    { const t = get(), seed = (p.tasks0 || []).find((x) => x.name === t.name);   // 舊資料一次性補上 目前狀態 / 備註 預設
+      if (t.cur === undefined && seed && seed.cur !== undefined) S.updateTask(p.id, tid, { cur: seed.cur, note: seed.note || "" }); }
     document.getElementById("tdOv")?.remove();
     const ov = document.createElement("div"); ov.id = "tdOv";
-    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey, true); };
+    const close = () => { ov.remove(); document.removeEventListener("keydown", onKey, true); again && again(true); };
     const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
     document.addEventListener("keydown", onKey, true);
     const t0 = get();
     ov.innerHTML = `<div class="td-box" role="dialog" aria-label="${esc(t0.name)}"><button type="button" class="td-x" aria-label="關閉">✕</button>
       <h3>${esc(t0.name)}</h3><p class="td-meta"></p>
-      <h4>狀態歷史</h4>
-      <form class="td-f" autocomplete="off"><select name="status">${ST.map((x) => `<option ${x === t0.status ? "selected" : ""}>${x}</option>`).join("")}</select><input name="progress" type="number" min="0" max="100" value="${+t0.progress || 0}"><span>%</span><input name="text" placeholder="新增一筆狀態（例：11/17 已送測、等 GPU）" required><button type="submit">新增</button></form>
-      <ul class="td-l"></ul>
+      <div class="td-sec" data-fld="cur"><h4>目前狀態</h4><div class="td-row"><input name="v" placeholder="現在進行到哪、卡在哪" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
+      <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row"><input name="v" placeholder="下一步要做什麼" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
+      <div class="td-sec"><h4>備註</h4><textarea class="td-note-in" rows="2" placeholder="等待對象、連結、補充（失焦自動儲存）"></textarea></div>
+      <div class="td-sec"><h4>歷史</h4><ul class="td-l"></ul></div>
       <h4>🤖 這個任務的獨立 AI Session</h4><div class="tz-ai td-ai"></div></div>`;
     document.body.appendChild(ov);
-    const paint = () => {
+    const L = { cur: "目前狀態", next: "Next Step" };
+    const paint = (keepInputs) => {
       const t = get(); if (!t) return;
-      ov.querySelector(".td-meta").innerHTML = `<span class="stt st-${esc(String(t.status).replace(/\s/g, ""))}">${esc(t.status)}</span> ${+t.progress || 0}% · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)}`;
-      const L = (t.log || []).slice().reverse();
-      ov.querySelector(".td-l").innerHTML = L.map((l) => `<li><em>${esc(l.d)}</em><b>${esc(l.s)} ${+l.p || 0}%</b><span>${esc(l.text)}</span></li>`).join("") + (t.note ? `<li class="td-note"><em>備註</em><span>${esc(t.note)}</span></li>` : "") || `<li class="td-none">還沒有狀態紀錄，上面新增第一筆。</li>`;
+      ov.querySelector(".td-meta").innerHTML = `<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)}`;
+      ov.querySelectorAll("[data-m]").forEach((el) => el.addEventListener("change", () => { let v = el.value; if (el.dataset.m === "progress") v = Math.max(0, Math.min(100, +v || 0)); S.updateTask(p.id, tid, { [el.dataset.m]: v }); paint(); again && again(true); }));
+      if (!keepInputs) { ov.querySelector('[data-fld="cur"] input').value = t.cur || ""; ov.querySelector('[data-fld="next"] input').value = t.next || ""; ov.querySelector(".td-note-in").value = t.note || ""; }
+      const H = (t.log || []).slice().reverse();
+      ov.querySelector(".td-l").innerHTML = H.map((l) => `<li><em>${esc(l.d)}</em><b>${esc(l.k || "狀態")} · ${esc(l.s)} ${+l.p || 0}%</b><span>${esc(l.text)}</span></li>`).join("") || `<li class="td-none">還沒有歷史。更新目前狀態時，舊的內容可以丟進來。</li>`;
     };
     paint();
+    ov.querySelectorAll(".td-sec[data-fld]").forEach((sec) => {
+      const fld = sec.dataset.fld, inp = sec.querySelector("input"), ask = sec.querySelector(".td-ask");
+      const apply = (saveOld) => {
+        const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(), patch = { [fld]: nv, [fld + "At"]: iso(new Date()) };
+        if (saveOld && old) patch.log = [...(t.log || []), { d: t[fld + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: L[fld] }];
+        S.updateTask(p.id, tid, patch); ask.hidden = true; paint(true); again && again(true);
+      };
+      const go = () => { const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(); if (nv === old) return; if (!old) return apply(false);
+        ask.hidden = false; ask.innerHTML = `之前的「<b>${esc(old.length > 60 ? old.slice(0, 60) + "…" : old)}</b>」要丟進歷史嗎？ <button type="button" data-y>丟進歷史</button><button type="button" data-n>不用</button>`;
+        ask.querySelector("[data-y]").onclick = () => apply(true); ask.querySelector("[data-n]").onclick = () => apply(false); };
+      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go(); } });
+    });
+    ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
-    ov.querySelector(".td-f").addEventListener("submit", (e) => {
-      e.preventDefault(); const f = new FormData(e.target), t = get(), pg = Math.max(0, Math.min(100, +f.get("progress") || 0)), st = String(f.get("status")), text = String(f.get("text")).trim(); if (!text) return;
-      S.updateTask(p.id, tid, { status: st, progress: pg, log: [...(t.log || []), { d: iso(new Date()), s: st, p: pg, text }] }); e.target.text.value = ""; paint(); again && again(true);
-    });
     const ai = ov.querySelector(".td-ai");
-    if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, sys: () => { const t = get() || t0; return `你是 David 的工作助理，只針對任務「${t.name}」（所屬：${p.name}）用繁體中文簡潔直接地回答。狀態 ${t.status}、進度 ${+t.progress || 0}%、優先 ${t.pri}、期間 ${t.start}→${t.end}。備註：${t.note || "無"}。狀態歷史（新到舊）：${(t.log || []).slice().reverse().map((l) => `${l.d} ${l.s} ${l.p}% ${l.text}`).join("；") || "無"}。需要時參考，不需要不要複述。`; } }); } catch (_) { ai.textContent = "AI 載入失敗"; } } else ai.textContent = "AI 未載入";
-    ov.querySelector("input[name=text]").focus();
+    if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, sys: () => { const t = get() || t0; return `你是 David 的工作助理，只針對任務「${t.name}」（所屬：${p.name}）用繁體中文簡潔直接地回答。狀態 ${t.status}、進度 ${+t.progress || 0}%、優先 ${t.pri}、期間 ${t.start}→${t.end}。目前狀態：${t.cur || "無"}。Next Step：${t.next || "無"}。備註：${t.note || "無"}。歷史（新到舊）：${(t.log || []).slice().reverse().map((l) => `${l.d} ${l.k || ""} ${l.text}`).join("；") || "無"}。需要時參考，不需要不要複述。`; } }); } catch (_) { ai.textContent = "AI 載入失敗"; } } else ai.textContent = "AI 未載入";
   }
 
   /* 滑鼠移到任務那一列 → 浮出「新增狀態」小卡：改狀態/進度 + 一句進度紀錄（記在該任務上，保留歷史） */
@@ -131,7 +146,7 @@
       card.querySelector(".st-open").addEventListener("click", () => { card.hidden = true; cur = null; openTask(p, t.id, again); });
       card.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault(); const f = new FormData(e.target), pg = Math.max(0, Math.min(100, +f.get("progress") || 0)), st = String(f.get("status")), text = String(f.get("text")).trim(); if (!text) return;
-        S.updateTask(p.id, t.id, { status: st, progress: pg, log: [...(t.log || []), { d: iso(new Date()), s: st, p: pg, text }] }); card.hidden = true; cur = null; again();
+        S.updateTask(p.id, t.id, { status: st, progress: pg, cur: text, curAt: iso(new Date()), log: [...(t.log || []), { d: iso(new Date()), s: st, p: pg, text, k: "狀態" }] }); card.hidden = true; cur = null; again();
       });
     };
     el.addEventListener("mouseover", (e) => { const tr = e.target.closest && e.target.closest("tr[data-tid]"); if (!tr || tr === cur || !el.contains(tr) || tr.contains(document.activeElement) && document.activeElement.matches("input,select")) return; show(tr); });
