@@ -15,8 +15,9 @@
   const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
   const load = () => { try { data = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (_) { data = {}; } };
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (_) {} };
-  const SEED_V = 2;   // 預設時程（data/projects.js 的 tasks）每台瀏覽器只灌一次；之後以你在白板上改的為準
-  const seedTasks = () => { P.forEach((p) => { const r = rec(p.id); if ((r.seedV || 0) < SEED_V) { if ((!r.tasks.length || (p.id === "tpi" && (r.seedV || 0) < 2 && r.tasks.every((t) => /^(整理 RAG|多 sessions|測試報告給|安排 Sean)/.test(t.name)))) && Array.isArray(p.tasks0)) r.tasks = p.tasks0.map((t) => ({ id: Math.random().toString(36).slice(2, 8), ...t })); if (p.id !== "tpi" || (p.tasks0 && p.tasks0.length)) r.seedV = SEED_V; } }); save(); };
+  const SEED_V = 3;   // 預設時程（data/projects.js 的 tasks）每台瀏覽器只灌一次；之後以你在白板上改的為準
+  const seedTasks = () => { P.forEach((p) => { const r = rec(p.id); if ((r.seedV || 0) < SEED_V) { if ((!r.tasks.length || (p.id === "tpi" && (r.seedV || 0) < 2 && r.tasks.every((t) => /^(整理 RAG|多 sessions|測試報告給|安排 Sean)/.test(t.name)))) && Array.isArray(p.tasks0)) r.tasks = p.tasks0.map((t) => ({ id: Math.random().toString(36).slice(2, 8), ...t })); if (p.id === "tpi" && p.tasks0 && p.tasks0.length && (r.seedV || 0) < 3) r.tasks.forEach((t) => { if (!t.updAt && !(t.log && t.log.length)) t.progress = 0; });   /* 之前預設塞的估計進度清成 0（你自己改過的不動） */
+      if (p.id !== "tpi" || (p.tasks0 && p.tasks0.length)) r.seedV = SEED_V; } }); save(); };
   const rec = (pid) => { const r = (data[pid] = data[pid] || { updates: [], goal: "", milestones: [], answers: [], status: "", note: "", noteAt: "", next: "", tasks: [] }); if (!r.tasks) r.tasks = []; return r; };
   const ACT_L = { goal: "目標：", status: "白板狀態：", next: "Next Step：" };
   const emit = (detail) => { try { if (detail && detail.pid && detail.text) { const r = rec(detail.pid); r.acts = r.acts || []; r.acts.unshift({ at: Date.now(), kind: detail.kind || "", text: (ACT_L[detail.kind] || "") + detail.text, remote: !!detail.remote }); if (r.acts.length > 200) r.acts.length = 200; save(); } } catch (_) {} window.dispatchEvent(new CustomEvent("store:change", { detail: detail || null })); };
