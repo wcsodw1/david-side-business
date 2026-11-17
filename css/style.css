@@ -1570,3 +1570,9 @@ body.dim:not(.gl3d) .sch-t td.g.on { background: #b9ad96; } body.dim:not(.gl3d) 
 }
 .td-del { margin-top: 22px; background: none; border: 1px solid #d9b3bd; color: #b3122f; border-radius: 6px; padding: 8px 14px; font: 600 13px var(--font); cursor: pointer; }
 @media (max-width: 760px) { .sch-t .x { display: none; } .sch-split .sch-l td select { width: 86px; } }
+
+.nav-more > button { font-size: 18px !important; font-weight: 700 !important; padding: 8px 20px !important; letter-spacing: .06em; }
+.nav-more > button i { font-size: 11px; }
+.og-face { display: block; margin: 10px auto 0; padding: 10px 22px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); background: transparent; color: inherit; font: 600 14px var(--font); cursor: pointer; }
+body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
+@media (max-width: 860px) { .nav-more > button { display: none !important; } }

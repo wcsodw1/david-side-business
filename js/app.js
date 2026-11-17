@@ -240,6 +240,7 @@
             <p>這裡有全部專案的儀表板和 AI 總管，請輸入辦公室密碼。</p>
             <input type="password" id="officePw" placeholder="辦公室密碼" autocomplete="off" aria-label="辦公室密碼">
             <button type="submit">進入辦公室</button>
+            ${window.FaceLogin && window.FaceLogin.enrolled() ? `<button type="button" id="officeFace" class="og-face">👤 人臉進入</button>` : ""}
             <p class="og-err" id="officeErr" role="alert"></p>
           </form>
         </section>`;
@@ -485,6 +486,10 @@
     if (window.VIEWER && seg === "p") $$("[data-jmount] form, [data-jmount] button:not([data-tab]), [data-jmount] textarea, [data-jmount] select, [data-jmount] input", app).forEach((e) => { if (!e.closest(".sch-scroll")) e.hidden = true; });   // 客人唯讀：專案頁的編輯控制全部藏起來（資料層本來就擋寫入）
     if (seg === "office" && !officeOpen() && !window.VIEWER) {
       const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);
+      { const fb = $("#officeFace", app), F = window.FaceLogin;
+        const faceOffice = async () => { const c = await F.scan(); if (!c) return; if (!c.op) { $("#officeErr", app).textContent = "這個人臉登錄還沒有辦公室密碼，請到「其他 → 人臉登錄」重新登錄"; return; }
+          if (await sha256(c.op) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (window.Store) window.Store.init(P); render(); } else $("#officeErr", app).textContent = "辦公室密碼已變更，請重新登錄人臉"; };
+        if (fb && F) { fb.addEventListener("click", faceOffice); if (F.hasOffice() && !window.__officeFaceTried) { window.__officeFaceTried = true; setTimeout(faceOffice, 300); } } }
       if (f) f.addEventListener("submit", async (e) => {
         e.preventDefault(); const v = pw.value.trim(); if (!v) return;
         if (await sha256(v) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} render(); }
@@ -592,10 +597,10 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   /* ---------- 人臉解鎖（方便功能；詳見 js/face.js）---------- */
-  const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); $("#pw").value = c.pw; $("#gateForm").requestSubmit(); };
+  const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (c.op && await sha256(c.op) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} } $("#pw").value = c.pw; $("#gateForm").requestSubmit(); };
   { const F = window.FaceLogin, row = $("#gateForm");
     if (F && row && !$("#faceBtn")) { const b = document.createElement("button"); b.type = "button"; b.id = "faceBtn"; b.className = "face-btn"; b.textContent = "👤 人臉解鎖"; b.hidden = !F.enrolled(); row.after(b); b.addEventListener("click", faceGo); } }
-  { const fe = $("#faceEnroll"); if (fe) fe.addEventListener("click", () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; window.FaceLogin.enroll({ verify: async (pw, tp, tk) => { if (!pw || await sha256(pw) !== PASS_HASH) return "網站密碼不對"; if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); }); }); }
+  { const fe = $("#faceEnroll"); if (fe) fe.addEventListener("click", () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; window.FaceLogin.enroll({ verify: async (pw, tp, tk, op) => { if (!pw || await sha256(pw) !== PASS_HASH) return "網站密碼不對"; if (!op || await sha256(op) !== OFFICE_HASH) return "辦公室密碼不對"; if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); }); }); }
   let ok = false;
   try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === AGENT_HASH || k === GALLERY_HASH; if (k === GALLERY_HASH) setGallery(); if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else { setTimeout(() => $("#pw").focus(), 50); let sw2 = false; try { sw2 = sessionStorage.getItem(SW_KEY) === "1"; } catch (_) {} if (!sw2 && window.FaceLogin && window.FaceLogin.enrolled()) faceGo(); }
