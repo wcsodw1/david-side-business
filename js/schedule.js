@@ -45,7 +45,7 @@
         <td class="d">${valid(t.start) && valid(t.end) ? bdays(t.start, t.end) : "—"}</td>
         <td><input data-f="start" type="date" value="${esc(t.start)}"></td>
         <td><input data-f="end" type="date" value="${esc(t.end)}"></td>
-        <td><button type="button" class="x" data-del aria-label="刪除">✕</button></td>
+        <td class="ops"><button type="button" class="op" data-open aria-label="開啟詳細">›</button><button type="button" class="x" data-del aria-label="刪除">✕</button></td>
       </tr>`;
     const hd = (x, span) => `<tr class="grp-h"><td colspan="${span}"><b>${esc(x.h)}</b><span>${x.n}</span></td></tr>`;
     const rows = seq.map((x) => (x.h ? hd(x, 9) : rowL(x))).join("");
@@ -79,6 +79,7 @@
         if ((f === "start" || f === "end") && valid(s2) && valid(e2) && pd(e2) < pd(s2)) { if (f === "start") patch.end = v; else patch.start = v; }   // 日期顛倒時自動帶動另一端
         S.updateTask(p.id, id, patch); again();
       }));
+      tr.querySelector("[data-open]")?.addEventListener("click", () => openTask(p, id, again));
       tr.querySelector("[data-del]")?.addEventListener("click", () => { S.removeTask(p.id, id); again(); });
     });
     statusCard(el, p, again);
@@ -104,7 +105,7 @@
       <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row"><input name="v" placeholder="下一步要做什麼" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
       <div class="td-sec"><h4>備註</h4><textarea class="td-note-in" rows="2" placeholder="等待對象、連結、補充（失焦自動儲存）"></textarea></div>
       <div class="td-sec"><h4>歷史</h4><ul class="td-l"></ul></div>
-      <h4>🤖 這個任務的獨立 AI Session</h4><div class="tz-ai td-ai"></div></div>`;
+      <h4>🤖 這個任務的獨立 AI Session</h4><div class="tz-ai td-ai"></div><button type="button" class="td-del">刪除這個任務</button></div>`;
     document.body.appendChild(ov);
     const L = { cur: "目前狀態", next: "Next Step" };
     const paint = (keepInputs) => {
@@ -131,6 +132,7 @@
     ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
+    ov.querySelector(".td-del").addEventListener("click", () => { if (confirm("確定刪除「" + (get() || t0).name + "」？此動作無法復原。")) { S.removeTask(p.id, tid); close(); } });
     const ai = ov.querySelector(".td-ai");
     if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, task: { run: (name, a) => {
           if (name !== "update_this_task") return { ok: false, error: "不認得的工具：" + name };

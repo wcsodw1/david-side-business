@@ -1,0 +1,17 @@
+{
+  "name": "David's Side Business",
+  "short_name": "David's",
+  "description": "TPI 工作區、Side Business 藝廊與辦公室",
+  "start_url": "./#/office",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f1ede3",
+  "theme_color": "#8b1e3f",
+  "lang": "zh-Hant",
+  "icons": [
+    { "src": "img/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "img/pwa/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "img/pwa/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

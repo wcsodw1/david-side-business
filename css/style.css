@@ -1529,3 +1529,44 @@ body.dim:not(.gl3d) .sch-t td.g.on { background: #b9ad96; } body.dim:not(.gl3d) 
 .tf-list li { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 9px 14px; border-bottom: 1px solid #efe9da; font-size: 14.5px; line-height: 1.55; }
 .tf-list li:last-child { border-bottom: 0; } .tf-list time { font-variant-numeric: tabular-nums; color: #8b1e3f; opacity: .85; font-size: 13px; padding-top: 1px; }
 .tf-list li:hover { background: #f6f1e4; }
+
+/* ===== 手機版 / PWA ===== */
+.sch-t .op { border: 1px solid #cfc7b6; background: #fff; color: #8b1e3f; width: 30px; height: 30px; border-radius: 6px; font-size: 20px; line-height: 1; cursor: pointer; margin-right: 4px; }
+.sch-split .ops { white-space: nowrap; text-align: right; }
+@supports (padding: env(safe-area-inset-top)) { .nav { padding-top: env(safe-area-inset-top); } .page { padding-bottom: calc(80px + env(safe-area-inset-bottom)); } }
+@media (max-width: 760px) {
+  input, select, textarea { font-size: 16px !important; }   /* 避免 iOS 點輸入框自動放大 */
+  .page { padding-left: 12px; padding-right: 12px; }
+  .page-head h1 { font-size: 30px; }
+  .tpi-zone, .tz-card { padding: 14px 12px; }
+  .tz-head { flex-wrap: wrap; } .tz-head span { display: none; }
+  .tf-bar { font-size: 13.5px; padding: 10px; gap: 8px; } .tf-bar i { display: none; }
+  .tf-list li { grid-template-columns: 1fr; gap: 2px; padding: 9px 12px; } .tf-list time { font-size: 12px; }
+  /* 時程表：手機只留 任務 / 狀態 / 進度，其他進詳細（›）看；甘特收成右側細條 */
+  .sch-split { padding-right: 34px; --rh: 56px; }
+  .sch-split .sch-l th:nth-child(2), .sch-split .sch-l td:nth-child(2), .sch-split .sch-l th:nth-child(3), .sch-split .sch-l td:nth-child(3),
+  .sch-split .sch-l th:nth-child(6), .sch-split .sch-l td:nth-child(6), .sch-split .sch-l th:nth-child(7), .sch-split .sch-l td:nth-child(7),
+  .sch-split .sch-l th:nth-child(8), .sch-split .sch-l td:nth-child(8) { display: none; }
+  .sch-split .sch-l tr.grp-h td { display: table-cell; }
+  .sch-split .sch-l td.nm { width: auto; } .sch-split .sch-l td.nm input { font-size: 15px !important; }
+  .sch-split .sch-l td select, .sch-split .sch-l td input.num { height: 38px; }
+  .sch-split .sch-l input.num { width: 44px; }
+  .sch-gt { width: 34px; } .sch-gt:hover, .sch-gt:focus-within, .sch-gt:focus { width: calc(100% - 4px); } .sch-gt-in { width: calc(100vw - 40px); }
+  .sch-gt-tab { font-size: 11.5px; letter-spacing: .15em; }
+  .sch-add { display: grid; grid-template-columns: 1fr 1fr; } .sch-add input[name=name] { grid-column: 1 / -1; } .sch-add button { grid-column: 1 / -1; padding: 12px; }
+  .sch-add .arrow { display: none; }
+  #stTip { display: none !important; }   /* 觸控沒有 hover：改用每列右邊的 › 開啟詳細 */
+  .td-box { width: 100vw !important; border-radius: 0 !important; }
+  .td-l li { grid-template-columns: 1fr !important; } .td-l li em { grid-row: auto !important; }
+  .ot-switch button small { display: none; } .page.office > .ot-switch button { padding: 12px; font-size: 18px; justify-content: center; }
+  .fc-box, .td-box { max-width: 100%; }
+}
+@media (display-mode: standalone) { body { overscroll-behavior-y: none; } }
+@media (max-width: 760px) {
+  .sch-split .sch-l th:nth-child(5), .sch-split .sch-l td:nth-child(5) { display: none; }
+  .sch-split .sch-l td select { width: 92px; padding: 0 4px; }
+  .sch-split .sch-l td.nm { min-width: 110px; }
+  .sch-t .op { width: 28px; } .sch-t .x { width: 22px; padding: 0; }
+}
+.td-del { margin-top: 22px; background: none; border: 1px solid #d9b3bd; color: #b3122f; border-radius: 6px; padding: 8px 14px; font: 600 13px var(--font); cursor: pointer; }
+@media (max-width: 760px) { .sch-t .x { display: none; } .sch-split .sch-l td select { width: 86px; } }
