@@ -40,13 +40,12 @@
         <td class="d">${valid(t.start) && valid(t.end) ? bdays(t.start, t.end) : "—"}</td>
         <td><input data-f="start" type="date" value="${esc(t.start)}"></td>
         <td><input data-f="end" type="date" value="${esc(t.end)}"></td>
-        ${ws.map((w) => cell(t, w)).join("")}
         <td><button type="button" class="x" data-del aria-label="刪除">✕</button></td>
       </tr>`).join("");
     return `
     <div class="sch">
       <div class="sch-head"><b>時程表</b><span>${tasks.length} 個任務</span><button type="button" class="ghost-btn" data-sch-copy>複製（貼到試算表）</button></div>
-      ${tasks.length ? `<div class="sch-scroll"><table class="sch-t"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th>${weekHead(ws)}<th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
+      ${tasks.length ? `<div class="sch-scroll sch-split"><table class="sch-t sch-l"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="sch-gt" tabindex="0" aria-label="時間軸（滑過展開）"><span class="sch-gt-tab">時間軸 ◂</span><div class="sch-gt-in"><table class="sch-t sch-g" style="min-width:${ws.length * 58}px"><thead><tr>${weekHead(ws)}</tr></thead><tbody>${tasks.map((t) => `<tr>${ws.map((w) => cell(t, w)).join("")}</tr>`).join("")}</tbody></table></div></div></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
       <form class="sch-add" data-sch-add autocomplete="off">
         <input name="name" placeholder="新任務（例如：拍攝第一支示範片）" required>
         <select name="pri">${PRI.map((x) => `<option ${x === "P1" ? "selected" : ""}>${x}</option>`).join("")}</select>
@@ -74,7 +73,35 @@
       }));
       tr.querySelector("[data-del]")?.addEventListener("click", () => { S.removeTask(p.id, id); again(); });
     });
+    statusCard(el, p, again);
     el.querySelector("[data-sch-copy]")?.addEventListener("click", () => copy(tsv([p])));
+  }
+
+  /* 滑鼠移到任務那一列 → 浮出「新增狀態」小卡：改狀態/進度 + 一句進度紀錄（記在該任務上，保留歷史） */
+  function statusCard(el, p, again) {
+    const S = window.Store; if (!S || window.VIEWER) return;
+    let card = document.getElementById("stTip"); if (!card) { card = document.createElement("div"); card.id = "stTip"; card.hidden = true; document.body.appendChild(card); }
+    let timer, cur = null; const hide = () => { clearTimeout(timer); timer = setTimeout(() => { card.hidden = true; cur = null; }, 260); };
+    const keep = () => clearTimeout(timer);
+    card.onmouseenter = keep; card.onmouseleave = hide;
+    const show = (tr) => {
+      const t = (p.tasks || []).find((x) => x.id === tr.dataset.tid); if (!t) return; cur = tr; keep();
+      const logs = (t.log || []).slice(-3).reverse();
+      card.innerHTML = `<form autocomplete="off"><div class="st-h"><b>${esc(t.name)}</b><span>＋ 新增狀態</span></div>
+        <div class="st-r"><select name="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input name="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span><input name="text" placeholder="這次的狀態（例：11/17 已送測、等 GPU）" required><button type="submit">新增</button></div>
+        ${logs.length ? `<ul class="st-l">${logs.map((l) => `<li><em>${esc(l.d)}</em> <b>${esc(l.s)} ${+l.p || 0}%</b> ${esc(l.text)}</li>`).join("")}</ul>` : ""}</form>`;
+      const r = tr.getBoundingClientRect(), w = Math.min(640, innerWidth - 24);
+      card.style.width = w + "px"; card.style.left = Math.max(12, Math.min(r.left + 20, innerWidth - w - 12)) + "px"; card.hidden = false;
+      const h = card.offsetHeight; card.style.top = (r.bottom + h + 8 > innerHeight && r.top - h - 8 > 0 ? r.top - h - 4 : r.bottom - 2) + "px";
+      card.querySelector("form").addEventListener("submit", (e) => {
+        e.preventDefault(); const f = new FormData(e.target), pg = Math.max(0, Math.min(100, +f.get("progress") || 0)), st = String(f.get("status")), text = String(f.get("text")).trim(); if (!text) return;
+        S.updateTask(p.id, t.id, { status: st, progress: pg, log: [...(t.log || []), { d: iso(new Date()), s: st, p: pg, text }] }); card.hidden = true; cur = null; again();
+      });
+    };
+    el.addEventListener("mouseover", (e) => { const tr = e.target.closest && e.target.closest("tr[data-tid]"); if (!tr || tr === cur || !el.contains(tr) || tr.contains(document.activeElement) && document.activeElement.matches("input,select")) return; show(tr); });
+    el.addEventListener("mouseout", (e) => { const tr = e.target.closest && e.target.closest("tr[data-tid]"); if (!tr || (e.relatedTarget && (tr.contains(e.relatedTarget) || card.contains(e.relatedTarget)))) return; hide(); });
+    el.addEventListener("focusin", (e) => { if (e.target.closest("tr[data-tid]")) { clearTimeout(timer); card.hidden = true; cur = null; } });
+    window.addEventListener("hashchange", () => { card.hidden = true; });
   }
 
   /* ---------- 匯出：欄位順序同你們的 Weekly_Task_Tracking ---------- */
