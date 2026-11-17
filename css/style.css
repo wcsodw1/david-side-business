@@ -1330,3 +1330,22 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .mega-opts button.on { background: #2a1f17; border-color: #2a1f17; color: #f7f2e8; } .mega-opts button.on small { color: #d9ccb6; }
 .mega-wide { grid-column: span 2; } .mega-note { grid-column: 1 / -1; margin: 6px 4px 0; color: #6b5a4a; font-size: 13px; } .mega-note b { color: #6d1530; letter-spacing: .14em; font-size: 11px; margin-right: 8px; }
 [data-up][hidden] { display: none !important; }
+
+/* 時程表：不用橫向捲動，甘特欄自動縮放塞進同一屏 */
+.sch-scroll { overflow-x: visible; }
+.sch-t { width: 100%; min-width: 0; table-layout: auto; }
+.sch-t th { padding: 6px 5px; }
+.sch-t td { padding: 4px 3px; }
+.sch-t td.nm { min-width: 0; width: 22%; }
+.sch-t td.nm input { min-width: 0; width: 100%; }
+.sch-t input, .sch-t select { max-width: 100%; font-size: 11.5px; padding: 3px 3px; }
+.sch-t input[type=date], .sch-t input[type=text]:not(.num) { width: 100%; min-width: 0; }
+.sch-t input.num { width: 34px; }
+.sch-t td input[type=date] { width: 106px; }
+.sch-t th.g { min-width: 0; width: 5.5%; padding: 4px 1px; }
+.sch-t th.g small { font-size: 8.5px; white-space: normal; }
+.sch-t td.g { min-width: 0; background: none; border-left: 1px solid #f0ebde; }
+.sch-t td.g.on { background: #6b8fe6; }
+.sch-t td.g.on.pri-P0 { background: #e0536b; }
+.sch-t td.g.on.st-Done { background: #5fbf92; }
+.sch-t td.g.on.st-Blocked { background: #9a9aae; }
