@@ -1582,3 +1582,6 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 #faceNudge button { height: 36px; padding: 0 16px; border-radius: 6px; border: 1px solid #cfc7b6; background: #fff; color: #2b2723; font: 600 14px var(--font); cursor: pointer; }
 #faceNudge button[data-y] { background: #8b1e3f; border-color: #8b1e3f; color: #fff; }
 @media (max-width: 860px) { #faceNav { display: none; } }
+
+.sch-split .sch-l td.upd { font-size: 13.5px; color: #7a6a55; text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 760px) { .sch-split .sch-l th:nth-child(9), .sch-split .sch-l td:nth-child(9) { display: none; } }

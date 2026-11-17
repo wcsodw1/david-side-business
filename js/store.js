@@ -105,12 +105,12 @@
     // 時程表：每個專案的任務（名稱 / 優先級 P0-P2 / 負責人 / 狀態 / 進度 / 預計開始與結束 / 說明）
     addTask(pid, t) {
       const p = P.find((x) => x.id === pid); if (!p) return null; const name = String(t.name || "").trim(); if (!name) return null;
-      const r = rec(pid), task = { id: Math.random().toString(36).slice(2, 8), name, pri: t.pri || "P1", owner: String(t.owner || "").trim(), status: t.status || "To Do", progress: +t.progress || 0, start: t.start || today(), end: t.end || t.start || today(), note: String(t.note || "").trim() };
+      const r = rec(pid), task = { createdAt: Date.now(), updAt: Date.now(), id: Math.random().toString(36).slice(2, 8), name, pri: t.pri || "P1", owner: String(t.owner || "").trim(), status: t.status || "To Do", progress: +t.progress || 0, start: t.start || today(), end: t.end || t.start || today(), note: String(t.note || "").trim() };
       r.tasks.push(task); save(); apply(p); emit({ pid, kind: "tasks", text: "新增任務：" + name }); bc({ pid, tasks: r.tasks }); return task;
     },
     updateTask(pid, id, patch) {
       const p = P.find((x) => x.id === pid); if (!p) return; const r = rec(pid), t = r.tasks.find((x) => x.id === id); if (!t) return;
-      const before = { ...t }; Object.assign(t, patch); if (t.progress >= 100) t.status = "Done"; save(); apply(p);
+      const before = { ...t }; Object.assign(t, patch); t.updAt = Date.now(); if (t.progress >= 100) t.status = "Done"; save(); apply(p);
       const L = { status: "狀態", progress: "進度", cur: "目前狀態", next: "Next Step", note: "備註", grp: "區塊", owner: "負責人", start: "開始", end: "結束", pri: "優先", name: "名稱" }, parts = Object.keys(patch).filter((k) => L[k] && String(before[k] ?? "") !== String(t[k] ?? "")).map((k) => k === "note" ? "備註更新" : `${L[k]} → ${String(t[k]).length > 40 ? String(t[k]).slice(0, 40) + "…" : t[k]}${k === "progress" ? "%" : ""}`);
       if (patch.log && patch.log.length > (before.log || []).length && !parts.length) parts.push("歷史新增一筆");
       if (parts.length) emit({ pid, kind: "tasks", text: `${t.name}：${parts.join("；")}` }); bc({ pid, tasks: r.tasks });

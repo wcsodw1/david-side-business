@@ -27,6 +27,10 @@
   const cell = (t, w) => { const on = valid(t.start) && valid(t.end) && pd(t.start) <= w.fri && pd(t.end) >= w.mon; return `<td class="g ${on ? `on pri-${esc(t.pri)} st-${esc(String(t.status).replace(/\s/g, ""))}` : ""}" title="${on ? esc(t.name) + "：" + esc(t.start) + " → " + esc(t.end) : ""}"></td>`; };
   const weekHead = (ws) => ws.map((w) => `<th class="g">${w.label}<small>${w.range}</small></th>`).join("");
 
+  const ymd = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  const seedOf = (p, t) => (p && p.tasks0 || []).find((x) => x.name === t.name) || {};
+  const updOf = (t, p) => (t.updAt ? ymd(t.updAt) : t.upd || seedOf(p, t).upd || "");
+  const crtOf = (t, p) => (t.createdAt ? ymd(t.createdAt) : t.created || seedOf(p, t).created || "");
   /* TPI 分三區：RD / ADMIN / BACKLOG（每個任務可自己選；沒選的依原本分類推測） */
   const GRPS = ["RD", "ADMIN", "BACKLOG"];
   const grpOf = (p, t) => { if (GRPS.includes(t.grp)) return t.grp; const seed = (p.tasks0 || []).find((x) => x.name === t.name); if (seed && GRPS.includes(seed.grp)) return seed.grp; const c = (String(t.note || "").match(/【([^】]*)】/) || [])[1] || ""; return /行政|開案/.test(c) ? "ADMIN" : "RD"; };
@@ -45,14 +49,15 @@
         <td class="d">${valid(t.start) && valid(t.end) ? bdays(t.start, t.end) : "—"}</td>
         <td><input data-f="start" type="date" value="${esc(t.start)}"></td>
         <td><input data-f="end" type="date" value="${esc(t.end)}"></td>
+        <td class="upd" title="新增 ${esc(crtOf(t, p) || "—")}｜最後更新 ${esc(updOf(t, p) || "—")}">${esc((updOf(t, p) || "—").slice(5).replace("-", "/"))}</td>
         <td class="ops"><button type="button" class="op" data-open aria-label="開啟詳細">›</button><button type="button" class="x" data-del aria-label="刪除">✕</button></td>
       </tr>`;
     const hd = (x, span) => `<tr class="grp-h"><td colspan="${span}"><b>${esc(x.h)}</b><span>${x.n}</span></td></tr>`;
-    const rows = seq.map((x) => (x.h ? hd(x, 9) : rowL(x))).join("");
+    const rows = seq.map((x) => (x.h ? hd(x, 10) : rowL(x))).join("");
     return `
     <div class="sch">
       <div class="sch-head"><b>時程表</b><span>${tasks.length} 個任務</span><button type="button" class="ghost-btn" data-sch-copy>複製（貼到試算表）</button></div>
-      ${tasks.length ? `<div class="sch-scroll sch-split"><table class="sch-t sch-l"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="sch-gt" tabindex="0" aria-label="時間軸（滑過展開）"><span class="sch-gt-tab">時間軸 ◂</span><div class="sch-gt-in"><table class="sch-t sch-g" style="min-width:${ws.length * 58}px"><thead><tr>${weekHead(ws)}</tr></thead><tbody>${seq.map((x) => (x.h ? hd(x, ws.length) : `<tr>${ws.map((w) => cell(x, w)).join("")}</tr>`)).join("")}</tbody></table></div></div></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
+      ${tasks.length ? `<div class="sch-scroll sch-split"><table class="sch-t sch-l"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th><th>更新</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="sch-gt" tabindex="0" aria-label="時間軸（滑過展開）"><span class="sch-gt-tab">時間軸 ◂</span><div class="sch-gt-in"><table class="sch-t sch-g" style="min-width:${ws.length * 58}px"><thead><tr>${weekHead(ws)}</tr></thead><tbody>${seq.map((x) => (x.h ? hd(x, ws.length) : `<tr>${ws.map((w) => cell(x, w)).join("")}</tr>`)).join("")}</tbody></table></div></div></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
       <form class="sch-add" data-sch-add autocomplete="off">
         <input name="name" placeholder="新任務（例如：拍攝第一支示範片）" required>
         <select name="pri">${PRI.map((x) => `<option ${x === "P1" ? "selected" : ""}>${x}</option>`).join("")}</select>
@@ -110,7 +115,7 @@
     const L = { cur: "目前狀態", next: "Next Step" };
     const paint = (keepInputs) => {
       const t = get(); if (!t) return;
-      ov.querySelector(".td-meta").innerHTML = `${p.id === "tpi" ? `<select data-m="grp" title="區塊">${GRPS.map((x) => `<option ${x === grpOf(p, t) ? "selected" : ""}>${x}</option>`).join("")}</select>` : ""}<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)}`;
+      ov.querySelector(".td-meta").innerHTML = `${p.id === "tpi" ? `<select data-m="grp" title="區塊">${GRPS.map((x) => `<option ${x === grpOf(p, t) ? "selected" : ""}>${x}</option>`).join("")}</select>` : ""}<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)} · 新增 ${esc(crtOf(t, p) || "—")} · <b>更新 ${esc(updOf(t, p) || "—")}</b>`;
       ov.querySelectorAll("[data-m]").forEach((el) => el.addEventListener("change", () => { let v = el.value; if (el.dataset.m === "progress") v = Math.max(0, Math.min(100, +v || 0)); S.updateTask(p.id, tid, { [el.dataset.m]: v }); paint(); again && again(true); }));
       if (!keepInputs) { ov.querySelector('[data-fld="cur"] input').value = t.cur || ""; ov.querySelector('[data-fld="next"] input').value = t.next || ""; ov.querySelector(".td-note-in").value = t.note || ""; }
       const H = (t.log || []).slice().reverse();
