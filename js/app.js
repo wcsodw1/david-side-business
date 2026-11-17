@@ -489,8 +489,8 @@
       const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);
       { const fs = $("#officeFaceSet", app); if (fs) fs.addEventListener("click", () => window.__faceEnroll && window.__faceEnroll()); }
       { const fb = $("#officeFace", app), F = window.FaceLogin;
-        const faceOffice = async () => { const c = await F.scan(); if (!c) return; if (!c.op) { $("#officeErr", app).textContent = "這個人臉登錄還沒有辦公室密碼，請到「其他 → 人臉登錄」重新登錄"; return; }
-          if (await sha256(c.op) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (window.Store) window.Store.init(P); render(); } else $("#officeErr", app).textContent = "辦公室密碼已變更，請重新登錄人臉"; };
+        const faceOffice = async () => { const c = await F.scan(); if (!c) return; if (!c.op && !c.office) { $("#officeErr", app).textContent = "這個人臉登錄沒有辦公室權限：請先用辦公室密碼進入，再到「其他 → 人臉登錄」重新登錄"; return; }
+          if (c.office || await sha256(c.op) === OFFICE_HASH) { if (c.op) window.FaceLogin.upgrade({ office: true }); try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (window.Store) window.Store.init(P); render(); } else $("#officeErr", app).textContent = "辦公室密碼已變更，請重新登錄人臉"; };
         if (fb && F) { fb.addEventListener("click", faceOffice); if (F.hasOffice() && !window.__officeFaceTried) { window.__officeFaceTried = true; setTimeout(faceOffice, 300); } } }
       if (f) f.addEventListener("submit", async (e) => {
         e.preventDefault(); const v = pw.value.trim(); if (!v) return;
@@ -601,10 +601,14 @@
   window.addEventListener("ai:applied", () => { if (document.body.classList.contains("locked") || window.Gallery3D && window.Gallery3D.active) return; const y = scrollY; render(); requestAnimationFrame(() => scrollTo(0, y)); });
 
   /* ---------- 人臉解鎖（方便功能；詳見 js/face.js）---------- */
-  const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (c.op && await sha256(c.op) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} } $("#pw").value = c.pw; $("#gateForm").requestSubmit(); };
+  const faceEnter = () => { window.PERSONA = "david"; window.GUESTLIKE = false; try { sessionStorage.setItem(KEY, PASS_HASH); } catch (_) {} { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } } enter(); };
+  const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk);
+    if (c.pw) { const siteOk = await sha256(String(c.pw).trim()) === PASS_HASH; if (!siteOk) { $("#gateError").textContent = "網站密碼已變更，請用密碼進入後重新登錄人臉"; return; } const offOk = !!c.op && await sha256(c.op) === OFFICE_HASH; F.upgrade({ site: true, office: offOk }); if (offOk) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} } faceEnter(); return; }   // 舊版登錄：驗證後改存旗標、刪掉明碼
+    if (c.office) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} }
+    faceEnter(); };
   { const F = window.FaceLogin, row = $("#gateForm");
     if (F && row && !$("#faceBtn")) { const b = document.createElement("button"); b.type = "button"; b.id = "faceBtn"; b.className = "face-btn"; b.textContent = "👤 人臉解鎖"; b.hidden = !F.enrolled(); row.after(b); b.addEventListener("click", faceGo); } }
-  const faceEnroll = () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; return window.FaceLogin.enroll({ verify: async (pw, tp, tk, op) => { if (!pw || await sha256(pw) !== PASS_HASH) return "網站密碼不對"; if (!op || await sha256(op) !== OFFICE_HASH) return "辦公室密碼不對"; if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); const n = $("#faceNudge"); if (n) n.remove(); }); };
+  const faceEnroll = () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; return window.FaceLogin.enroll({ office: officeOpen(), verify: async (tp, tk) => { if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); const n = $("#faceNudge"); if (n) n.remove(); }); };
   window.__faceEnroll = faceEnroll;
   ["#faceEnroll", "#faceNav"].forEach((q) => { const el = $(q); if (el) el.addEventListener("click", faceEnroll); });
   let ok = false;
