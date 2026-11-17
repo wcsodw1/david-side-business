@@ -1508,3 +1508,10 @@ body.dim:not(.gl3d) .sch-t td.g.on { background: #b9ad96; } body.dim:not(.gl3d) 
 @keyframes tdIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .td-l li { grid-template-columns: 78px 1fr !important; } .td-l li b, .td-l li span { grid-column: 2; } .td-l li em { grid-row: 1 / span 2; }
 .td-l li.td-note { grid-template-columns: 78px 1fr !important; }
+
+/* TPI 分區（RD / ADMIN / BACKLOG） */
+.sch-split tr.grp-h { height: 38px; }
+.sch-split tr.grp-h td { height: 38px; padding: 0 12px; background: #efe8d6 !important; border-top: 1px solid #ddd3bd; border-bottom: 0; }
+.sch-split tr.grp-h td b { font: 800 13px var(--font); letter-spacing: .24em; color: #8b1e3f; }
+.sch-split tr.grp-h td span { margin-left: 10px; font-size: 12px; opacity: .55; }
+.sch-split .sch-g tr.grp-h td { padding: 0; }

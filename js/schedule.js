@@ -27,10 +27,15 @@
   const cell = (t, w) => { const on = valid(t.start) && valid(t.end) && pd(t.start) <= w.fri && pd(t.end) >= w.mon; return `<td class="g ${on ? `on pri-${esc(t.pri)} st-${esc(String(t.status).replace(/\s/g, ""))}` : ""}" title="${on ? esc(t.name) + "：" + esc(t.start) + " → " + esc(t.end) : ""}"></td>`; };
   const weekHead = (ws) => ws.map((w) => `<th class="g">${w.label}<small>${w.range}</small></th>`).join("");
 
+  /* TPI 分三區：RD / ADMIN / BACKLOG（每個任務可自己選；沒選的依原本分類推測） */
+  const GRPS = ["RD", "ADMIN", "BACKLOG"];
+  const grpOf = (p, t) => { if (GRPS.includes(t.grp)) return t.grp; const seed = (p.tasks0 || []).find((x) => x.name === t.name); if (seed && GRPS.includes(seed.grp)) return seed.grp; const c = (String(t.note || "").match(/【([^】]*)】/) || [])[1] || ""; return /行政|開案/.test(c) ? "ADMIN" : "RD"; };
+
   /* ---------- 單一專案的時程分頁 ---------- */
   function panel(p) {
     const tasks = p.tasks || [], ws = weeksFor(tasks), who = window.PERSONA === "aeris" ? "ARIES" : "David";
-    const rows = tasks.map((t) => `
+    const G = p.id === "tpi", seq = G ? GRPS.flatMap((g) => { const L = tasks.filter((t) => grpOf(p, t) === g); return L.length ? [{ h: g, n: L.length }, ...L] : []; }) : tasks;
+    const rowL = (t) => `
       <tr data-tid="${esc(t.id)}">
         <td class="nm"><input data-f="name" value="${esc(t.name)}" aria-label="任務"></td>
         <td><select data-f="pri" class="pri-${esc(t.pri)}">${PRI.map((x) => `<option ${x === t.pri ? "selected" : ""}>${x}</option>`).join("")}</select></td>
@@ -41,14 +46,17 @@
         <td><input data-f="start" type="date" value="${esc(t.start)}"></td>
         <td><input data-f="end" type="date" value="${esc(t.end)}"></td>
         <td><button type="button" class="x" data-del aria-label="刪除">✕</button></td>
-      </tr>`).join("");
+      </tr>`;
+    const hd = (x, span) => `<tr class="grp-h"><td colspan="${span}"><b>${esc(x.h)}</b><span>${x.n}</span></td></tr>`;
+    const rows = seq.map((x) => (x.h ? hd(x, 9) : rowL(x))).join("");
     return `
     <div class="sch">
       <div class="sch-head"><b>時程表</b><span>${tasks.length} 個任務</span><button type="button" class="ghost-btn" data-sch-copy>複製（貼到試算表）</button></div>
-      ${tasks.length ? `<div class="sch-scroll sch-split"><table class="sch-t sch-l"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="sch-gt" tabindex="0" aria-label="時間軸（滑過展開）"><span class="sch-gt-tab">時間軸 ◂</span><div class="sch-gt-in"><table class="sch-t sch-g" style="min-width:${ws.length * 58}px"><thead><tr>${weekHead(ws)}</tr></thead><tbody>${tasks.map((t) => `<tr>${ws.map((w) => cell(t, w)).join("")}</tr>`).join("")}</tbody></table></div></div></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
+      ${tasks.length ? `<div class="sch-scroll sch-split"><table class="sch-t sch-l"><thead><tr><th>任務</th><th>優先</th><th>負責人</th><th>狀態</th><th>進度</th><th>天數</th><th>開始</th><th>結束</th><th></th></tr></thead><tbody>${rows}</tbody></table><div class="sch-gt" tabindex="0" aria-label="時間軸（滑過展開）"><span class="sch-gt-tab">時間軸 ◂</span><div class="sch-gt-in"><table class="sch-t sch-g" style="min-width:${ws.length * 58}px"><thead><tr>${weekHead(ws)}</tr></thead><tbody>${seq.map((x) => (x.h ? hd(x, ws.length) : `<tr>${ws.map((w) => cell(x, w)).join("")}</tr>`)).join("")}</tbody></table></div></div></div>` : `<p class="sch-empty">還沒有任務。在下面新增第一個，會自動畫出每週的甘特條。</p>`}
       <form class="sch-add" data-sch-add autocomplete="off">
         <input name="name" placeholder="新任務（例如：拍攝第一支示範片）" required>
         <select name="pri">${PRI.map((x) => `<option ${x === "P1" ? "selected" : ""}>${x}</option>`).join("")}</select>
+        ${G ? `<select name="grp">${GRPS.map((x) => `<option>${x}</option>`).join("")}</select>` : ""}
         <input name="owner" placeholder="負責人" value="${esc(who)}" size="7">
         <input name="start" type="date" value="${iso(new Date())}"><span class="arrow">→</span><input name="end" type="date" value="${iso(new Date(Date.now() + 4 * 86400000))}">
         <button type="submit">新增</button>
@@ -61,7 +69,7 @@
     el.querySelector("[data-sch-add]")?.addEventListener("submit", (e) => {
       e.preventDefault(); const f = new FormData(e.target), start = String(f.get("start")), end = String(f.get("end"));
       if (valid(start) && valid(end) && pd(end) < pd(start)) { window.Journal && window.Journal.toast("結束日不能早於開始日"); return; }
-      S.addTask(p.id, { name: f.get("name"), pri: f.get("pri"), owner: f.get("owner"), start, end }); again();
+      const nt = S.addTask(p.id, { name: f.get("name"), pri: f.get("pri"), owner: f.get("owner"), start, end }); if (nt && f.get("grp")) S.updateTask(p.id, nt.id, { grp: String(f.get("grp")) }); again();
     });
     el.querySelectorAll("tr[data-tid]").forEach((tr) => {
       const id = tr.dataset.tid;
@@ -101,7 +109,7 @@
     const L = { cur: "目前狀態", next: "Next Step" };
     const paint = (keepInputs) => {
       const t = get(); if (!t) return;
-      ov.querySelector(".td-meta").innerHTML = `<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)}`;
+      ov.querySelector(".td-meta").innerHTML = `${p.id === "tpi" ? `<select data-m="grp" title="區塊">${GRPS.map((x) => `<option ${x === grpOf(p, t) ? "selected" : ""}>${x}</option>`).join("")}</select>` : ""}<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)}`;
       ov.querySelectorAll("[data-m]").forEach((el) => el.addEventListener("change", () => { let v = el.value; if (el.dataset.m === "progress") v = Math.max(0, Math.min(100, +v || 0)); S.updateTask(p.id, tid, { [el.dataset.m]: v }); paint(); again && again(true); }));
       if (!keepInputs) { ov.querySelector('[data-fld="cur"] input').value = t.cur || ""; ov.querySelector('[data-fld="next"] input').value = t.next || ""; ov.querySelector(".td-note-in").value = t.note || ""; }
       const H = (t.log || []).slice().reverse();
