@@ -124,7 +124,17 @@
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
     const ai = ov.querySelector(".td-ai");
-    if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, sys: () => { const t = get() || t0; return `你是 David 的工作助理，只針對任務「${t.name}」（所屬：${p.name}）用繁體中文簡潔直接地回答。狀態 ${t.status}、進度 ${+t.progress || 0}%、優先 ${t.pri}、期間 ${t.start}→${t.end}。目前狀態：${t.cur || "無"}。Next Step：${t.next || "無"}。備註：${t.note || "無"}。歷史（新到舊）：${(t.log || []).slice().reverse().map((l) => `${l.d} ${l.k || ""} ${l.text}`).join("；") || "無"}。需要時參考，不需要不要複述。`; } }); } catch (_) { ai.textContent = "AI 載入失敗"; } } else ai.textContent = "AI 未載入";
+    if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, task: { run: (name, a) => {
+          if (name !== "update_this_task") return { ok: false, error: "不認得的工具：" + name };
+          const t = get(); if (!t) return { ok: false, error: "任務不存在" }; const patch = {}, done = [], keep = a.archive_old !== false, log = [...(t.log || [])];
+          if (ST.includes(a.status) && a.status !== t.status) { patch.status = a.status; done.push("狀態 → " + a.status); }
+          if (a.progress !== undefined && !isNaN(+a.progress)) { patch.progress = Math.max(0, Math.min(100, +a.progress)); done.push("進度 → " + patch.progress + "%"); }
+          for (const [k, lab] of [["cur", "目前狀態"], ["next", "Next Step"]]) { if (a[k] === undefined) continue; const nv = String(a[k]).trim(), old = String(t[k] || "").trim(); if (nv === old) continue; if (keep && old) log.push({ d: t[k + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: lab }); patch[k] = nv; patch[k + "At"] = iso(new Date()); done.push(lab + " → " + (nv || "（清空）") + (keep && old ? "（舊的已存進歷史）" : "")); }
+          if (a.note !== undefined && String(a.note).trim() !== String(t.note || "").trim()) { patch.note = String(a.note).trim(); done.push("備註已更新"); }
+          if (!done.length) return { ok: true, text: "沒有需要改的" };
+          if (log.length !== (t.log || []).length) patch.log = log;
+          S.updateTask(p.id, tid, patch); paint(); again && again(true); return { ok: true, text: `${t.name}：${done.join("；")}` };
+        }, }, sys: () => { const t = get() || t0; return `你是 David 的工作助理，只針對任務「${t.name}」（所屬：${p.name}）用繁體中文簡潔直接地回答。狀態 ${t.status}、進度 ${+t.progress || 0}%、優先 ${t.pri}、期間 ${t.start}→${t.end}。目前狀態：${t.cur || "無"}。Next Step：${t.next || "無"}。備註：${t.note || "無"}。歷史（新到舊）：${(t.log || []).slice().reverse().map((l) => `${l.d} ${l.k || ""} ${l.text}`).join("；") || "無"}。需要時參考，不需要不要複述。`; } }); } catch (_) { ai.textContent = "AI 載入失敗"; } } else ai.textContent = "AI 未載入";
   }
 
   /* 滑鼠移到任務那一列 → 浮出「新增狀態」小卡：改狀態/進度 + 一句進度紀錄（記在該任務上，保留歷史） */

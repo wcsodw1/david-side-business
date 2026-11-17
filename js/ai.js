@@ -108,6 +108,7 @@
   };
   const fn = (name, description, props, required) => ({ type: "function", function: { name, description, parameters: { type: "object", properties: props, required } } });
   const PJ = { type: "string", description: "專案 id 或名稱，例如 coffee-shop / Coffee Shop" };
+  const TASK_TOOL = [fn("update_this_task", "更新「這個任務」自己的資料：狀態、進度、目前狀態一句話、Next Step、備註。只填要改的欄位。目前狀態/Next Step 有舊內容時，預設會把舊的存進歷史。", { status: { type: "string", enum: ["To Do", "Doing", "Done", "Blocked"] }, progress: { type: "number" }, cur: { type: "string", description: "目前狀態（一句話）" }, next: { type: "string", description: "Next Step" }, note: { type: "string", description: "備註（會取代原本備註）" }, archive_old: { type: "boolean", description: "舊的目前狀態/Next Step 是否存進歷史，預設 true" } }, [])];
   const TOOLS = [
     fn("update_project", "更新專案白板：狀態、目前進度一句話（會寫進進度紀錄與 NEWS）、Next Step、目標。只填要改的欄位。", { project: PJ, status: { type: "string", enum: P_ST }, note: { type: "string", description: "目前進度 / 最新狀況一句話" }, next: { type: "string", description: "下一步" }, goal: { type: "string", description: "專案目標" } }, ["project"]),
     fn("add_milestones", "替專案加里程碑（完成度會依里程碑計算）", { project: PJ, items: { type: "array", items: { type: "string" } } }, ["project", "items"]),
@@ -156,6 +157,7 @@
     WAY(p) +
     `\n各專案的時程表任務：\n` + projList(p).map((q) => `- ${q.id}（${q.name}）：${(q.tasks || []).length ? q.tasks.map((t) => `${t.name}［${t.status} ${t.progress || 0}% ${t.start}~${t.end}］`).join("、") : "沒有任務"}`).join("\n");
   const runTool = (p, name, a) => {
+    if (p.task) return p.task.run(name, a);
     const S = window.Store; if (!S) return { ok: false, error: "藝廊資料還沒載入" };
     const pj = findProj(p, a.project); if (!pj) return { ok: false, error: `找不到專案「${a.project || ""}」` };
     const done = [], nm = pj.name;
@@ -209,7 +211,7 @@
       return { text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"), imgs: [] };
     }
     if (isLocal()) {
-      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store && !opt.compare && !p.noTools, messages = [{ role: "system", content: sysPrompt(p) + (useTools ? toolPrompt(p) : "") }];
+      const base = baseOf(), useTools = cfg.tools !== false && !!window.Store && !opt.compare && (!p.noTools || !!p.task), messages = [{ role: "system", content: sysPrompt(p) + (useTools ? (p.task ? "\n\n你可以呼叫 update_this_task 直接更新這個任務。David 說要記錄、更新狀態、進度、下一步、備註時，一定要真的呼叫工具，不要只在文字裡說已更新。今天是 " + (window.Store ? window.Store.today() : "") + "。" : toolPrompt(p)) : "") }];
       for (const m of hist) {
         if (m.role === "user") {
           const noEyes = cfg.provider === "aiso1" && aiso.vision === false;   // 目前的模型不能看圖：不要把圖送過去（不然整段對話都會報錯），改成文字說明
@@ -237,7 +239,7 @@
         body.chat_template_kwargs = { enable_thinking: !!cfg.think };          // llama.cpp：要不要先「思考」再回答
         if (cfg.temp !== "" && !isNaN(+cfg.temp)) body.temperature = +cfg.temp;
         if (+cfg.maxTok > 0) body.max_tokens = Math.round(+cfg.maxTok);
-        if (useTools && round < 7) body.tools = repoOn() ? TOOLS.concat(REPO_TOOLS) : TOOLS;
+        if (useTools && round < 7) body.tools = p.task ? TASK_TOOL : repoOn() ? TOOLS.concat(REPO_TOOLS) : TOOLS;
         let r;
         try { r = await fetch(base + "/chat/completions", { ...LNA(), method: "POST", signal, headers, body: JSON.stringify(body) }); }
         catch (e) { if (e.name === "AbortError") throw e; throw new Error(cfg.provider === "aiso1" ? `連不到 AISO1（${base}）。${LAUNCH_HELP} 或確認：① 瀏覽器允許這個網站存取本機：${LNA_HELP} ② 這台 Mac 的 SSH 通道有開：${AISO_TUNNEL}（出現 Address already in use 代表已經開著，沒問題）③ AISO1 上的模型服務在跑。` : `連不到 ${base}：${e.message}`); }

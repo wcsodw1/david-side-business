@@ -1501,3 +1501,10 @@ body.dim:not(.gl3d) .sch-t td.g.on { background: #b9ad96; } body.dim:not(.gl3d) 
 .td-note-in { width: 100%; font: 500 14.5px/1.6 var(--font); padding: 8px 10px; border: 1px solid #cfc7b6; border-radius: 6px; background: #fff; color: #2b2723; resize: vertical; }
 .td-meta select, .td-meta input { font: 500 14px var(--font); height: 32px; padding: 0 6px; border: 1px solid #cfc7b6; border-radius: 6px; background: #fff; color: #2b2723; } .td-meta input { width: 56px; }
 .td-l li { grid-template-columns: 96px 150px 1fr !important; }
+
+/* 任務詳細改成右側抽屜：左邊的 TPI 工作區保持可見 */
+#tdOv { background: rgba(43,39,35,.14); place-items: stretch end !important; padding: 0 !important; overflow: hidden !important; }
+.td-box { width: min(580px, 94vw) !important; height: 100vh; overflow-y: auto; border-radius: 10px 0 0 10px !important; padding: 24px 24px 30px !important; box-shadow: -18px 0 40px rgba(40,25,20,.2) !important; animation: tdIn .28s cubic-bezier(.2,.8,.2,1); }
+@keyframes tdIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+.td-l li { grid-template-columns: 78px 1fr !important; } .td-l li b, .td-l li span { grid-column: 2; } .td-l li em { grid-row: 1 / span 2; }
+.td-l li.td-note { grid-template-columns: 78px 1fr !important; }
