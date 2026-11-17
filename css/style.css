@@ -1595,3 +1595,5 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 .td-box { width: min(880px, 94vw) !important; height: auto !important; max-height: 90vh; overflow-y: auto; border-radius: 12px !important; box-shadow: 0 24px 70px rgba(40,25,20,.32) !important; animation: tdPop .22s cubic-bezier(.2,.8,.2,1) !important; }
 @keyframes tdPop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (max-width: 760px) { #tdOv { padding: 0 !important; } .td-box { width: 100vw !important; max-height: 100vh; height: 100vh !important; border-radius: 0 !important; } }
+.sch-t td.nm input[data-f=name] { cursor: pointer; } .sch-t td.nm input[data-f=name]:hover { border-color: #8b1e3f; background: #fff; }
+.td-box h3 { margin-right: 36px; } .td-name { width: 100%; font: 600 24px var(--font); color: #2b2723; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 2px 6px; margin-left: -6px; } .td-name:hover, .td-name:focus { border-color: #cfc7b6; background: #fff; outline: none; }

@@ -86,6 +86,7 @@
         S.updateTask(p.id, id, patch); again();
       }));
       tr.querySelector("[data-open]")?.addEventListener("click", () => openTask(p, id, again));
+      { const nm = tr.querySelector("input[data-f=name]"); if (nm) { nm.readOnly = true; nm.style.cursor = "pointer"; nm.title = "點一下開啟詳細（狀態 / Next Step / 歷史 / AI）"; nm.addEventListener("click", () => openTask(p, id, again)); } }
       tr.querySelector("[data-del]")?.addEventListener("click", () => { S.removeTask(p.id, id); again(); });
     });
     statusCard(el, p, again);
@@ -106,7 +107,7 @@
     document.addEventListener("keydown", onKey, true);
     const t0 = get();
     ov.innerHTML = `<div class="td-box" role="dialog" aria-label="${esc(t0.name)}"><button type="button" class="td-x" aria-label="關閉">✕</button>
-      <h3>${esc(t0.name)}</h3><p class="td-meta"></p>
+      <h3><input class="td-name" value="${esc(t0.name)}" aria-label="任務名稱" title="點這裡可改名稱"></h3><p class="td-meta"></p>
       <div class="td-sec" data-fld="cur"><h4>目前狀態</h4><div class="td-row"><input name="v" placeholder="現在進行到哪、卡在哪" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
       <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row"><input name="v" placeholder="下一步要做什麼" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
       <div class="td-sec"><h4>備註</h4><textarea class="td-note-in" rows="2" placeholder="等待對象、連結、補充（失焦自動儲存）"></textarea></div>
@@ -135,6 +136,7 @@
         ask.querySelector("[data-y]").onclick = () => apply(true); ask.querySelector("[data-n]").onclick = () => apply(false); };
       sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go(); } });
     });
+    ov.querySelector(".td-name").addEventListener("change", (e) => { const v = e.target.value.trim(); if (v) S.updateTask(p.id, tid, { name: v }); else e.target.value = (get() || t0).name; });
     ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
