@@ -12,7 +12,7 @@
   const KEY = "dsb-unlocked";
   const OFFICE_KEY = "dsb-office", OFFICE_HASH = "e6207542afa9e43cb59bf41af439c06ebb9a5b1c0652e3dcdb14b0b81931873a";   // 辦公室另設密碼（只存 SHA-256，不存明碼）
   let updTab = "gallery";   // 最新動態：藝廊 / TPI
-  let officeTab = "gallery";   // 辦公室上方兩個類型：gallery（Side Business 儀表板）/ tpi（TPI 工作區）
+  let officeTab = "tpi";   // 辦公室上方兩個類型：gallery（Side Business 儀表板）/ tpi（TPI 工作區）
   let wbPage = 0;   // 辦公室看板目前在第幾頁
   const officeOpen = () => { try { return sessionStorage.getItem(OFFICE_KEY) === OFFICE_HASH; } catch (_) { return false; } };
   // 辦公室權限閘：機器人 / AI 總管也要先輸入辦公室密碼（這個分頁輸入過一次就不再問）
@@ -313,8 +313,8 @@
             <p>每個 Side Business 的即時現況，都貼在這間辦公室裡。</p>
           </div>
           ${tpi ? `<div class="ot-switch" role="tablist" aria-label="辦公室類型">
-            <button type="button" role="tab" data-otb="gallery" class="${officeTab === "gallery" ? "on" : ""}">Gallery<small>Side Business</small></button>
             <button type="button" role="tab" data-otb="tpi" class="${officeTab === "tpi" ? "on" : ""}">TPI<small>本業工作區</small></button>
+            <button type="button" role="tab" data-otb="gallery" class="${officeTab === "gallery" ? "on" : ""}">Gallery<small>Side Business</small></button>
           </div>` : ""}
           <div class="office-room" data-ot="gallery" ${tpi && officeTab === "tpi" ? "hidden" : ""}>
 
