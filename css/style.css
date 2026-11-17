@@ -1588,3 +1588,10 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 .fc-b .fc-add { background: #f4efe3; }
 .fc-f { grid-template-columns: 1fr 1fr; } .fc-f input { min-width: 0; }
 .fc-b .fc-main { background: #8b1e3f; color: #fff; border-color: #8b1e3f; } .fc-b .fc-done { background: #fff; }
+.pd-zh { font-size: 14px; font-weight: 500; opacity: .6; margin-left: 8px; } .pd-open { color: #8b1e3f; font-weight: 700; text-decoration: none; margin-left: 6px; } .pd-open:hover { text-decoration: underline; }
+
+/* 詳細面板：置中蓋住原本區域；滑鼠移開自動關閉 */
+#tdOv { place-items: center !important; padding: 20px !important; overflow: hidden !important; background: rgba(43,39,35,.10) !important; }
+.td-box { width: min(880px, 94vw) !important; height: auto !important; max-height: 90vh; overflow-y: auto; border-radius: 12px !important; box-shadow: 0 24px 70px rgba(40,25,20,.32) !important; animation: tdPop .22s cubic-bezier(.2,.8,.2,1) !important; }
+@keyframes tdPop { from { transform: scale(.97); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 760px) { #tdOv { padding: 0 !important; } .td-box { width: 100vw !important; max-height: 100vh; height: 100vh !important; border-radius: 0 !important; } }

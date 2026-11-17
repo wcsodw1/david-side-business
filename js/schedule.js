@@ -28,7 +28,8 @@
   const weekHead = (ws) => ws.map((w) => `<th class="g">${w.label}<small>${w.range}</small></th>`).join("");
 
   const ymd = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-  const seedOf = (p, t) => (p && p.tasks0 || []).find((x) => x.name === t.name) || {};
+  const catOf = (x) => (String(x.note || "").match(/【([^】]*)】/) || [])[1] || "";
+  const seedOf = (p, t) => { const L = (p && p.tasks0) || []; const byName = L.find((x) => x.name === t.name); if (byName) return byName; const c = catOf(t); if (!c) return {}; const m = L.filter((x) => catOf(x) === c); return m.length === 1 ? m[0] : {}; };   // 改過名稱的任務：用唯一的【分類】對回預設資料
   const updOf = (t, p) => (t.updAt ? ymd(t.updAt) : t.upd || seedOf(p, t).upd || "");
   const crtOf = (t, p) => (t.createdAt ? ymd(t.createdAt) : t.created || seedOf(p, t).created || "");
   /* TPI 分三區：RD / ADMIN / BACKLOG（每個任務可自己選；沒選的依原本分類推測） */
@@ -96,7 +97,7 @@
      更新「目前狀態」或「Next Step」時，若舊的有內容，會問你要不要把舊的丟進歷史。 */
   function openTask(p, tid, again) {
     const S = window.Store, get = () => (p.tasks || []).find((x) => x.id === tid); if (!S || !get()) return;
-    { const t = get(), seed = (p.tasks0 || []).find((x) => x.name === t.name);   // 舊資料一次性補上 目前狀態 / 備註 預設
+    { const t = get(), seed = seedOf(p, t);   // 舊資料一次性補上 目前狀態 / 備註 預設
       if (t.cur === undefined && seed && seed.cur !== undefined) S.updateTask(p.id, tid, { cur: seed.cur, note: seed.note || "" }); }
     document.getElementById("tdOv")?.remove();
     const ov = document.createElement("div"); ov.id = "tdOv";
@@ -137,6 +138,7 @@
     ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
+    window.DrawerUtil && window.DrawerUtil.hoverClose(ov, ov.querySelector(".td-box"), close);
     ov.querySelector(".td-del").addEventListener("click", () => { if (confirm("確定刪除「" + (get() || t0).name + "」？此動作無法復原。")) { S.removeTask(p.id, tid); close(); } });
     const ai = ov.querySelector(".td-ai");
     if (window.AIChat) { try { window.AIChat.mount(ai, { ...p, id: p.id + "~task-" + tid, name: p.name + " · " + t0.name, zh: "", noTools: true, task: { run: (name, a) => {
