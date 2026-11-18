@@ -165,17 +165,23 @@
     card.onmouseenter = keep; card.onmouseleave = hide;
     const show = (tr) => {
       const t = (p.tasks || []).find((x) => x.id === tr.dataset.tid); if (!t) return; cur = tr; keep();
-      const logs = (t.log || []).slice(-3).reverse();
+      const pv = t.cur ? { d: t.curAt || updOf(t, p), text: t.cur } : (t.log || []).slice(-1).map((l) => ({ d: l.d, text: l.text }))[0] || null;
       card.innerHTML = `<form autocomplete="off"><div class="st-h"><b>${esc(t.name)}</b><button type="button" class="st-open">開啟：狀態歷史 + AI ›</button></div>
-        <div class="st-r"><select name="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input name="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span><input name="text" placeholder="這次的狀態（例：11/17 已送測、等 GPU）" required><button type="submit">新增</button></div>
-        ${logs.length ? `<ul class="st-l">${logs.map((l) => `<li><em>${esc(l.d)}</em> <b>${esc(l.s)} ${+l.p || 0}%</b> ${esc(l.text)}</li>`).join("")}</ul>` : ""}</form>`;
+        <div class="st-prev">${pv ? `<em>上一個更新 · ${esc(pv.d || "")}</em><span>${esc(pv.text)}</span>` : `<em>還沒有更新</em>`}</div>
+        <div class="st-r"><input name="text" placeholder="打字更新目前狀態…" required><button type="submit">更新</button></div>
+        <div class="st-ask" hidden></div></form>`;
       const r = tr.getBoundingClientRect(), w = Math.min(640, innerWidth - 24);
       card.style.width = w + "px"; card.style.left = Math.max(12, Math.min(r.left + 20, innerWidth - w - 12)) + "px"; card.hidden = false;
       const h = card.offsetHeight; card.style.top = (r.bottom + h + 8 > innerHeight && r.top - h - 8 > 0 ? r.top - h - 4 : r.bottom - 2) + "px";
       card.querySelector(".st-open").addEventListener("click", () => { card.hidden = true; cur = null; openTask(p, t.id, again); });
       card.querySelector("form").addEventListener("submit", (e) => {
-        e.preventDefault(); const f = new FormData(e.target), pg = Math.max(0, Math.min(100, +f.get("progress") || 0)), st = String(f.get("status")), text = String(f.get("text")).trim(); if (!text) return;
-        S.updateTask(p.id, t.id, { status: st, progress: pg, cur: text, curAt: iso(new Date()), log: [...(t.log || []), { at: Date.now(), d: iso(new Date()), s: st, p: pg, text, k: "狀態" }] }); card.hidden = true; cur = null; again();
+        e.preventDefault(); const text = String(new FormData(e.target).get("text") || "").trim(); if (!text) return;
+        const old = String(t.cur || "").trim(), ask = card.querySelector(".st-ask");
+        const apply = (save) => { const patch = { cur: text, curAt: iso(new Date()) }; if (save && old) patch.log = [...(t.log || []), { at: Date.now(), d: t.curAt || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: "目前狀態" }]; S.updateTask(p.id, t.id, patch); card.hidden = true; cur = null; again(); };
+        if (!old || old === text) return apply(false);
+        ask.hidden = false; ask.innerHTML = `之前的「<b>${esc(old.length > 50 ? old.slice(0, 50) + "…" : old)}</b>」要丟進歷史嗎？ <button type="button" data-y>丟進歷史</button><button type="button" data-n>不用</button>`;
+        ask.querySelector("[data-y]").onclick = () => apply(true); ask.querySelector("[data-n]").onclick = () => apply(false);
+        card.querySelector("input[name=text]").readOnly = true;
       });
     };
     el.addEventListener("mouseover", (e) => { const tr = e.target.closest && e.target.closest("tr[data-tid]"); if (!tr || tr === cur || !el.contains(tr) || tr.contains(document.activeElement) && document.activeElement.matches("input,select")) return; show(tr); });

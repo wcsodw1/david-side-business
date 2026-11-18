@@ -1597,3 +1597,6 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 @media (max-width: 760px) { #tdOv { padding: 0 !important; } .td-box { width: 100vw !important; max-height: 100vh; height: 100vh !important; border-radius: 0 !important; } }
 .sch-t td.nm input[data-f=name] { cursor: pointer; } .sch-t td.nm input[data-f=name]:hover { border-color: #8b1e3f; background: #fff; }
 .td-box h3 { margin-right: 36px; } .td-name { width: 100%; font: 600 24px var(--font); color: #2b2723; border: 1px solid transparent; border-radius: 6px; background: transparent; padding: 2px 6px; margin-left: -6px; } .td-name:hover, .td-name:focus { border-color: #cfc7b6; background: #fff; outline: none; }
+#stTip .st-prev { display: grid; gap: 2px; margin: 2px 0 10px; padding: 8px 10px; background: #f4efe3; border-radius: 6px; font-size: 14px; line-height: 1.5; } #stTip .st-prev em { font-style: normal; font-size: 12px; opacity: .6; }
+#stTip .st-ask { margin-top: 8px; padding: 9px 11px; background: #f4efe2; border: 1px solid #e1dacb; border-radius: 6px; font-size: 13.5px; line-height: 1.7; }
+#stTip .st-ask button { height: 28px; padding: 0 12px; margin-left: 6px; font-size: 13px; } #stTip .st-ask button[data-n] { background: #fff; color: #2b2723; border: 1px solid #cfc7b6; }
