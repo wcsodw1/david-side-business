@@ -26,7 +26,8 @@
   }
   async function camera(o) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("這個瀏覽器不支援鏡頭");
-    o.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480 }, audio: false });
+    o.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 480 }, height: { ideal: 640 } }, audio: false });
+    o.video.muted = true; o.video.setAttribute("playsinline", ""); o.video.setAttribute("webkit-playsinline", "");   // iOS Safari 需要
     o.video.srcObject = o.stream; await o.video.play();
   }
   const safeDetect = async (f, v) => { try { return await detect(f, v); } catch (_) { return null; } };
@@ -54,7 +55,7 @@
 
   /* 登錄：先驗證 TPI（verify 回傳空字串=通過，否則是錯誤訊息；網站／辦公室沿用目前登入狀態，不輸入也不存密碼），再拍 6 張特徵 */
   async function enroll(opts) {
-    const o = panel("👤 人臉登錄", `<p class="fc-p">登錄後，這台電腦開啟網站會用鏡頭自動進入，並自動解鎖 TPI。<br>建議拍兩種樣子（例如戴眼鏡、不戴眼鏡），認得比較穩。<br>TPI 密碼與金鑰（有用到才填）會存在這個瀏覽器（localStorage），請確認這是你自己的電腦。</p>
+    const o = panel("👤 人臉登錄", `<p class="fc-p">登錄後，這個裝置開啟網站會用鏡頭自動進入，並自動解鎖 TPI。<br>建議拍兩種樣子（例如戴眼鏡、不戴眼鏡），認得比較穩。<br>TPI 密碼與金鑰（有用到才填）會存在這個瀏覽器（localStorage），請確認這是你自己的裝置。</p>
       <div class="fc-f"><input type="password" name="tp" placeholder="TPI 密碼" autocomplete="off"><input type="password" name="tk" placeholder="金鑰" autocomplete="off"></div>`);
     const q = (n) => o.ov.querySelector(`[name=${n}]`);
     const grab = async (n, label) => {   // 拍 n 張特徵；回傳陣列或 null

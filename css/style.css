@@ -1600,3 +1600,7 @@ body.dim:not(.gl3d) .og-face { border-color: rgba(255,255,255,.3); }
 #stTip .st-prev { display: grid; gap: 2px; margin: 2px 0 10px; padding: 8px 10px; background: #f4efe3; border-radius: 6px; font-size: 14px; line-height: 1.5; } #stTip .st-prev em { font-style: normal; font-size: 12px; opacity: .6; }
 #stTip .st-ask { margin-top: 8px; padding: 9px 11px; background: #f4efe2; border: 1px solid #e1dacb; border-radius: 6px; font-size: 13.5px; line-height: 1.7; }
 #stTip .st-ask button { height: 28px; padding: 0 12px; margin-left: 6px; font-size: 13px; } #stTip .st-ask button[data-n] { background: #fff; color: #2b2723; border: 1px solid #cfc7b6; }
+
+/* 手機的人臉視窗 */
+.fc-box { max-height: 96vh; overflow-y: auto; }
+@media (max-width: 560px) { .fc-f { grid-template-columns: 1fr; } .fc-box { padding: 18px 16px; } .fc-v { max-height: 42vh; } .fc-b button { flex: 1 1 100%; height: 44px; } #faceNudge { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); width: auto; } #faceNudge button { height: 44px; flex: 1; } .face-btn, .og-face { width: 100%; height: 46px; } }
