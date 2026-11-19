@@ -40,7 +40,7 @@
       const go = () => { const v = (f === "next" && window.normSteps ? window.normSteps(inp.value) : inp.value.trim()), q = cur(), old = String({ note: q.wbNote, next: q.next, goal: q.goal }[f] || "").trim(); if (v === old) return;
         if (f === "note") { if (!v) return; S.setNote(q.id, v); } else if (f === "next") S.setNext(q.id, v); else S.setGoal(q.id, v);
         paint(true); again && again(true); };
-      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && (inp.tagName !== "TEXTAREA" || e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
+      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("change", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && (inp.tagName !== "TEXTAREA" || e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
     });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);
@@ -50,7 +50,7 @@
   }
   /* 滑鼠移出面板就自動關閉（回到原本畫面）；正在輸入（輸入框有游標）或選取文字時不關，避免打到一半消失 */
   window.DrawerUtil = { hoverClose(ov, box, close) {
-    let t; const typing = () => { const a = document.activeElement; return !!(a && ov.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+    let t; const typing = () => { const a = document.activeElement; return !!(a && ov.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) || !!ov.querySelector(".td-ask:not([hidden])"); };   // 正在輸入，或正在等你回答「要不要丟進歷史」時都不自動關
     const arm = () => { clearTimeout(t); t = setTimeout(() => { if (!document.body.contains(ov) || typing() || String(window.getSelection && window.getSelection())) return; close(); }, 450); };
     box.addEventListener("mouseleave", arm); box.addEventListener("mouseenter", () => clearTimeout(t));
     box.addEventListener("focusout", () => setTimeout(() => { if (!box.matches(":hover") && !typing()) arm(); }, 0));

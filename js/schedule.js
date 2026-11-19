@@ -137,6 +137,7 @@
         ask.hidden = false; ask.innerHTML = `之前的「<b>${esc(old.length > 60 ? old.slice(0, 60) + "…" : old)}</b>」要丟進歷史嗎？ <button type="button" data-y>丟進歷史</button><button type="button" data-n>不用</button>`;
         ask.querySelector("[data-y]").onclick = () => apply(true); ask.querySelector("[data-n]").onclick = () => apply(false); };
       sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && (inp.tagName !== "TEXTAREA" || e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
+      inp.addEventListener("change", go);   // 寫完離開輸入框（或按 Enter）就自動更新並詢問，不用再按按鈕
     });
     ov.querySelector(".td-name").addEventListener("change", (e) => { const v = e.target.value.trim(); if (v) S.updateTask(p.id, tid, { name: v }); else e.target.value = (get() || t0).name; });
     ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
