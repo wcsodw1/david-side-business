@@ -17,7 +17,7 @@
     ov.innerHTML = `<div class="td-box" role="dialog" aria-label="${esc(p.name)}"><button type="button" class="td-x" aria-label="關閉">✕</button>
       <h3>${esc(p.name)}${p.zh ? ` <small class="pd-zh">${esc(p.zh)}</small>` : ""}</h3><p class="td-meta"></p>
       <div class="td-sec" data-fld="note"><h4>目前狀態</h4><div class="td-row"><input name="v" placeholder="現在進行到哪、卡在哪" autocomplete="off"><button type="button" class="td-go">更新</button></div></div>
-      <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row"><input name="v" placeholder="下一步要做什麼" autocomplete="off"><button type="button" class="td-go">更新</button></div></div>
+      <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row td-row-ml"><textarea name="v" rows="3" placeholder="下一步要做什麼（可分行：1.… 2.… 3.…；Cmd/Ctrl+Enter 送出）"></textarea><button type="button" class="td-go">更新</button></div></div>
       <div class="td-sec" data-fld="goal"><h4>目標</h4><div class="td-row"><input name="v" placeholder="要做到什麼程度" autocomplete="off"><button type="button" class="td-go">更新</button></div></div>
       <div class="td-sec"><h4>歷史</h4><ul class="td-l"></ul></div>
       <h4>🤖 這個專案的 AI</h4><div class="tz-ai td-ai"></div></div>`;
@@ -27,7 +27,7 @@
       const q = cur();
       ov.querySelector(".td-meta").innerHTML = `<select data-m="status" title="白板狀態">${P_ST.map((x) => `<option ${x === q.wbStatus ? "selected" : ""}>${x}</option>`).join("")}</select> 完成度 ${q.progress ?? 0}% · ${esc(q.category || "")} · <a href="#/p/${encodeURIComponent(q.id)}" class="pd-open">開啟專案頁 ↗</a>`;
       ov.querySelector("[data-m=status]").addEventListener("change", (e) => { if (e.target.value !== q.wbStatus) S.setStatus(q.id, e.target.value); paint(); again && again(true); });
-      if (!keep) { ov.querySelector('[data-fld=note] input').value = q.wbNote || ""; ov.querySelector('[data-fld=next] input').value = q.next || ""; ov.querySelector('[data-fld=goal] input').value = q.goal || ""; }
+      if (!keep) { ov.querySelector('[data-fld=note] input').value = q.wbNote || ""; ov.querySelector('[data-fld=next] textarea').value = q.next || ""; ov.querySelector('[data-fld=goal] input').value = q.goal || ""; }
       const it = [];
       (q.updates || []).forEach((u) => it.push({ at: u.at || new Date((u.date || "1970-01-01") + "T00:00:00").getTime(), day: !u.at, text: (u.title || "") + (u.text && u.text !== u.title ? "：" + u.text : "") }));
       ((S.acts && S.acts(q.id)) || []).filter((a) => /^(next|goal|status)$/.test(a.kind)).forEach((a) => it.push({ at: a.at, day: false, text: a.text }));
@@ -36,11 +36,11 @@
     };
     paint();
     ov.querySelectorAll(".td-sec[data-fld]").forEach((sec) => {
-      const f = sec.dataset.fld, inp = sec.querySelector("input");
-      const go = () => { const v = inp.value.trim(), q = cur(), old = String({ note: q.wbNote, next: q.next, goal: q.goal }[f] || "").trim(); if (v === old) return;
+      const f = sec.dataset.fld, inp = sec.querySelector("input, textarea");
+      const go = () => { const v = (f === "next" && window.normSteps ? window.normSteps(inp.value) : inp.value.trim()), q = cur(), old = String({ note: q.wbNote, next: q.next, goal: q.goal }[f] || "").trim(); if (v === old) return;
         if (f === "note") { if (!v) return; S.setNote(q.id, v); } else if (f === "next") S.setNext(q.id, v); else S.setGoal(q.id, v);
         paint(true); again && again(true); };
-      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go(); } });
+      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && (inp.tagName !== "TEXTAREA" || e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
     });
     ov.addEventListener("mousedown", (e) => { if (e.target === ov) close(); });
     ov.querySelector(".td-x").addEventListener("click", close);

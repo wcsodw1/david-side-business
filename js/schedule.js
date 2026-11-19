@@ -28,6 +28,8 @@
   const weekHead = (ws) => ws.map((w) => `<th class="g">${w.label}<small>${w.range}</small></th>`).join("");
 
   const ymd = (ms) => { const d = new Date(ms); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+  /* Next Step 分行：一行塞了「1.… 2.… 3.…」就自動拆成一行一項 */
+  const normSteps = (t) => { t = String(t || "").replace(/\r/g, "").trim(); if ((t.match(/(^|\s)\d{1,2}[.、)）](?!\d)/g) || []).length >= 2) t = t.replace(/[ \t]+(?=\d{1,2}[.、)）](?!\d)\s*\S)/g, "\n"); return t; };
   const catOf = (x) => (String(x.note || "").match(/【([^】]*)】/) || [])[1] || "";
   const seedOf = (p, t) => { const L = (p && p.tasks0) || []; const byName = L.find((x) => x.name === t.name); if (byName) return byName; const c = catOf(t); if (!c) return {}; const m = L.filter((x) => catOf(x) === c); return m.length === 1 ? m[0] : {}; };   // 改過名稱的任務：用唯一的【分類】對回預設資料
   const updOf = (t, p) => (t.updAt ? ymd(t.updAt) : t.upd || seedOf(p, t).upd || "");
@@ -109,7 +111,7 @@
     ov.innerHTML = `<div class="td-box" role="dialog" aria-label="${esc(t0.name)}"><button type="button" class="td-x" aria-label="關閉">✕</button>
       <h3><input class="td-name" value="${esc(t0.name)}" aria-label="任務名稱" title="點這裡可改名稱"></h3><p class="td-meta"></p>
       <div class="td-sec" data-fld="cur"><h4>目前狀態</h4><div class="td-row"><input name="v" placeholder="現在進行到哪、卡在哪" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
-      <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row"><input name="v" placeholder="下一步要做什麼" autocomplete="off"><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
+      <div class="td-sec" data-fld="next"><h4>NEXT STEP</h4><div class="td-row td-row-ml"><textarea name="v" rows="3" placeholder="下一步要做什麼（可分行：1.… 2.… 3.…；Cmd/Ctrl+Enter 送出）"></textarea><button type="button" class="td-go">更新</button></div><div class="td-ask" hidden></div></div>
       <div class="td-sec"><h4>備註</h4><textarea class="td-note-in" rows="2" placeholder="等待對象、連結、補充（失焦自動儲存）"></textarea></div>
       <div class="td-sec"><h4>歷史</h4><ul class="td-l"></ul></div>
       <h4>🤖 這個任務的獨立 AI Session</h4><div class="tz-ai td-ai"></div><button type="button" class="td-del">刪除這個任務</button></div>`;
@@ -119,22 +121,22 @@
       const t = get(); if (!t) return;
       ov.querySelector(".td-meta").innerHTML = `${p.id === "tpi" ? `<select data-m="grp" title="區塊">${GRPS.map((x) => `<option ${x === grpOf(p, t) ? "selected" : ""}>${x}</option>`).join("")}</select>` : ""}<select data-m="status">${ST.map((x) => `<option ${x === t.status ? "selected" : ""}>${x}</option>`).join("")}</select><input data-m="progress" type="number" min="0" max="100" value="${+t.progress || 0}"><span>%</span> · ${esc(t.pri)} · ${esc(t.owner)} · ${esc(t.start)} → ${esc(t.end)} · 新增 ${esc(crtOf(t, p) || "—")} · <b>更新 ${esc(updOf(t, p) || "—")}</b>`;
       ov.querySelectorAll("[data-m]").forEach((el) => el.addEventListener("change", () => { let v = el.value; if (el.dataset.m === "progress") v = Math.max(0, Math.min(100, +v || 0)); S.updateTask(p.id, tid, { [el.dataset.m]: v }); paint(); again && again(true); }));
-      if (!keepInputs) { ov.querySelector('[data-fld="cur"] input').value = t.cur || ""; ov.querySelector('[data-fld="next"] input').value = t.next || ""; ov.querySelector(".td-note-in").value = t.note || ""; }
+      if (!keepInputs) { ov.querySelector('[data-fld="cur"] input').value = t.cur || ""; ov.querySelector('[data-fld="next"] textarea').value = t.next || ""; ov.querySelector(".td-note-in").value = t.note || ""; }
       const H = (t.log || []).slice().reverse();
       ov.querySelector(".td-l").innerHTML = H.map((l) => `<li><em>${esc(l.d)}</em><b>${esc(l.k || "狀態")} · ${esc(l.s)} ${+l.p || 0}%</b><span>${esc(l.text)}</span></li>`).join("") || `<li class="td-none">還沒有歷史。更新目前狀態時，舊的內容可以丟進來。</li>`;
     };
     paint();
     ov.querySelectorAll(".td-sec[data-fld]").forEach((sec) => {
-      const fld = sec.dataset.fld, inp = sec.querySelector("input"), ask = sec.querySelector(".td-ask");
+      const fld = sec.dataset.fld, inp = sec.querySelector("input, textarea"), ask = sec.querySelector(".td-ask");
       const apply = (saveOld) => {
-        const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(), patch = { [fld]: nv, [fld + "At"]: iso(new Date()) };
+        const t = get(), old = String(t[fld] || "").trim(), nv = (fld === "next" ? normSteps(inp.value) : inp.value.trim()), patch = { [fld]: nv, [fld + "At"]: iso(new Date()) };
         if (saveOld && old) patch.log = [...(t.log || []), { at: Date.now(), d: t[fld + "At"] || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: L[fld] }];
         S.updateTask(p.id, tid, patch); ask.hidden = true; paint(true); again && again(true);
       };
-      const go = () => { const t = get(), old = String(t[fld] || "").trim(), nv = inp.value.trim(); if (nv === old) return; if (!old) return apply(false);
+      const go = () => { const t = get(), old = String(t[fld] || "").trim(), nv = (fld === "next" ? normSteps(inp.value) : inp.value.trim()); if (nv === old) return; if (!old) return apply(false);
         ask.hidden = false; ask.innerHTML = `之前的「<b>${esc(old.length > 60 ? old.slice(0, 60) + "…" : old)}</b>」要丟進歷史嗎？ <button type="button" data-y>丟進歷史</button><button type="button" data-n>不用</button>`;
         ask.querySelector("[data-y]").onclick = () => apply(true); ask.querySelector("[data-n]").onclick = () => apply(false); };
-      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); go(); } });
+      sec.querySelector(".td-go").addEventListener("click", go); inp.addEventListener("keydown", (e) => { if (e.key === "Enter" && (inp.tagName !== "TEXTAREA" || e.metaKey || e.ctrlKey)) { e.preventDefault(); go(); } });
     });
     ov.querySelector(".td-name").addEventListener("change", (e) => { const v = e.target.value.trim(); if (v) S.updateTask(p.id, tid, { name: v }); else e.target.value = (get() || t0).name; });
     ov.querySelector(".td-note-in").addEventListener("change", (e) => { S.updateTask(p.id, tid, { note: e.target.value.trim() }); });
@@ -168,6 +170,7 @@
       const pv = t.cur ? { d: t.curAt || updOf(t, p), text: t.cur } : (t.log || []).slice(-1).map((l) => ({ d: l.d, text: l.text }))[0] || null;
       card.innerHTML = `<form autocomplete="off"><div class="st-h"><b>${esc(t.name)}</b><button type="button" class="st-open">開啟：狀態歷史 + AI ›</button></div>
         <div class="st-prev">${pv ? `<em>上一個更新 · ${esc(pv.d || "")}</em><span>${esc(pv.text)}</span>` : `<em>還沒有更新</em>`}</div>
+        ${t.next ? `<div class="st-next"><em>下一步${t.nextAt ? " · " + esc(t.nextAt) : ""}</em><span>${esc(t.next)}</span></div>` : ""}
         <div class="st-r"><input name="text" placeholder="打字更新目前狀態…" required><button type="submit">更新</button></div>
         <div class="st-ask" hidden></div></form>`;
       const r = tr.getBoundingClientRect(), w = Math.min(640, innerWidth - 24);
@@ -247,5 +250,6 @@
     root.addEventListener("mouseout", (e) => { const row = e.target.closest && e.target.closest(sel); if (!row || (e.relatedTarget && row.contains(e.relatedTarget))) return; hide(); });
     root.addEventListener("click", hide); root.addEventListener("scroll", hide, true); window.addEventListener("hashchange", hide);
   }
+  window.normSteps = normSteps;
   window.Schedule = { panel, bind, officeHtml, bindOffice, tsv, attachTip };
 })();
