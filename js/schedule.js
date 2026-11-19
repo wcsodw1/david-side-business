@@ -162,21 +162,29 @@
   function statusCard(el, p, again) {
     const S = window.Store; if (!S || window.VIEWER) return;
     let card = document.getElementById("stTip"); if (!card) { card = document.createElement("div"); card.id = "stTip"; card.hidden = true; document.body.appendChild(card); }
-    let timer, cur = null; const hide = () => { clearTimeout(timer); timer = setTimeout(() => { card.hidden = true; cur = null; }, 260); };
+    let timer, cur = null; const hide = () => { clearTimeout(timer); timer = setTimeout(() => { const a = document.activeElement; if (a && card.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName)) return; card.hidden = true; cur = null; }, 260); };
     const keep = () => clearTimeout(timer);
-    card.onmouseenter = keep; card.onmouseleave = hide;
+    card.onmouseenter = keep; card.onmouseleave = hide; card.onfocusout = () => setTimeout(() => { if (!card.matches(":hover")) hide(); }, 0);
     const show = (tr) => {
       const t = (p.tasks || []).find((x) => x.id === tr.dataset.tid); if (!t) return; cur = tr; keep();
       const pv = t.cur ? { d: t.curAt || updOf(t, p), text: t.cur } : (t.log || []).slice(-1).map((l) => ({ d: l.d, text: l.text }))[0] || null;
       card.innerHTML = `<form autocomplete="off"><div class="st-h"><b>${esc(t.name)}</b><button type="button" class="st-open">開啟：狀態歷史 + AI ›</button></div>
         <div class="st-prev">${pv ? `<em>上一個更新 · ${esc(pv.d || "")}</em><span>${esc(pv.text)}</span>` : `<em>還沒有更新</em>`}</div>
-        ${t.next ? `<div class="st-next"><em>下一步${t.nextAt ? " · " + esc(t.nextAt) : ""}</em><span>${esc(t.next)}</span></div>` : ""}
+        <div class="st-next"><em>下一步${t.nextAt ? " · " + esc(t.nextAt) : ""}</em><textarea name="next" rows="${Math.min(6, Math.max(2, String(t.next || "").split("\n").length))}" placeholder="下一步（Enter 換行，可寫 1.… 2.… 3.…）">${esc(t.next || "")}</textarea><div class="st-nx"><button type="button" class="st-nx-go">更新下一步</button></div><div class="st-ask st-ask2" hidden></div></div>
         <div class="st-r"><input name="text" placeholder="打字更新目前狀態…" required><button type="submit">更新</button></div>
         <div class="st-ask" hidden></div></form>`;
       const r = tr.getBoundingClientRect(), w = Math.min(640, innerWidth - 24);
       card.style.width = w + "px"; card.style.left = Math.max(12, Math.min(r.left + 20, innerWidth - w - 12)) + "px"; card.hidden = false;
       const h = card.offsetHeight; card.style.top = (r.bottom + h + 8 > innerHeight && r.top - h - 8 > 0 ? r.top - h - 4 : r.bottom - 2) + "px";
       card.querySelector(".st-open").addEventListener("click", () => { card.hidden = true; cur = null; openTask(p, t.id, again); });
+      { const ta = card.querySelector("textarea[name=next]"), ask2 = card.querySelector(".st-ask2");
+        card.querySelector(".st-nx-go").addEventListener("click", () => {
+          const nv = normSteps(ta.value), old = String(t.next || "").trim(); if (nv === old) return;
+          const apply = (save) => { const patch = { next: nv, nextAt: iso(new Date()) }; if (save && old) patch.log = [...(t.log || []), { at: Date.now(), d: t.nextAt || iso(new Date()), s: t.status, p: +t.progress || 0, text: old, k: "Next Step" }]; S.updateTask(p.id, t.id, patch); card.hidden = true; cur = null; again(); };
+          if (!old) return apply(false);
+          ask2.hidden = false; ask2.innerHTML = `之前的下一步要丟進歷史嗎？ <button type="button" data-y>丟進歷史</button><button type="button" data-n>不用</button>`;
+          ask2.querySelector("[data-y]").onclick = () => apply(true); ask2.querySelector("[data-n]").onclick = () => apply(false); ta.readOnly = true;
+        }); }
       card.querySelector("form").addEventListener("submit", (e) => {
         e.preventDefault(); const text = String(new FormData(e.target).get("text") || "").trim(); if (!text) return;
         const old = String(t.cur || "").trim(), ask = card.querySelector(".st-ask");
