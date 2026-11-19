@@ -1304,6 +1304,8 @@ body.viewer #megaLink + *, body.viewer .santa, body.viewer .robot-fab { display:
 .tz-head .eyebrow { color: #8b1e3f; font: 600 12px var(--font); letter-spacing: .32em; margin: 0; }
 .tz-head h2 { margin: 0; font: 700 30px "Noto Serif TC", "Songti TC", "Cormorant Garamond", serif; }
 .tz-head span { color: #6b5a4a; font-size: 14px; }
+.tz-head .tz-aiso { margin-left: auto; align-self: center; padding: 7px 14px; border: 1px solid #8b1e3f; color: #8b1e3f; background: transparent; font: 600 13px var(--font); letter-spacing: .06em; text-decoration: none; border-radius: 2px; white-space: nowrap; }
+.tz-head .tz-aiso:hover, .tz-head .tz-aiso:focus-visible { background: #8b1e3f; color: #fbf8f2; }
 .tz-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }   /* 專案進度整排拉寬，AI 區在下方 */
 .tz-prog, .tz-ai { background: #fffdf8; border: 1px solid #d9ccb6; border-radius: 18px; padding: 18px 20px; min-width: 0; }
 .tz-top { display: flex; align-items: center; gap: 12px; } .tz-name { font: 700 24px "Noto Serif TC", serif; color: #2a1f17; text-decoration: none; padding: 4px 14px; border-radius: 12px; background: color-mix(in srgb, var(--c) 18%, #fffdf8); box-shadow: inset 3px 0 0 var(--c); } .tz-pct { margin-left: auto; font: 700 22px "Cormorant Garamond", serif; }

@@ -355,7 +355,7 @@
 
           </div>
           ${tpi ? `<section class="tpi-zone" id="tpiZone" data-ot="tpi" ${officeTab === "tpi" ? "" : "hidden"} style="--c:${accent(P.indexOf(tpi))}">
-            <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span></div>
+            <div class="tz-head"><p class="eyebrow">TPI · 本業</p><h2>TPI 工作區</h2><span>獨立於 Side Business：專案進度 + 專屬 AI</span><a class="tz-aiso" href="https://wcsodw1.github.io/AISO_Platform/" target="_blank" rel="noopener" title="在新分頁開啟 AISO Platform">進入 AISO Platform ↗</a></div>
             <div class="tz-grid">
               <div class="tz-prog">
                 ${feedHtml(tpi)}
