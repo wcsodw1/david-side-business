@@ -169,7 +169,7 @@
       const t = (p.tasks || []).find((x) => x.id === tr.dataset.tid); if (!t) return; cur = tr; keep();
       const pv = t.cur ? { d: t.curAt || updOf(t, p), text: t.cur } : (t.log || []).slice(-1).map((l) => ({ d: l.d, text: l.text }))[0] || null;
       card.innerHTML = `<form autocomplete="off"><div class="st-h"><b>${esc(t.name)}</b><button type="button" class="st-open">開啟：狀態歷史 + AI ›</button></div>
-        <div class="st-prev">${pv ? `<em>上一個更新 · ${esc(pv.d || "")}</em><span>${esc(pv.text)}</span>` : `<em>還沒有更新</em>`}</div>
+        <div class="st-prev">${t.cur ? `<em>上一個更新 · ${esc(pv.d || "")}（可直接修改）</em><textarea name="curedit" rows="${Math.min(5, Math.max(1, String(t.cur).split("\n").length))}">${esc(t.cur)}</textarea><div class="st-nx"><button type="button" class="st-cur-go">儲存修改</button></div>` : pv ? `<em>上一個更新 · ${esc(pv.d || "")}</em><span>${esc(pv.text)}</span>` : `<em>還沒有更新</em>`}</div>
         <div class="st-next"><em>下一步${t.nextAt ? " · " + esc(t.nextAt) : ""}</em><textarea name="next" rows="${Math.min(6, Math.max(2, String(t.next || "").split("\n").length))}" placeholder="下一步（Enter 換行，可寫 1.… 2.… 3.…）">${esc(t.next || "")}</textarea><div class="st-nx"><button type="button" class="st-nx-go">更新下一步</button></div><div class="st-ask st-ask2" hidden></div></div>
         <div class="st-r"><input name="text" placeholder="打字更新目前狀態…" required><button type="submit">更新</button></div>
         <div class="st-ask" hidden></div></form>`;
@@ -177,6 +177,7 @@
       card.style.width = w + "px"; card.style.left = Math.max(12, Math.min(r.left + 20, innerWidth - w - 12)) + "px"; card.hidden = false;
       const h = card.offsetHeight; card.style.top = (r.bottom + h + 8 > innerHeight && r.top - h - 8 > 0 ? r.top - h - 4 : r.bottom - 2) + "px";
       card.querySelector(".st-open").addEventListener("click", () => { card.hidden = true; cur = null; openTask(p, t.id, again); });
+      card.querySelector(".st-cur-go")?.addEventListener("click", () => { const v = card.querySelector("textarea[name=curedit]").value.trim(); if (!v || v === String(t.cur || "").trim()) return; S.updateTask(p.id, t.id, { cur: v }); card.hidden = true; cur = null; again(); });   // 直接修正文字：不問歷史
       { const ta = card.querySelector("textarea[name=next]"), ask2 = card.querySelector(".st-ask2");
         card.querySelector(".st-nx-go").addEventListener("click", () => {
           const nv = normSteps(ta.value), old = String(t.next || "").trim(); if (nv === old) return;
