@@ -19,7 +19,7 @@ window.SITE = {
   galleryMusicYouTube: "",
   // 家（房子裡）的歌單（走進家裡自動依序播放、播完循環；右下角出現小播放器；失敗就退回內建音樂）：
   // 米津玄師〈Lemon〉＋ The Hope 教會點閱最高的三首詩歌（在祢沒有難成的事 / 我唯一渴望 / 跟隨祢心意）。藝廊維持內建的 Bossa Nova。
-  homeMusicYouTube: ["SX_ViT4Ra7k", "rUvwUc2_66s", "TrHaapOTf-Q", "TEjKi77Kwj8"],
+  homeMusicYouTube: ["f5wCZ0-3Eos", "rUvwUc2_66s", "TrHaapOTf-Q", "TEjKi77Kwj8"],
   posterPhotos: ["chanyeol-1.jpg", "chanyeol-2.jpg", "chanyeol-3.jpg", "chanyeol-4.jpg", "chanyeol-5.jpg", "chanyeol-6.jpg", "chanyeol-7.jpg"],   // 照片來源與授權見 README 與二樓海報旁的標註（CC BY 4.0）
 };
 
