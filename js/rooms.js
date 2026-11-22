@@ -168,7 +168,7 @@
           pln(0.9, 0.16, K.label("字幕工作站 · SUBTITLE", 640, 100, { bg: "#16161c", fg: "#f2e8d0", fs: 38 }), 0, 0.5, 0.33, 0, { p: q, glow: 0.3 });
           obs(1.2, -5.4, 0.78, 0.34);
           const open = K.openLuka = () => { if (window.LukaTool) window.LukaTool.open(); };   // 工具畫面做在 js/luka.js（直接在網站裡，不是外連）
-          const wp = K.w(1.2, -4.7), act = { id: "luka-tool" + K.s, x: wp.x, z: wp.z, r: 1.6, lvl: 0, html: "<kbd>Enter</kbd> 打開 <b>Luka Film 字幕工具</b> <small>　點螢幕也可以</small>", fn: open };
+          const wp = K.w(1.2, -4.7), act = { id: "luka-tool" + K.s, x: wp.x, z: wp.z, r: 1.6, lvl: 0, html: "<kbd>Enter</kbd> 打開 <b>Luka Film 字幕工具</b> <small>　點螢幕也可以</small>", fn: open, auto: true };   // auto：走近就自動打開（離開再走近才會再開）
           interact.push(act); cleanup.push(() => { const i = interact.indexOf(act); if (i >= 0) interact.splice(i, 1); });
           const hit = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 0.4), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.set(1.2, 1.1, -5.55); hit.userData = { station: K.s, kind: "act", act: open, stand: { x: wp.x, z: wp.z } }; K.g.add(hit); pickables.push(hit); cleanup.push(() => { const i = pickables.indexOf(hit); if (i >= 0) pickables.splice(i, 1); }); }
       },

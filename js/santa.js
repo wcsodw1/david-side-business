@@ -30,11 +30,29 @@
     // 3D 辦公室的機器人對話開著的話先關掉，避免疊兩個
     const other = document.querySelector(".robot-chat [data-x]"); if (other) other.click();
     box = document.createElement("div"); box.className = "robot-chat santa-chat";
-    box.innerHTML = `<section class="office-ai"><header class="rc-h"><b>🎅 AI 總管</b><span>我看得到所有專案的目標、狀態與 Next Step</span><button type="button" data-fs aria-label="全螢幕" title="全螢幕（F）">⤢</button><button type="button" data-x aria-label="關閉">✕</button></header><div class="ai-mount" data-m></div></section>`;
+    box.innerHTML = `<section class="office-ai"><header class="rc-h"><b>🎅 AI 總管</b><nav class="rc-scope" role="tablist" aria-label="對話範圍"><button type="button" role="tab" data-sc="tpi">TPI<small>本業</small></button><button type="button" role="tab" data-sc="gallery">Gallery<small>Side Business</small></button></nav><span data-sub></span><button type="button" data-fs aria-label="全螢幕" title="全螢幕（F）">⤢</button><button type="button" data-x aria-label="關閉">✕</button></header><div class="ai-mount" data-m></div></section>`;
     document.body.appendChild(box); document.body.classList.add("robot-open"); fab.classList.add("is-open");
-    (window.AIChat.mountConv || window.AIChat.mount)(box.querySelector("[data-m]"), { id: "__office", name: "辦公室", office: true, projects: window.PROJECTS || [] });
+    // 兩個獨立 session：TPI（本業，只看得到 TPI 專案）/ Gallery（Side Business，看不到 TPI）。各有自己的對話紀錄與工具範圍
+    const isTpi = (q) => q.id === "tpi" || q.category === "Work";
+    let scope = window.__officeTab === "gallery" || window.__officeTab === "tpi" ? window.__officeTab : "tpi";
+    if (!window.__officeTab) { try { const v = localStorage.getItem("dsb-ai-scope"); if (v === "gallery" || v === "tpi") scope = v; } catch (_) {} }
+    const scopeP = () => (window.PROJECTS || []).filter((q) => (scope === "tpi" ? isTpi(q) : !isTpi(q)));
+    const mountScope = () => {
+      const m = box.querySelector("[data-m]"), V = window.TpiVault;
+      box.querySelectorAll("[data-sc]").forEach((b) => b.classList.toggle("on", b.dataset.sc === scope));
+      box.querySelector("[data-sub]").textContent = scope === "tpi" ? "只看得到 TPI 專案的目標、狀態與 Next Step" : "看得到 Side Business 各專案（不含 TPI）";
+      try { localStorage.setItem("dsb-ai-scope", scope); } catch (_) {}
+      if (scope === "tpi" && V && V.has && V.locked) { m.innerHTML = `<p class="rc-lock">🔒 TPI 內容已加密。請先到辦公室的 TPI 工作區輸入 TPI 密碼與金鑰，再回來聊。</p>`; return; }
+      m.innerHTML = "";
+      const tpiP = (window.PROJECTS || []).find((q) => q.id === "tpi");   // TPI 分頁直接用 TPI 專案本身，和辦公室 TPI 區的「專屬 AI」是同一個對話
+      (window.AIChat.mountConv || window.AIChat.mount)(m, scope === "tpi" && tpiP ? tpiP : scope === "tpi" ? { id: "__office-tpi", name: "TPI 工作區", office: true, projects: scopeP() } : { id: "__office", name: "Gallery", office: true, projects: scopeP() });
+      window.dispatchEvent(new Event("store:change"));   // 儀表板跟著換範圍
+      const ta = m.querySelector("textarea"); if (ta) setTimeout(() => ta.focus(), 60);
+    };
+    box.querySelectorAll("[data-sc]").forEach((b) => b.addEventListener("click", () => { if (scope !== b.dataset.sc) { scope = b.dataset.sc; mountScope(); } }));
+    mountScope();
     box.querySelector("[data-x]").addEventListener("click", close);
-    if (window.Dash) window.Dash.attach(box, () => window.PROJECTS || []);   // 儀表板融合進 AI 視窗
+    if (window.Dash) window.Dash.attach(box, scopeP);   // 儀表板融合進 AI 視窗（跟著目前範圍）
     const fsBtn = box.querySelector("[data-fs]"), setFs = (on) => { box.classList.toggle("rc-full", on); fsBtn.textContent = on ? "⤡" : "⤢"; fsBtn.title = on ? "縮小（F / Esc）" : "全螢幕（F）"; try { localStorage.setItem("dsb-robot-full", on ? "1" : ""); } catch (_) {} const m = box.querySelector(".ai-msgs"); if (m) m.scrollTop = m.scrollHeight; };
     fsBtn.addEventListener("click", () => setFs(!box.classList.contains("rc-full")));
     box.addEventListener("keydown", (e) => { if ((e.key === "f" || e.key === "F") && !/^(TEXTAREA|INPUT|SELECT)$/.test(e.target.tagName)) { e.preventDefault(); setFs(!box.classList.contains("rc-full")); } });
@@ -64,11 +82,13 @@
   // 永遠貼在報紙正下方（報紙的位置會因頁面 / 螢幕寬度不同而變）
   const place = () => {
     const news = document.querySelector(".news-fab"); if (!news || !fab) return;
+    if (/^#\/?office/.test(location.hash)) { fab.classList.add("fab-br"); fab.style.top = ""; fab.style.left = ""; fab.style.right = ""; return; }   // 辦公室：右下角浮動按鈕
+    fab.classList.remove("fab-br");
     const r = news.getBoundingClientRect(); if (!r.height) return;
     fab.style.top = Math.round(r.bottom + 10) + "px";
     fab.style.left = Math.round(r.left + r.width / 2 - fab.offsetWidth / 2) + "px"; fab.style.right = "auto";
   };
-  window.addEventListener("resize", place); setInterval(place, 1500);
+  window.addEventListener("resize", place); window.addEventListener("hashchange", place); setInterval(place, 1500);
   new MutationObserver(sync).observe(document.body, { childList: true });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sync); else sync();
   window.Santa = { open: () => { sync(); open(); }, close };

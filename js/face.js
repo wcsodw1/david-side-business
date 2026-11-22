@@ -89,7 +89,7 @@
           const tp = q("tp").value.trim(), tk = q("tk").value.trim();
           const err = opts && opts.verify ? await opts.verify(tp, tk) : ""; if (err) { o.status(err); btn.disabled = false; return; }
           o.status("載入辨識模型…"); const d = await grab(6, "登錄中（目前的樣子）"); if (!d) { btn.disabled = false; return; }
-          localStorage.setItem(KEY, JSON.stringify({ d, site: 1, office: opts && opts.office ? 1 : 0, tp, tk, at: Date.now() })); ["tp", "tk"].forEach((n) => { q(n).value = ""; });
+          localStorage.setItem(KEY, JSON.stringify({ d, site: 1, office: 1, tp, tk, at: Date.now() })); ["tp", "tk"].forEach((n) => { q(n).value = ""; });
           o.redo = false; o.status("✅ 已登錄，以後用鏡頭就能進入（不用再輸入網站密碼）。想更穩可以換一種樣子（拿下／戴上眼鏡）再加一次，不需要就按「完成」。"); paintBtns();
         } catch (er) { o.status("失敗：" + (er && er.message || er)); btn.disabled = false; }
       });

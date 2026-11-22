@@ -22,13 +22,19 @@
       if (officeOpen()) return cb();
       if (document.getElementById("ogOv")) return;
       const ov = document.createElement("div"); ov.id = "ogOv";
-      ov.innerHTML = `<form class="og-card" autocomplete="off"><h3>🔒 辦公室權限</h3><p>機器人 / AI 總管在辦公室裡，請輸入辦公室密碼。</p><input type="password" placeholder="辦公室密碼" aria-label="辦公室密碼"><div class="og-err"></div><div class="og-b"><button type="button" data-no>取消</button><button type="submit">進入</button></div></form>`;
+      ov.innerHTML = `<form class="og-card" autocomplete="off"><h3>🔒 辦公室權限</h3><p>機器人 / AI 總管在辦公室裡，請輸入辦公室密碼。</p><button type="button" data-face class="og-facebtn" hidden>👤 人臉進入</button><input type="password" placeholder="辦公室密碼" aria-label="辦公室密碼"><div class="og-err"></div><div class="og-b"><button type="button" data-no>取消</button><button type="submit">進入</button></div></form>`;
       document.body.appendChild(ov);
       const f = ov.querySelector("form"), inp = ov.querySelector("input"), err = ov.querySelector(".og-err"), done = () => { ov.parentNode && ov.parentNode.removeChild(ov); };
       ["keydown", "keyup", "keypress"].forEach((t) => ov.addEventListener(t, (e) => { e.stopPropagation(); if (t === "keydown" && e.key === "Escape") done(); }));
       ov.querySelector("[data-no]").addEventListener("click", done);
       f.addEventListener("submit", async (e) => { e.preventDefault(); const v = inp.value.trim(); if (!v) return; if (await sha256(v) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} done(); cb(); } else { err.textContent = "密碼不正確"; f.classList.remove("shake"); void f.offsetWidth; f.classList.add("shake"); inp.select(); } });
-      setTimeout(() => inp.focus(), 30);
+      const F = window.FaceLogin;
+      if (F && F.enrolled()) {   // 人臉優先：先跳出鏡頭，不行再輸入密碼
+        const p = ov.querySelector("p"); if (p) p.textContent = "按「人臉進入」用鏡頭；不行的話，請輸入辦公室密碼。";
+        const fb = ov.querySelector("[data-face]"); fb.hidden = false;
+        const go = async () => { const c = await F.scan(); if (!c || !ov.isConnected) return; try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); done(); cb(); };
+        fb.addEventListener("click", go); setTimeout(go, 200);
+      } else { const p = ov.querySelector("p"); if (p) p.textContent = "請輸入辦公室密碼。（登入後到「其他 → 人臉登錄」設定這台裝置，之後按辦公室就直接刷臉）"; setTimeout(() => inp.focus(), 30); }
     },
   };
   const AERIS_HASH = "d0f5fe6b15cee2b54a6a8acb222a35cea48bb69171af2ff42d4049bd067fc1f8";                     // Aeris 玩家密碼（不分大小寫，只存雜湊）
@@ -37,7 +43,8 @@
   const LYJ_HASH = "de6d23fe62808d9e7e3e324d94db6cffefba6994f935aa630c0826801d6f8f6d";   // 訪客「林晏如」的密碼 LYJ（不分大小寫，只存雜湊）；登入後歡迎詞顯示她的名字
   const HOUSE_HASH = "36b940ab36b32cd70ef1d0922cff8233bff581f67d7b9a00658df21a35b30d00";   // 訪客「guest-house」密碼（不分大小寫，只存雜湊）：只能在 3D 二樓房間走動
   const GALLERY_HASH = "549fdf0c2549bbdefb86167a8a822ec88fc03bd4caedb060b62a2050bf71636a";   // 訪客「guest-gallery」密碼（不分大小寫，只存雜湊）：可逛 3D 藝廊，但沒有機器人 / AI 總管 / 專案進度 / 辦公室 / NEWS
-  const GUEST_ALT = [LYJ_HASH, HOUSE_HASH];
+  const ALBERT_HASH = "85a17a991b8876374fe959028273e63f6e563bf69365148c4d562e278bbf6f98";   // 訪客「AlbertYao」的密碼（不分大小寫，只存雜湊）：來看房的男生訪客，只能在二樓房間走動；外型是男生（黑色立領襯衫）
+  const GUEST_ALT = [LYJ_HASH, HOUSE_HASH, ALBERT_HASH];
   const AGENT_HASH = "3cce5ca57826b4509c7d1ffea69aaa803428a73c7838065a249c9c44f3d0e89e";   // 房仲 David 的密碼 guest-agent（只存雜湊）：跟訪客同一個二樓空間；沒人登入時，房仲 David 站在門口講解
   const VIEWER_HASH = "";   // （唯讀客人模式已停用：david-guest 改為一般訪客，專案進度 / AI / 機器人只有 admin 能用）   // 客人（唯讀）密碼 david-guest（不分大小寫，只存雜湊）：只能看辦公室儀表板 / 專案進度表 / 進度總覽 / 專案頁，不能改任何資料、沒有 AI 總管 / NEWS / 3D 藝廊
   window.PERSONA = "david"; window.GUESTLIKE = false; window.VIEWER = false; window.GALLERYGUEST = false;
@@ -238,9 +245,10 @@
             <p class="eyebrow">OFFICE</p>
             <h1>辦公室</h1>
             <p>這裡有全部專案的儀表板和 AI 總管，請輸入辦公室密碼。</p>
+            ${window.FaceLogin && window.FaceLogin.enrolled() ? `<button type="button" id="officeFace" class="og-face og-primary">👤 人臉進入</button><p class="og-or">人臉不行，再用密碼</p>` : ""}
             <input type="password" id="officePw" placeholder="辦公室密碼" autocomplete="off" aria-label="辦公室密碼">
             <button type="submit">進入辦公室</button>
-            ${window.FaceLogin && window.FaceLogin.enrolled() ? `<button type="button" id="officeFace" class="og-face">👤 人臉進入</button>` : window.PERSONA === "david" ? `<button type="button" id="officeFaceSet" class="og-face">👤 設定人臉解鎖（用電腦鏡頭）</button>` : ""}
+            ${window.FaceLogin && window.FaceLogin.enrolled() ? "" : window.PERSONA === "david" ? `<button type="button" id="officeFaceSet" class="og-face">👤 設定人臉解鎖（電腦或手機前鏡頭，每台裝置設一次）</button>` : ""}
             <p class="og-err" id="officeErr" role="alert"></p>
           </form>
         </section>`;
@@ -269,7 +277,7 @@
           ["David（ADMIN）", "本人", Y, Y, Y, Y, Y, "全部功能；辦公室需再輸入辦公室密碼"],
           ["ARIES（朋友）", "Aeris 玩家模式", Y, N, N, N, N, "粉色角色；可逛 3D 藝廊與家；不能進辦公室、用機器人 / AI 總管（辦公室密碼不對她開放）"],
           ["訪客・藝廊（guest-gallery）", "訪客", Y, N, N, N, N, "可以逛 3D 藝廊與各專案房間；沒有機器人 / AI 總管 / 專案進度 / 辦公室 / NEWS"],
-          ["訪客・房間（guest-house）", "林晏如等", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
+          ["訪客・房間（guest-house）", "林晏如、AlbertYao 等", N, N, N, N, N, "只能在 3D 二樓房間走動，屋外全黑；進不了辦公室、白板、NEWS"],
           ["房仲（AGENT）", "David（房仲）", N, N, N, N, N, "跟訪客同一個二樓空間；站在門口講解；穿紫色禮賓員制服"],
         ];
         return `<div class="sch-scroll"><table class="sch-t pm-t"><thead><tr><th>角色</th><th>對象</th><th>3D 藝廊</th><th>進度總覽 / 專案頁</th><th>辦公室儀表板</th><th>專案進度表</th><th>改資料 / AI 總管 / NEWS</th><th>說明</th></tr></thead><tbody>${rows.map((r) => `<tr><td class="nm">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td></tr>`).join("")}</tbody></table></div><p class="sch-empty">密碼不顯示在這裡（網站只存雜湊）。機器人、AI 總管、專案進度（白板 / 時程 / 進度總覽）只有 admin（David）能用；訪客、房仲都只進得了 3D 二樓房間。</p>`;
@@ -352,6 +360,7 @@
                 <svg class="plant" viewBox="0 0 40 50" aria-hidden="true"><path d="M20 30C8 28 6 14 8 6c10 2 14 10 12 24zM20 30c12-2 14-16 12-24-10 2-14 10-12 24z" fill="#6be3a4"/><path d="M10 32h20l-3 16H13z" fill="#ff9b78"/></svg>
               </div>
             </div>
+            <section class="office-ai oa-inline" id="galleryAIBox" aria-label="Gallery AI 總管"><h2>🎅 AI 總管 · Gallery</h2><p class="oa-sub">Side Business 各專案的進度、Next Step，直接問或叫我更新（和右下角聖誕老人是同一個對話）。</p><div id="galleryAI"></div></section>
 
           </div>
           ${tpi ? `<section class="tpi-zone" id="tpiZone" data-ot="tpi" ${officeTab === "tpi" ? "" : "hidden"} style="--c:${accent(P.indexOf(tpi))}">
@@ -489,9 +498,9 @@
       const f = $("#officeGate", app), pw = $("#officePw", app); setTimeout(() => pw && pw.focus(), 50);
       { const fs = $("#officeFaceSet", app); if (fs) fs.addEventListener("click", () => window.__faceEnroll && window.__faceEnroll()); }
       { const fb = $("#officeFace", app), F = window.FaceLogin;
-        const faceOffice = async () => { const c = await F.scan(); if (!c) return; if (!c.op && !c.office) { $("#officeErr", app).textContent = "這個人臉登錄沒有辦公室權限：請先用辦公室密碼進入，再到「其他 → 人臉登錄」重新登錄"; return; }
-          if (c.office || await sha256(c.op) === OFFICE_HASH) { if (c.op) window.FaceLogin.upgrade({ office: true }); try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (window.Store) window.Store.init(P); render(); } else $("#officeErr", app).textContent = "辦公室密碼已變更，請重新登錄人臉"; };
-        if (fb && F) { fb.addEventListener("click", faceOffice); if (F.hasOffice() && !window.__officeFaceTried) { window.__officeFaceTried = true; setTimeout(faceOffice, 300); } } }
+        const faceOffice = async () => { const c = await F.scan(); if (!c) return;   // 人臉登錄只有登入後的 David 做得到：人臉通過 = 站台與辦公室一起通過
+          { if (c.op) window.FaceLogin.upgrade({ office: true }); try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk); if (window.Store) window.Store.init(P); render(); } };
+        if (fb && F) { fb.addEventListener("click", faceOffice); if (F.enrolled() && !window.__officeFaceTried) { window.__officeFaceTried = true; setTimeout(faceOffice, 300); } } }
       if (f) f.addEventListener("submit", async (e) => {
         e.preventDefault(); const v = pw.value.trim(); if (!v) return;
         if (await sha256(v) === OFFICE_HASH) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} render(); }
@@ -511,14 +520,15 @@
       }));
       if (window.Schedule) window.Schedule.bindOffice($(".office-sched", app), P);
       // 上方 Gallery / TPI：滑鼠移過去就切換（也可以點）
-      { const sw = (k) => { officeTab = k; $$("[data-otb]", app).forEach((x) => x.classList.toggle("on", x.dataset.otb === k)); $$("[data-ot]", app).forEach((x) => (x.hidden = x.dataset.ot !== k)); };
+      { window.__officeTab = officeTab; const sw = (k) => { officeTab = k; window.__officeTab = k; $$("[data-otb]", app).forEach((x) => x.classList.toggle("on", x.dataset.otb === k)); $$("[data-ot]", app).forEach((x) => (x.hidden = x.dataset.ot !== k)); };
         $$("[data-otb]", app).forEach((b) => { b.addEventListener("mouseenter", () => sw(b.dataset.otb)); b.addEventListener("click", () => sw(b.dataset.otb)); b.addEventListener("focus", () => sw(b.dataset.otb)); }); }
       { const tz = $(".tz-grid", app), V = window.TpiVault;   // TPI 內容加密：沒解鎖就只顯示輸入密碼的表單
         if (tz && V && V.has && V.locked) { tz.innerHTML = `<form class="tz-lock" autocomplete="off"><h3>🔒 TPI 內容已加密</h3><p>請輸入 TPI 密碼與金鑰（只記在這個分頁，關掉就失效）。</p><input type="password" name="pw" placeholder="TPI 密碼" autocomplete="off"><input type="password" name="key" placeholder="金鑰" autocomplete="off"><button type="submit">解鎖</button><span class="tz-err" hidden>密碼或金鑰不對</span></form>`;
           const f = tz.querySelector("form"); f.addEventListener("submit", async (e) => { e.preventDefault(); const ok = await V.unlock(f.pw.value, f.key.value); if (ok) { if (window.Store) window.Store.init(P); buildMega(); render(); } else f.querySelector(".tz-err").hidden = false; }); } }
       { const tp = P.find((x) => x.id === "tpi"), pm = $("[data-tpi-plan]", app); const LK = window.TpiVault && window.TpiVault.has && window.TpiVault.locked;    // TPI 獨立區：專案進度表（可編輯）+ 專屬 AI
         if (!LK && tp && pm && window.Schedule) { const again = () => { const y = scrollY; render(); scrollTo(0, y); }; window.Schedule.bind(pm, tp, again); }
-        const ai = $("#tpiAI", app); if (!LK && tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } } }
+        const ai = $("#tpiAI", app); if (!LK && tp && ai && window.AIChat) { try { window.AIChat.mount(ai, tp); } catch (e) { ai.textContent = "AI 載入失敗"; } }
+        const ga = $("#galleryAI", app); if (ga && window.AIChat) { try { (window.AIChat.mountConv || window.AIChat.mount)(ga, { id: "__office", name: "Gallery", office: true, projects: P.filter((x) => x.id !== "tpi" && x.category !== "Work") }); } catch (e) { ga.textContent = "AI 載入失敗"; } } }   // Gallery AI：和右下角 AI 總管的 Gallery 分頁共用同一組對話
       // 滑鼠移到專案那一列 → 浮出該專案自己的進度表（辦公室儀表板與 AI 總管視窗共用同一個浮窗）
       if (window.Schedule && window.Schedule.attachTip) window.Schedule.attachTip(app, ".kb-row[data-pid]", (row) => P.find((x) => x.id === row.dataset.pid), (p) => accent(P.indexOf(p)));
       // AI 總管不再嵌在辦公室頁下方（David 2026-11-15：辦公室只留更新區）；要聊天點 NEWS 下的聖誕老人或 3D 辦公室的機器人
@@ -576,7 +586,7 @@
       window.PERSONA = hv === PASS_HASH ? "david" : ha === GALLERY_HASH ? "gallery" : ha === AGENT_HASH ? "agent" : (ha === GUEST_HASH || GUEST_ALT.includes(ha)) ? "guest" : "aeris";
       window.GUESTLIKE = window.PERSONA === "guest" || window.PERSONA === "agent";
       if (window.PERSONA === "gallery") setGallery();
-      if (window.PERSONA === "guest") window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : "訪客"; else if (window.PERSONA === "agent") window.GUEST_NAME = "David（房仲）";
+      if (window.PERSONA === "guest") { window.GUEST_NAME = ha === LYJ_HASH ? "林晏如" : ha === ALBERT_HASH ? "AlbertYao" : "訪客"; window.GUEST_AVATAR = ha === ALBERT_HASH ? "albert" : "guest"; } else if (window.PERSONA === "agent") window.GUEST_NAME = "David（房仲）";
       try { ($("#remember").checked ? localStorage : sessionStorage).setItem(KEY, window.PERSONA === "aeris" ? AERIS_HASH : window.GUESTLIKE || window.GALLERYGUEST ? ha : PASS_HASH); } catch (_) {}
       { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } }
       enter();
@@ -603,15 +613,19 @@
   /* ---------- 人臉解鎖（方便功能；詳見 js/face.js）---------- */
   const faceEnter = () => { window.PERSONA = "david"; window.GUESTLIKE = false; try { sessionStorage.setItem(KEY, PASS_HASH); } catch (_) {} { let sw = false; try { sw = sessionStorage.getItem(SW_KEY) === "1"; sessionStorage.removeItem(SW_KEY); } catch (_) {} if (sw) { freshReload(); return; } } enter(); };
   const faceGo = async () => { const F = window.FaceLogin; if (!F || !F.enrolled()) return; const c = await F.scan(); if (!c) return; if (c.tp && window.TpiVault) await window.TpiVault.unlock(c.tp, c.tk);
-    if (c.pw) { const siteOk = await sha256(String(c.pw).trim()) === PASS_HASH; if (!siteOk) { $("#gateError").textContent = "網站密碼已變更，請用密碼進入後重新登錄人臉"; return; } const offOk = !!c.op && await sha256(c.op) === OFFICE_HASH; F.upgrade({ site: true, office: offOk }); if (offOk) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} } faceEnter(); return; }   // 舊版登錄：驗證後改存旗標、刪掉明碼
-    if (c.office) { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} }
+    if (c.pw) { const siteOk = await sha256(String(c.pw).trim()) === PASS_HASH; if (!siteOk) { $("#gateError").textContent = "網站密碼已變更，請用密碼進入後重新登錄人臉"; return; } const offOk = !!c.op && await sha256(c.op) === OFFICE_HASH; F.upgrade({ site: true, office: true }); { try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {} } faceEnter(); return; }   // 舊版登錄：驗證後改存旗標、刪掉明碼
+    try { sessionStorage.setItem(OFFICE_KEY, OFFICE_HASH); } catch (_) {}   // 一次刷臉通過兩層：網站 + 辦公室
     faceEnter(); };
   { const F = window.FaceLogin, row = $("#gateForm");
-    if (F && row && !$("#faceBtn")) { const b = document.createElement("button"); b.type = "button"; b.id = "faceBtn"; b.className = "face-btn"; b.textContent = "👤 人臉解鎖"; b.hidden = !F.enrolled(); row.after(b); b.addEventListener("click", faceGo); } }
-  const faceEnroll = () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; return window.FaceLogin.enroll({ office: officeOpen(), verify: async (tp, tk) => { if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { const b = $("#faceBtn"); if (b) b.hidden = !window.FaceLogin.enrolled(); const n = $("#faceNudge"); if (n) n.remove(); }); };
+    if (F && row && !$("#faceBtn")) {   // 人臉優先：按鈕放在密碼框上面；還沒登錄的裝置顯示怎麼設定
+      const b = document.createElement("button"); b.type = "button"; b.id = "faceBtn"; b.className = "face-btn face-first"; b.textContent = "👤 人臉解鎖"; b.addEventListener("click", faceGo);
+      const hint = document.createElement("p"); hint.id = "faceHint"; hint.className = "face-hint";
+      const sync = () => { const on = F.enrolled(); b.hidden = !on; hint.textContent = on ? "人臉不行，再用密碼" : "第一次先用密碼進入，登入後設定人臉，之後這台裝置就用鏡頭解鎖（手機、電腦各設一次）"; };
+      sync(); window.__faceSync = sync; const anchor = row.querySelector(".gate-field") || row.firstChild; row.insertBefore(b, anchor); row.insertBefore(hint, anchor); } }
+  const faceEnroll = () => { if (window.PERSONA !== "david" || !window.FaceLogin) return; return window.FaceLogin.enroll({ office: officeOpen(), verify: async (tp, tk) => { if (tp || tk) { if (!(window.TpiVault && await window.TpiVault.unlock(tp, tk))) return "TPI 密碼或金鑰不對"; } return ""; } }).then(() => { if (window.__faceSync) window.__faceSync(); const n = $("#faceNudge"); if (n) n.remove(); }); };
   window.__faceEnroll = faceEnroll;
   ["#faceEnroll", "#faceNav"].forEach((q) => { const el = $(q); if (el) el.addEventListener("click", faceEnroll); });
   let ok = false;
-  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === AGENT_HASH || k === GALLERY_HASH; if (k === GALLERY_HASH) setGallery(); if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : "訪客"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
+  try { const k = sessionStorage.getItem(KEY) || localStorage.getItem(KEY); ok = k === PASS_HASH || k === AERIS_HASH || k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === ALBERT_HASH || k === AGENT_HASH || k === GALLERY_HASH; if (k === GALLERY_HASH) setGallery(); if (k === VIEWER_HASH) setViewer(); if (k === AERIS_HASH) window.PERSONA = "aeris"; if (k === GUEST_HASH || k === LYJ_HASH || k === HOUSE_HASH || k === ALBERT_HASH) { window.PERSONA = "guest"; window.GUESTLIKE = true; window.GUEST_NAME = k === LYJ_HASH ? "林晏如" : k === ALBERT_HASH ? "AlbertYao" : "訪客"; window.GUEST_AVATAR = k === ALBERT_HASH ? "albert" : "guest"; } if (k === AGENT_HASH) { window.PERSONA = "agent"; window.GUESTLIKE = true; window.GUEST_NAME = "David（房仲）"; } } catch (_) {}
   if (ok) enter(); else { setTimeout(() => $("#pw").focus(), 50); let sw2 = false; try { sw2 = sessionStorage.getItem(SW_KEY) === "1"; } catch (_) {} if (!sw2 && window.FaceLogin && window.FaceLogin.enrolled()) faceGo(); }
 })();

@@ -1794,7 +1794,7 @@
 
     /* ----- 人物 ----- */
     const GUEST = !!window.GUESTLIKE, AGENT = window.PERSONA === "agent", GG = !!window.GALLERYGUEST;   // 訪客（含房仲 David）：只能在二樓房間走動，屋外全黑、看不到；仍可用各種視角
-    const av = (GUEST || GG) && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts("guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts(AGENT ? "agent" : "david") : undefined); if ((GUEST || GG) && !AGENT && window.Faces) window.Faces.apply(THREE, av, "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, AGENT ? "agent" : "david"); scene.add(av.root);
+    const av = (GUEST || GG) && !AGENT ? buildAvatar(THREE, window.Faces ? window.Faces.opts(window.GUEST_AVATAR === "albert" ? "albert" : "guest") : undefined) : window.PERSONA === "aeris" && window.Aeris ? window.Aeris.buildPlayer(THREE, (o) => buildAvatar(THREE, o)) : buildAvatar(THREE, window.Faces ? window.Faces.opts(AGENT ? "agent" : "david") : undefined); if ((GUEST || GG) && !AGENT && window.Faces) window.Faces.apply(THREE, av, window.GUEST_AVATAR === "albert" ? "albert" : "guest"); else if (window.PERSONA !== "aeris" && window.Faces) window.Faces.apply(THREE, av, AGENT ? "agent" : "david"); scene.add(av.root);
 
     /* ----- 狀態 ----- */
     const sxOf = (s) => stationsX[s];
@@ -2286,7 +2286,7 @@
         lastInfoS = (inside < 0 && sitting < 0 && cn < 0 && !ia && nn > 0) ? nn : 0; renderInfo(lastInfoS);
         if (sitting >= 0) { prompt.innerHTML = "<kbd>Enter</kbd> 起身　或按任意方向鍵"; prompt.hidden = false; }
         else if (cn >= 0) { prompt.innerHTML = chairSpots[cn].sofa ? "<kbd>Enter</kbd> 坐在毛毛蟲沙發上" : "<kbd>Enter</kbd> 坐下休息"; prompt.hidden = false; }
-        else if (ia) { prompt.innerHTML = ia.html; prompt.hidden = false; }
+        else if (ia) { prompt.innerHTML = ia.html; prompt.hidden = false; if (ia.auto && !wake && ov.hidden && !document.body.classList.contains("news-open") && !document.body.classList.contains("locked")) { try { ia.fn(); } catch (_) {} } }
         else if (nn >= 0) {
           prompt.innerHTML = inside >= 0
             ? `<kbd>Enter</kbd> 查看白板 · <b>${H.esc(P[nn - 1].name)}</b> <small>　雙擊 ← 或滾輪下滑出門</small>`

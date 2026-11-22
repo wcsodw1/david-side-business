@@ -16,6 +16,7 @@
   const OPTS = {
     david: { blazer: 0x5f6a3c, shirt: 0x5f6a3c, pants: 0x5f6a3c, shoe: 0xf2f2f2, skin: 0xe0ac8a, hair: 0x14100e },
     guest: { blazer: 0x5a4636, shirt: 0x5a4636, pants: 0x34415a, shoe: 0xf2f2f2, skin: 0xf1d2ba, hair: 0x1a1210 },
+    albert: { blazer: 0x1d1d22, shirt: 0x1d1d22, pants: 0x0f1013, shoe: 0x1a1a1c, skin: 0xe8c9ae, hair: 0x151210 },   // 訪客 AlbertYao（來看房的男生）：參考照片 —— 黑色立領長袖襯衫、深色長褲、黑短髮、笑容
     agent: { blazer: 0x4b2a5e, shirt: 0xf4efe6, pants: 0x3f2350, shoe: 0x1a1216, skin: 0xe0ac8a, hair: 0x14100e },   // 房仲 David：布達佩斯大飯店禮賓員（紫色禮服）
     aeris: { blazer: 0xeab9c6, shirt: 0xeab9c6, pants: 0xeab9c6, shoe: 0xf2f2f2, skin: 0xf0cbb0, hair: 0x1c1210 },
   };
@@ -41,6 +42,15 @@
       brows: { y: 0.215, inner: 0.19, outer: 0.58, thick: 0.03, arch: 0.008, slope: 0.0, color: "#241812", n: 200 },
       mouth: { w: 0.15, up: 0.034, lo: 0.07, sad: 0.002 },
       nose: { w: 0.09, tipY: -0.19, shade: 0.12 }, stubble: 0, freckles: 0, blush: 0.12,
+    },
+    albert: {   // 訪客 AlbertYao（男生）：參考照片 —— 短黑髮、較窄的臉、細長眼、濃眉、開心的笑
+      skin: "#e8c9ae", skinShade: "#c79b7f", hair: "#151210", hairHi: "#463d36", lip: "#c08a7c", iris: "#241810",
+      W: 0.097, H: 0.122, D: 0.106, taper: 0.13, sq: 0.12, long: 0.05, chin: 0.008, brow: 0.006, browY: 0.24, socket: 0.003, eyeX: 0.385, eyeY: 0.05,
+      noseH: 0.012, noseW: 0.9, cheek: 0.005, lip3d: 0.0065, mouthY: -0.5,
+      eye: { hw: 0.17, hh: 0.04, iris: 0.058, tilt: 0.0, crease: 0.12, lash: 0.3, liner: 0.4 },
+      brows: { y: 0.215, inner: 0.15, outer: 0.62, thick: 0.05, arch: 0.005, slope: -0.01, color: "#14100e", n: 420 },
+      mouth: { w: 0.34, up: 0.04, lo: 0.05, sad: -0.04, open: 0.085 },
+      nose: { w: 0.11, tipY: -0.2, shade: 0.16 }, stubble: 0.04, freckles: 0, blush: 0.1,
     },
     aeris: {
       skin: "#f6dac8", skinShade: "#e0b4a0", hair: "#1c1210", hairHi: "#52403a", lip: "#dc8478", iris: "#24150e",
@@ -120,10 +130,19 @@
       else { g.moveTo(X(-m.w), Y(my - m.sad)); g.quadraticCurveTo(X(0), Y(my - m.up * 0.15), X(m.w), Y(my - m.sad)); g.bezierCurveTo(X(m.w * 0.6), Y(my - m.lo * 1.15), X(m.w * 0.25), Y(my - m.lo * 1.3), X(0), Y(my - m.lo * 1.3)); g.bezierCurveTo(X(-m.w * 0.25), Y(my - m.lo * 1.3), X(-m.w * 0.6), Y(my - m.lo * 1.15), X(-m.w), Y(my - m.sad)); }
       g.closePath();
     };
-    for (const up of [true, false]) {
-      lipPath(up); const lg = g.createLinearGradient(0, Y(my + m.up), 0, Y(my - m.lo)); lg.addColorStop(0, shade(s.lip, up ? -18 : -4)); lg.addColorStop(1, shade(s.lip, up ? -6 : 14)); g.fillStyle = lg; g.fill();
+    const op = m.open || 0;   // 張嘴笑（露出牙齒）：下唇往下移，中間畫口腔與牙齒
+    if (op) {
+      g.save(); g.beginPath(); g.moveTo(X(-m.w * 0.9), Y(my - m.sad)); g.quadraticCurveTo(X(0), Y(my - m.up * 0.15), X(m.w * 0.9), Y(my - m.sad)); g.quadraticCurveTo(X(0), Y(my - m.up * 0.15) + R(op) * 2.1, X(-m.w * 0.9), Y(my - m.sad)); g.closePath(); g.fillStyle = "#4a1d1b"; g.fill(); g.clip();
+      g.fillStyle = "#f6f2ea"; g.fillRect(X(-m.w), Y(my - m.sad) - R(0.03), X(m.w) - X(-m.w), R(op) * 1.25 + R(0.03));
+      g.fillStyle = "rgba(120,100,90,.35)"; for (const k of [-0.55, -0.28, 0, 0.28, 0.55]) g.fillRect(X(m.w * k) - R(0.0012), Y(my - m.sad) - R(0.03), R(0.0024), R(op) * 1.25 + R(0.03));   // 牙縫
+      g.restore();
     }
-    g.strokeStyle = "rgba(90,35,35,.7)"; g.lineWidth = R(0.007); g.lineCap = "round"; g.beginPath(); g.moveTo(X(-m.w), Y(my - m.sad)); g.quadraticCurveTo(X(0), Y(my - m.up * 0.15), X(m.w), Y(my - m.sad)); g.stroke();   // 唇縫
+    for (const up of [true, false]) {
+      if (!up && op) { g.save(); g.translate(0, R(op) * 0.95); }
+      lipPath(up); const lg = g.createLinearGradient(0, Y(my + m.up), 0, Y(my - m.lo)); lg.addColorStop(0, shade(s.lip, up ? -18 : -4)); lg.addColorStop(1, shade(s.lip, up ? -6 : 14)); g.fillStyle = lg; g.fill();
+      if (!up && op) g.restore();
+    }
+    if (!op) { g.strokeStyle = "rgba(90,35,35,.7)"; g.lineWidth = R(0.007); g.lineCap = "round"; g.beginPath(); g.moveTo(X(-m.w), Y(my - m.sad)); g.quadraticCurveTo(X(0), Y(my - m.up * 0.15), X(m.w), Y(my - m.sad)); g.stroke(); }   // 唇縫
     blob(-0.02, my - m.lo * 0.6, 0.07, 0.03, "rgba(255,255,255,A)", 0.3);   // 下唇高光
     blob(0, my - m.lo * 1.55, 0.14, 0.04, "rgba(110,60,45,A)", 0.18);        // 下唇下方陰影
     for (const sx of [-1, 1]) blob(sx * (m.w + 0.025), my - m.sad, 0.035, 0.03, "rgba(100,45,40,A)", 0.3);   // 嘴角
@@ -357,7 +376,7 @@
     const skinM = new THREE.MeshStandardMaterial({ color: new THREE.Color(shade(s.skin, -14)), roughness: 0.6 });
     for (const sx of [-1, 1]) { const ear = new THREE.Mesh(new THREE.SphereGeometry(0.02, 14, 10), skinM); ear.position.set(sx * (s.W - 0.002), 0.075, -0.004); ear.scale.set(0.5, 1.15, 0.85); head.add(ear); }
     seed = 23;
-    const hair = who === "david" ? davidHair(THREE, s) : who === "guest" ? guestHair(THREE, s) : aerisHair(THREE, s); head.add(hair); if (who === "aeris") softHair(THREE, head, hair);
+    const hair = who === "david" || who === "albert" ? davidHair(THREE, s) : who === "guest" ? guestHair(THREE, s) : aerisHair(THREE, s); head.add(hair); if (who === "aeris") softHair(THREE, head, hair);
     const silver = new THREE.MeshStandardMaterial({ color: 0xd8dce2, roughness: 0.25, metalness: 0.9 });
     if (who === "guest") for (const sx of [-1, 1]) { const gold = new THREE.MeshStandardMaterial({ color: 0xd8b25a, roughness: 0.25, metalness: 0.9 }); const ring = new THREE.Mesh(new THREE.TorusGeometry(0.013, 0.0017, 8, 24), gold); ring.position.set(sx * (s.W + 0.003), 0.055, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小金圈耳環
     if (who === "aeris") for (const sx of [-1, 1]) { const ring = new THREE.Mesh(new THREE.TorusGeometry(0.016, 0.0016, 8, 28), silver); ring.position.set(sx * (s.W + 0.004), 0.028, -0.004); ring.rotation.y = PI / 2; head.add(ring); }   // 小耳環
@@ -379,7 +398,7 @@
     if (who === "aeris" && av.torso) for (const [rad, y, tilt] of [[0.064, 0.6, 0.22], [0.05, 0.575, 0.5]]) { const ch = new THREE.Mesh(new THREE.TorusGeometry(rad, 0.0016, 6, 48), silver); ch.position.set(0, y, 0.01); ch.rotation.x = PI / 2 + tilt; av.torso.add(ch); }   // 細銀項鍊（兩條）
     // 亞麻睡衣：David 橄欖綠、ARIES 粉色；長袖、翻領、木釦、寬褲
     try {
-      const base = who === "david" ? "#5f6a3c" : who === "guest" ? "#53402f" : "#eab9c6", trimC = who === "david" ? 0x5a6537 : 0xf8ecd8, baseC = AG ? "#4b2a5e" : base, GU = who === "guest";
+      const base = who === "david" ? "#5f6a3c" : who === "guest" ? "#53402f" : who === "albert" ? "#1d1d22" : "#eab9c6", trimC = who === "david" ? 0x5a6537 : 0xf8ecd8, baseC = AG ? "#4b2a5e" : base, GU = who === "guest" || who === "albert";
       const cv = document.createElement("canvas"); cv.width = 128; cv.height = 128; const g = cv.getContext("2d");
       g.fillStyle = AG ? "#4b2a5e" : base; g.fillRect(0, 0, 128, 128);
       for (let k = 0; k < 900; k++) { g.fillStyle = Math.random() < 0.5 ? "rgba(255,255,255,.10)" : "rgba(0,0,0,.09)"; if (k % 2) g.fillRect(Math.random() * 128, Math.random() * 128, 1 + Math.random() * 10, 1); else g.fillRect(Math.random() * 128, Math.random() * 128, 1, 1 + Math.random() * 10); }   // 亞麻織紋
@@ -413,7 +432,10 @@
       // 袖口翻摺
       for (const arm of [av.armL, av.armR]) { const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.047, 0.047, 0.045, 18), clothMat); cuff.position.set(0, -0.285, 0); arm.el.add(cuff); }
     } catch (e) { console.warn("睡衣失敗", e); }
-    if (who === "guest" && av.torso) av.torso.children.forEach((m) => { if (m.isMesh && m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });   // 圓領毛衣：不要 V 領的襯衫三角
+    if (who === "albert" && av.torso) { const cm = new THREE.MeshStandardMaterial({ color: 0x0c0c0f, roughness: 1 }); const col = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.064, 0.034, 24, 1, true), cm); col.material.side = THREE.DoubleSide; col.position.set(0, 0.625, 0.004); av.torso.add(col);
+      const pk = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.3, 0.006), new THREE.MeshStandardMaterial({ color: 0x050507, roughness: 0.9 })); pk.position.set(0, 0.46, 0.142); av.torso.add(pk);   // 前襟門襟（照片裡襯衫中間一排釦子）
+      for (let i = 0; i < 4; i++) { const bt = new THREE.Mesh(new THREE.CylinderGeometry(0.0075, 0.0075, 0.006, 12), new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.4, metalness: 0.3 })); bt.rotation.x = PI / 2; bt.position.set(0, 0.57 - i * 0.075, 0.146); av.torso.add(bt); } }   // 立領（黑色襯衫的小立領）+ 門襟 + 釦子
+    if ((who === "guest" || who === "albert") && av.torso) av.torso.children.forEach((m) => { if (m.isMesh && m.geometry && m.geometry.type === "CircleGeometry") m.visible = false; });   // 圓領毛衣：不要 V 領的襯衫三角
     if (who === "guest") {   // 女生的窄肩：肩線內縮、肩頭與上臂變細（同 ARIES）
       for (const arm of [av.armL, av.armR]) { const sd = Math.sign(arm.sh.position.x); arm.sh.position.set(sd * 0.185, 0.49, 0); arm.sh.children.slice(0, 3).forEach((m) => m.scale.multiplyScalar(0.8)); arm.sh.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(0.9, 1, 0.9); }); arm.el.children.forEach((m) => { if (m.isMesh && m.geometry.type === "CylinderGeometry") m.scale.set(0.9, 1, 0.9); }); }   // 肩比男生窄，但手臂要離開髖部，不穿進褲子
       av.root.scale.setScalar(0.95);

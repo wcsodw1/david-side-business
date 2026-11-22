@@ -42,7 +42,7 @@
     if (!sec || !hdr || box.__dash) return; box.__dash = true;
     const pane = document.createElement("aside"); pane.className = "dh-pane"; pane.setAttribute("aria-label", "儀表板"); sec.appendChild(pane);
     const btn = document.createElement("button"); btn.type = "button"; btn.className = "rc-dash"; btn.innerHTML = "▦ 儀表板<i hidden></i>"; btn.setAttribute("aria-pressed", "false"); btn.setAttribute("aria-expanded", "false");
-    hdr.insertBefore(btn, hdr.querySelector("button"));
+    hdr.insertBefore(btn, hdr.querySelector(":scope > button"));
     let open = false, pinned = false, closeT = 0, last = snap(getP());
     const hot = {};   // 專案 id → 閃色到什麼時候（連續幾個事件重畫時，閃色不會被洗掉）
     const draw = (flash) => {
