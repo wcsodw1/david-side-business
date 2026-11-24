@@ -130,7 +130,7 @@
     else if (seg[2] === "memos" || seg[2] === "buys") html = vNotes(p, seg[2]);
     else if (seg[2] === "notify") html = vNotify(p);
     else html = vHome(p);
-    const app = $("#app"); app.innerHTML = html + `<div class="home-ind"></div>`;
+    const app = $("#app"), ib = $("#ibn"); app.innerHTML = html + `<div class="home-ind"></div>`; if (ib) app.appendChild(ib);
     const sc = app.querySelector(".scroll"); if (sc) { sc.scrollTop = mem[h] || 0; sc.addEventListener("scroll", () => { mem[h] = sc.scrollTop; sb(sc); }, { passive: true }); sb(sc); }
     const car = $("#car"); if (car) car.addEventListener("scroll", () => { const i = Math.round(car.scrollLeft / car.clientWidth); document.querySelectorAll("#dots i").forEach((d, k) => d.classList.toggle("on", k === i)); }, { passive: true });
   }

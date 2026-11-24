@@ -140,3 +140,9 @@ button.box:active{background:#f3f3f5}
 .mbox input,.mbox textarea,.mbox select{width:100%;border:1px solid #e3e5ea;border-radius:12px;padding:11px 12px;font-size:16px;font-family:inherit;background:#fff;color:#222}
 .mbox textarea{min-height:100px;resize:vertical}.mbox .btns{display:flex;gap:10px;margin-top:18px}.mbox .btns button{flex:1;height:46px;border-radius:23px;font-size:15px;font-weight:700}
 .mbox .ok{background:var(--navy);color:#fff}.mbox .no{background:#ebecf0;color:var(--navy)}
+/* 安裝提示 */
+.ibn{position:absolute;left:14px;right:14px;bottom:calc(var(--cb) + 62px);z-index:40;background:#17324f;color:#fff;border-radius:16px;padding:12px 12px 12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(10,20,40,.3);font-size:13px;line-height:1.4}
+.ibn img{width:36px;height:36px;border-radius:9px;flex:none}.ibn span{flex:1}.ibn b{display:block;font-size:14px}
+.ibn button.go{background:#fff;color:#17324f;font-weight:700;border-radius:14px;height:32px;padding:0 13px;font-size:13px;flex:none}
+.ibn button.x{color:#fff;opacity:.7;font-size:20px;line-height:1;width:24px;height:32px;flex:none}
+.howto ol{margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.85;color:#333}.howto h4{margin:16px 0 0;font-size:15px}
