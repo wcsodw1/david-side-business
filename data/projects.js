@@ -183,6 +183,19 @@ window.PROJECTS = [
     updates: [],
   },
   {
+    id: "interior-design-app",
+    name: "Interior Design App",
+    zh: "室內設計 App",
+    category: "Software",
+    status: "idea",
+    progress: 5,
+    summary: "室內設計 App：讓使用者規劃空間、挑選風格與家具。",
+    links: [],
+    updates: [
+      { date: "2026-11-24", title: "專案頁建立", text: "加入平台，開始構想室內設計 App。" },
+    ],
+  },
+  {
     id: "pickleball",
     name: "PickleBall",
     zh: "匹克球",
