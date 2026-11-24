@@ -189,9 +189,10 @@ window.PROJECTS = [
     category: "Software",
     status: "idea",
     progress: 5,
-    summary: "室內設計 App：讓使用者規劃空間、挑選風格與家具。",
-    links: [],
+    summary: "室內設計 App：設計師與屋主共用的施工進度、請款與重點確認 App（手機版 POC，之後整合進 Gallery）。",
+    links: [{ label: "手機 App Demo（POC）", url: "interior-design-app/" }],
     updates: [
+      { date: "2026-11-24", title: "手機版 POC 上線", text: "依現有 UI 做出可操作的 Demo：專案列表、專案首頁、工程進度、請款進度、重點工程確認、備忘錄與採購清單。使用虛構示範資料。" },
       { date: "2026-11-24", title: "專案頁建立", text: "加入平台，開始構想室內設計 App。" },
     ],
   },
