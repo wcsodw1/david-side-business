@@ -1,4 +1,4 @@
-# Interior Design App（手機版 POC）
+# ENLIGHT SPACE DESIGN · Interior Design App（手機版 POC）
 
 依 10 張 UI 截圖還原（版面以 390pt 寬 @2.226x 量測，逐畫面並排比對）。純 HTML/CSS/JS，不需要建置。
 
@@ -21,6 +21,11 @@
                             └ 採購清單「查看更多 ›」→ 採購清單
 請款進度：點「完成／待收」切換、✎ 編輯日期與備註、編輯設定（合約金額）、新增設計費用／追加減款項
 ```
+
+## 品牌 Logo
+
+- `img/brand/`：`logo-dark.svg`（黑底白線，主要版本）、`logo-white.svg` / `logo-black.svg`（透明底）、`icon.svg`、PNG 匯出檔。
+- 由 `tools/make_logo.py` 產生（字母全部用線條路徑畫，不依賴字型）。改尺寸或線寬就改這支再執行。
 
 ## 安裝到主畫面（PWA）
 
