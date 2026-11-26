@@ -27,6 +27,20 @@
 - `img/brand/`：`logo-dark.svg`（黑底白線，主要版本）、`logo-white.svg` / `logo-black.svg`（透明底）、`icon.svg`、PNG 匯出檔。
 - 由 `tools/make_logo.py` 產生（字母全部用線條路徑畫，不依賴字型）。改尺寸或線寬就改這支再執行。
 
+## 五款風格（只換背景色與文字顏色）
+
+| 風格 | 網址 | 色調 |
+|---|---|---|
+| 工業風 | `themes/industrial/` | 清水模深灰、鏽鐵、黃銅 |
+| 歐風 | `themes/european/` | 象牙白、酒紅、古典金 |
+| 美式 Tropical | `themes/tropical/` | 薄荷白、棕櫚綠、珊瑚橘 |
+| 日系無印良品 | `themes/muji/` | 牛皮紙米色、暖灰、低彩度紅 |
+| 日系京都 | `themes/kyoto/` | 和紙、抹茶綠、朱紅 |
+
+- 顏色全部是 `style.css` 的 CSS 變數；每款風格是一個 `[data-theme=...]` 區塊，改色只改那裡。
+- 每款有自己的 manifest 與圖示，可以各自安裝到主畫面（共用同一份程式與資料）。
+- 總覽頁 `themes/`（預覽 + QR Code）；`tools/make_themes.py` 重新產生各風格頁面。
+
 ## 安裝到主畫面（PWA）
 
 - `manifest.webmanifest` + `sw.js`（離線可開）+ `icons/`。

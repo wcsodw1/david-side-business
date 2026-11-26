@@ -179,6 +179,7 @@
     ui[id === "q" ? "q" : "pq"] = e.target.value; const pos = e.target.selectionStart; render(); const q = $("#" + id); q.focus(); q.setSelectionRange(pos, pos);
   });
   document.addEventListener("change", (e) => { if (e.target.dataset && "paytype" in e.target.dataset) { curP().payType = e.target.value; save(); } });
+  const rs = $("#reset"); if (rs) rs.addEventListener("click", (e) => { e.preventDefault(); location.hash = "#/reset"; });
   window.addEventListener("hashchange", render);
   render();
 })();

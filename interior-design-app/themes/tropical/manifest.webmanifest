@@ -1,0 +1,33 @@
+{
+  "name": "ENLIGHT SPACE DESIGN · 美式 Tropical",
+  "short_name": "ENLIGHT 熱帶",
+  "description": "ENLIGHT SPACE DESIGN · 設計師與屋主共用的施工進度、請款與重點確認 App",
+  "lang": "zh-Hant",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f2faf6",
+  "theme_color": "#f2faf6",
+  "icons": [
+    {
+      "src": "../../icons/themes/tropical-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../icons/themes/tropical-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../../icons/themes/tropical-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
