@@ -1,0 +1,209 @@
+/* =====================================================================
+   五款 UI 風格：版面結構、功能、跳轉完全相同；各自有不同的字體、形狀、邊框、陰影與裝飾。
+   顏色在 style.css 的 [data-theme] 區塊；這裡是「UI 語言」。
+   ===================================================================== */
+
+/* ---------- 1. 工業風：直角、細框線、藍圖格線、模版字、警示斜紋 ---------- */
+html[data-theme="industrial"],html[data-theme="industrial"] body{font-family:"Noto Sans TC","PingFang TC",sans-serif}
+[data-theme="industrial"]{--fh:"Oswald","Noto Sans TC",sans-serif;--fm:"IBM Plex Mono",ui-monospace,monospace}
+[data-theme="industrial"] .scr{background-color:var(--bg);background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:22px 22px}
+[data-theme="industrial"] .hello h1{font-family:var(--fh);text-transform:uppercase;letter-spacing:3px;font-size:27px;font-weight:600;line-height:1.1}
+[data-theme="industrial"] .hello h1::before{content:"// SITE MANAGER";display:block;font-family:var(--fm);font-size:10px;letter-spacing:1.5px;color:var(--navy-text);font-weight:500;margin-bottom:4px}
+[data-theme="industrial"] .avatar{border-radius:2px;border:1px solid var(--line)}
+[data-theme="industrial"] .search,[data-theme="industrial"] .sel{border-radius:0;box-shadow:none;border:1px solid var(--line)}
+[data-theme="industrial"] .chip{border-radius:0;box-shadow:none;border:1px solid var(--line);font-family:var(--fh);letter-spacing:1px;font-weight:500}
+[data-theme="industrial"] .chip.on{border-color:var(--navy)}
+[data-theme="industrial"] .pcard{border-radius:0;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--navy)}
+[data-theme="industrial"] .pcard .th,[data-theme="industrial"] .hc .im,[data-theme="industrial"] .tl .pc .im,[data-theme="industrial"] .car .sl{filter:grayscale(.35) contrast(1.06)}
+[data-theme="industrial"] .pcard .th{border-radius:0}
+[data-theme="industrial"] .pcard .ft,[data-theme="industrial"] .hc .dt,[data-theme="industrial"] .tl .d,[data-theme="industrial"] .dtl .dt,[data-theme="industrial"] .kc .d,[data-theme="industrial"] .ins .ln em{font-family:var(--fm);letter-spacing:.3px}
+[data-theme="industrial"] .cta{border-radius:0;font-family:var(--fh);letter-spacing:4px;font-weight:600;box-shadow:none;background-image:repeating-linear-gradient(135deg,rgba(0,0,0,.14) 0 10px,transparent 10px 20px)}
+[data-theme="industrial"] .hbtn{border-radius:0;background:rgba(30,31,33,.86);color:#ecebe6;box-shadow:none}
+[data-theme="industrial"] .sheet{border-radius:0;border-top:3px solid var(--navy)}
+[data-theme="industrial"] .sheet h2,[data-theme="industrial"] .top h1{letter-spacing:1.5px}
+[data-theme="industrial"] .top h1{font-family:var(--fh);font-weight:600;letter-spacing:3px}
+[data-theme="industrial"] .prg b,[data-theme="industrial"] .sum .big,[data-theme="industrial"] .ins .am{font-family:var(--fh);font-weight:600;letter-spacing:1px}
+[data-theme="industrial"] .prg b{font-size:24px}
+[data-theme="industrial"] .bar{height:6px;border-radius:0}
+[data-theme="industrial"] .bar i{background:repeating-linear-gradient(135deg,var(--or) 0 7px,#9c7438 7px 14px)}
+[data-theme="industrial"] .bar.n i{background:var(--navy)}
+[data-theme="industrial"] .sec h3,[data-theme="industrial"] .h3{border-left:3px solid var(--navy);padding-left:9px;letter-spacing:1.5px}
+[data-theme="industrial"] .sec a,[data-theme="industrial"] .sec2 a{font-family:var(--fh);letter-spacing:1px}
+[data-theme="industrial"] .hc,[data-theme="industrial"] .kc,[data-theme="industrial"] .tl .pc,[data-theme="industrial"] .ins{border-radius:0;box-shadow:none;border:1px solid var(--line)}
+[data-theme="industrial"] .tl .pc .im,[data-theme="industrial"] .car{border-radius:0}
+[data-theme="industrial"] .box{border-radius:0}
+[data-theme="industrial"] .kc .tag{border-radius:0;font-family:var(--fm);font-weight:500}
+[data-theme="industrial"] .kc .s{border:1px solid var(--or);padding:0 5px;line-height:18px;font-size:12px;letter-spacing:1px}
+[data-theme="industrial"] .tl:before{width:1px;background:repeating-linear-gradient(var(--dash) 0 6px,transparent 6px 11px)}
+[data-theme="industrial"] .tl .d:before{border-radius:0;background:var(--navy)}
+[data-theme="industrial"] .dots i{border-radius:0;width:14px;height:3px}
+[data-theme="industrial"] .sum .pb{height:8px;border-radius:0}.sum .pb i{border-radius:inherit}
+[data-theme="industrial"] .sum .pb i{background:repeating-linear-gradient(135deg,var(--bar1) 0 8px,var(--bar2) 8px 16px)}
+[data-theme="industrial"] .ins .bd{border-radius:0;letter-spacing:1px}
+[data-theme="industrial"] .mbox,[data-theme="industrial"] .mbox input,[data-theme="industrial"] .mbox textarea,[data-theme="industrial"] .mbox select,[data-theme="industrial"] .mbox .btns button,[data-theme="industrial"] .ibn,[data-theme="industrial"] .ibn button.go{border-radius:0}
+
+/* ---------- 2. 歐風：襯線字、雙線框、拱窗圖片、金色飾線 ---------- */
+html[data-theme="european"],html[data-theme="european"] body{font-family:"Noto Serif TC","Songti TC",serif}
+[data-theme="european"]{--fd:"Cormorant Garamond","Noto Serif TC",serif}
+[data-theme="european"] .hello h1{font-family:var(--fd);font-style:italic;font-weight:600;font-size:32px;letter-spacing:.5px}
+[data-theme="european"] .avatar{box-shadow:0 0 0 1px var(--or),0 0 0 4px var(--bg),0 0 0 5px var(--dash)}
+[data-theme="european"] .search{border-radius:0;box-shadow:none;border:1px solid var(--dash);outline:1px solid var(--line);outline-offset:3px}
+[data-theme="european"] .chip{border-radius:0;box-shadow:none;background:transparent;border:1px solid var(--dash);letter-spacing:1px;font-weight:600}
+[data-theme="european"] .chip.on{border-color:var(--navy);box-shadow:inset 0 0 0 2px var(--navy),inset 0 0 0 3px rgba(255,255,255,.55)}
+[data-theme="european"] .pcard{border-radius:0;background:var(--surface);border:1px solid var(--dash);box-shadow:inset 0 0 0 4px var(--surface),inset 0 0 0 5px var(--line)}
+[data-theme="european"] .pcard h3{font-size:17px}
+[data-theme="european"] .pcard .th{border-radius:91px 91px 2px 2px/44px 44px 2px 2px}
+[data-theme="european"] .pcard hr{border-top-color:var(--or);opacity:.5}
+[data-theme="european"] .cta{border-radius:0;letter-spacing:5px;box-shadow:none;outline:1px solid var(--or);outline-offset:-5px}
+[data-theme="european"] .hbtn{box-shadow:0 0 0 1px var(--or)}
+[data-theme="european"] .sheet{border-radius:0;padding-top:52px}
+[data-theme="european"] .sheet::before{content:"❦";position:absolute;left:50%;top:14px;transform:translateX(-50%);color:var(--or);font-size:18px;line-height:1}
+[data-theme="european"] .sheet::after{content:"";position:absolute;left:50%;top:23px;width:150px;margin-left:-75px;height:1px;background:linear-gradient(90deg,transparent,var(--or) 30%,transparent 42%,transparent 58%,var(--or) 70%,transparent)}
+[data-theme="european"] .sheet .loc{top:51px}
+[data-theme="european"] .sheet h2,[data-theme="european"] .dtl h2,[data-theme="european"] .top h1{letter-spacing:2px}
+[data-theme="european"] .prg b,[data-theme="european"] .sum .big,[data-theme="european"] .ins .am{font-family:var(--fd);font-weight:700}
+[data-theme="european"] .prg b{font-size:26px}[data-theme="european"] .sum .big{font-size:40px}[data-theme="european"] .ins .am{font-size:18px}
+[data-theme="european"] .bar{height:2px}
+[data-theme="european"] .sec h3,[data-theme="european"] .h3{letter-spacing:2px}
+[data-theme="european"] .sec h3::before,[data-theme="european"] .h3::before{content:"";display:inline-block;width:18px;height:1px;background:var(--or);vertical-align:middle;margin-right:9px}
+[data-theme="european"] .sec a,[data-theme="european"] .sec2 a{font-family:var(--fd);font-style:italic;font-size:15px}
+[data-theme="european"] .hc,[data-theme="european"] .kc,[data-theme="european"] .tl .pc,[data-theme="european"] .ins{border-radius:0;box-shadow:none;border:1px solid var(--dash)}
+[data-theme="european"] .hc .im{border-radius:117px 117px 0 0/50px 50px 0 0;margin:8px 8px 0}
+[data-theme="european"] .hc b{margin-top:4px}
+[data-theme="european"] .tl .pc .im{border-radius:160px 160px 2px 2px/64px 64px 2px 2px}
+[data-theme="european"] .car{border-radius:180px 180px 4px 4px/80px 80px 4px 4px}
+[data-theme="european"] .box{border-radius:0;border-style:solid;outline:1px solid var(--line);outline-offset:-6px}
+[data-theme="european"] .kc .tag{border-radius:0;letter-spacing:1px}
+[data-theme="european"] .kc .s{font-family:var(--fd);font-style:italic;font-size:15px}
+[data-theme="european"] .tl .d:before{border-radius:0;transform:rotate(45deg);background:var(--or)}
+[data-theme="european"] .dots i{border-radius:0;transform:rotate(45deg);width:7px;height:7px}
+[data-theme="european"] .dtl h2::after{content:"";display:block;width:44px;height:1px;background:var(--or);margin-top:12px}
+[data-theme="european"] .ins .bd{border-radius:0;font-style:italic}
+[data-theme="european"] .sel{border-radius:0;background:var(--surface);border:1px solid var(--dash)}
+[data-theme="european"] .mbox,[data-theme="european"] .mbox input,[data-theme="european"] .mbox textarea,[data-theme="european"] .mbox select,[data-theme="european"] .mbox .btns button,[data-theme="european"] .ibn,[data-theme="european"] .ibn button.go{border-radius:0}
+
+/* ---------- 3. 美式 Tropical：大圓角、粗描邊、錯位陰影、陽光漸層 ---------- */
+html[data-theme="tropical"],html[data-theme="tropical"] body{font-family:"Poppins","Noto Sans TC","PingFang TC",sans-serif}
+[data-theme="tropical"] .scr{background-image:radial-gradient(circle at 108% -4%,rgba(246,195,91,.38) 0 130px,transparent 131px),radial-gradient(circle at -12% 104%,rgba(29,107,88,.13) 0 150px,transparent 151px)}
+[data-theme="tropical"] .hello h1{font-weight:800;font-size:27px;letter-spacing:0}
+[data-theme="tropical"] .hello h1::after{content:" 🌴"}
+[data-theme="tropical"] .avatar{background:var(--or);border:2px solid var(--ink)}
+[data-theme="tropical"] .search{border-radius:22px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+[data-theme="tropical"] .chip{border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink);font-weight:700;color:var(--ink)}
+[data-theme="tropical"] .chip.on{background:var(--or);color:#fff}
+[data-theme="tropical"] .chips.c2 .chip{border-width:1.5px;border-color:var(--ink);box-shadow:none}
+[data-theme="tropical"] .chips.c2 .chip.on{background:var(--navy)}
+[data-theme="tropical"] .pcard{border-radius:26px;background:var(--surface);border:2px solid var(--ink);box-shadow:5px 5px 0 var(--navy)}
+[data-theme="tropical"] .pcard h3{font-weight:800}
+[data-theme="tropical"] .pcard .th{border-radius:18px;border:2px solid var(--ink)}
+[data-theme="tropical"] .pcard hr{border-top:2px dotted var(--dash)}
+[data-theme="tropical"] .cta{background:linear-gradient(90deg,var(--bar1),var(--or));border:2px solid var(--ink);box-shadow:4px 4px 0 var(--ink);font-weight:800;letter-spacing:1px}
+[data-theme="tropical"] .hbtn{border:2px solid var(--ink);box-shadow:2px 2px 0 var(--ink)}
+[data-theme="tropical"] .sheet{border-radius:34px 34px 0 0;border-top:2px solid var(--ink)}
+[data-theme="tropical"] .sheet h2,[data-theme="tropical"] .dtl h2,[data-theme="tropical"] .top h1,[data-theme="tropical"] .sec h3,[data-theme="tropical"] .h3{font-weight:800}
+[data-theme="tropical"] .prg b,[data-theme="tropical"] .sum .big,[data-theme="tropical"] .ins .am{font-weight:800}
+[data-theme="tropical"] .bar{height:9px;border-radius:9px;border:1.5px solid var(--ink)}
+[data-theme="tropical"] .bar i{background:linear-gradient(90deg,var(--bar2),var(--or));border-radius:9px}
+[data-theme="tropical"] .bar.n i{background:var(--navy)}
+[data-theme="tropical"] .sec a,[data-theme="tropical"] .sec2 a{font-weight:700;color:var(--navy)}
+[data-theme="tropical"] .hc{border-radius:22px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--navy)}
+[data-theme="tropical"] .hc .im{border-bottom:2px solid var(--ink)}
+[data-theme="tropical"] .box{border-radius:18px;border:2px dashed var(--navy)}
+[data-theme="tropical"] .kc{border-radius:16px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--navy)}
+[data-theme="tropical"] .kc .tag{border-radius:999px;background:var(--or);border:2px solid var(--ink);top:-11px;height:22px;line-height:18px}
+[data-theme="tropical"] .kc .tag.g{background:var(--dash)}
+[data-theme="tropical"] .tl:before{width:3px;border-radius:3px;background:repeating-linear-gradient(var(--dash) 0 4px,transparent 4px 9px)}
+[data-theme="tropical"] .tl .d:before{background:var(--or);box-shadow:0 0 0 2px var(--ink);width:11px;height:11px;left:-20px;top:6px}
+[data-theme="tropical"] .tl .pc{border-radius:24px;border:2px solid var(--ink);box-shadow:4px 4px 0 var(--navy)}
+[data-theme="tropical"] .tl .pc .im{border-radius:16px;border:2px solid var(--ink)}
+[data-theme="tropical"] .car{border-radius:28px;border:2px solid var(--ink)}
+[data-theme="tropical"] .dots i.on{width:22px;border-radius:4px}
+[data-theme="tropical"] .sum .pb{height:12px;border-radius:12px;border:1.5px solid var(--ink)}
+[data-theme="tropical"] .ins{border-radius:18px;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--navy)}
+[data-theme="tropical"] .ins .bd{border:1.5px solid var(--ink)}
+[data-theme="tropical"] .sel{background:var(--surface);border:2px solid var(--ink)}
+[data-theme="tropical"] .mbox{border:2px solid var(--ink);border-bottom:0;border-radius:30px 30px 0 0}
+[data-theme="tropical"] .mbox input,[data-theme="tropical"] .mbox textarea,[data-theme="tropical"] .mbox select{border:2px solid var(--ink);border-radius:14px}
+[data-theme="tropical"] .mbox .btns button{border:2px solid var(--ink)}
+
+/* ---------- 4. 日系無印良品：細字、髮絲線、無陰影、平面清單、留白 ---------- */
+html[data-theme="muji"],html[data-theme="muji"] body{font-family:"Noto Sans TC","PingFang TC",sans-serif;letter-spacing:.04em}
+[data-theme="muji"] b,[data-theme="muji"] h1,[data-theme="muji"] h2,[data-theme="muji"] h3,[data-theme="muji"] h4{font-weight:500}
+[data-theme="muji"] .hello h1{font-weight:300;font-size:21px;letter-spacing:.14em}
+[data-theme="muji"] .avatar{border-radius:0;width:34px;height:34px}
+[data-theme="muji"] .search{border-radius:0;box-shadow:none;background:transparent;border-bottom:1px solid var(--ink2);padding:0 4px}
+[data-theme="muji"] .chip{border-radius:0;box-shadow:none;background:transparent;font-weight:400;color:var(--mute);border-bottom:2px solid transparent;padding:0 4px;margin-right:6px}
+[data-theme="muji"] .chip.on{background:transparent;color:var(--ink);border-bottom-color:var(--or)}
+[data-theme="muji"] .chips.c2 .chip{border:1px solid var(--line);background:transparent;padding:0 9px;color:var(--ink2)}
+[data-theme="muji"] .chips.c2 .chip.on{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+[data-theme="muji"] .pcard{border-radius:0;background:transparent;border:0;border-top:1px solid var(--ink2);border-bottom:1px solid var(--line);margin-left:24px;margin-right:24px}
+[data-theme="muji"] .pcard h3{font-weight:500;left:0}[data-theme="muji"] .pcard .ct,[data-theme="muji"] .pcard .ow{left:0}
+[data-theme="muji"] .pcard .th{border-radius:0;left:160px;width:182px}
+[data-theme="muji"] .pcard hr{left:0;right:0}[data-theme="muji"] .pcard .ft{left:0;font-weight:400}
+[data-theme="muji"] .cta{border-radius:2px;box-shadow:none;font-weight:400;letter-spacing:.35em}
+[data-theme="muji"] .hbtn{border-radius:2px;box-shadow:none}
+[data-theme="muji"] .sheet{border-radius:0}
+[data-theme="muji"] .prg,[data-theme="muji"] .due,[data-theme="muji"] .pay{font-weight:400}
+[data-theme="muji"] .prg b{font-weight:300;font-size:24px}
+[data-theme="muji"] .bar{height:2px;border-radius:0}
+[data-theme="muji"] .sec h3,[data-theme="muji"] .h3{font-size:15px;letter-spacing:.16em}
+[data-theme="muji"] .sec a,[data-theme="muji"] .sec2 a{font-size:12px;color:var(--mute)}
+[data-theme="muji"] .hc,[data-theme="muji"] .tl .pc,[data-theme="muji"] .ins{border-radius:0;box-shadow:none;border:1px solid var(--line)}
+[data-theme="muji"] .hc b,[data-theme="muji"] .tl .pc b{font-weight:500}
+[data-theme="muji"] .box{border-radius:0;border-style:solid;border-color:var(--line)}
+[data-theme="muji"] .kc{border-radius:0;box-shadow:none;background:transparent;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+[data-theme="muji"] .kc .tag{border-radius:0;background:transparent;color:var(--mute);font-weight:400;padding:0;left:16px;top:-10px;background:var(--bg);padding:0 6px}
+[data-theme="muji"] .kc .tag.g{background:var(--bg);color:var(--faint)}
+[data-theme="muji"] .kc .s{font-weight:500;font-size:13px}
+[data-theme="muji"] .tl:before{width:1px}
+[data-theme="muji"] .tl .d{font-weight:400}
+[data-theme="muji"] .tl .d:before{border-radius:0;width:7px;height:7px;left:-18px;top:8px}
+[data-theme="muji"] .tl .pc .im,[data-theme="muji"] .car{border-radius:0}
+[data-theme="muji"] .dots i{border-radius:0;width:16px;height:2px}
+[data-theme="muji"] .dtl h2{font-weight:400;font-size:20px;letter-spacing:.1em}
+[data-theme="muji"] .sum .big{font-weight:300;font-size:30px}
+[data-theme="muji"] .sum .pb{height:2px;border-radius:0}
+[data-theme="muji"] .ins .bd{border-radius:0;font-weight:400}
+[data-theme="muji"] .ins h4{font-weight:500}[data-theme="muji"] .ins .am{font-weight:500}
+[data-theme="muji"] .sel{border-radius:0;background:transparent;border:1px solid var(--line)}
+[data-theme="muji"] .top h1{font-weight:400;letter-spacing:.22em;font-size:15px}
+[data-theme="muji"] .mbox,[data-theme="muji"] .mbox input,[data-theme="muji"] .mbox textarea,[data-theme="muji"] .mbox select,[data-theme="muji"] .ibn,[data-theme="muji"] .ibn button.go{border-radius:0}
+[data-theme="muji"] .mbox .btns button{border-radius:2px;font-weight:400}
+
+/* ---------- 5. 日系京都：明朝體、和紙紋理、朱印章、縱線標題、角框 ---------- */
+html[data-theme="kyoto"],html[data-theme="kyoto"] body{font-family:"Noto Serif TC","Songti TC",serif}
+[data-theme="kyoto"] .scr{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' seed='3'/%3E%3CfeColorMatrix values='0 0 0 0 .45  0 0 0 0 .38  0 0 0 0 .28  0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E")}
+[data-theme="kyoto"] .hello h1{font-weight:700;font-size:23px;letter-spacing:.12em;display:flex;align-items:center}
+[data-theme="kyoto"] .hello h1::before{content:"京";display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;margin-right:11px;background:var(--or);color:#fff;font-size:13px;border-radius:3px;letter-spacing:0}
+[data-theme="kyoto"] .avatar{border:1px solid var(--or)}
+[data-theme="kyoto"] .search{border-radius:4px;box-shadow:none;border:1px solid var(--dash)}
+[data-theme="kyoto"] .chip{border-radius:4px;box-shadow:none;border:1px solid var(--dash);letter-spacing:.08em;font-weight:600}
+[data-theme="kyoto"] .chip.on{border-color:var(--navy)}
+[data-theme="kyoto"] .pcard{border-radius:4px;background:var(--surface);border:1px solid var(--dash)}
+[data-theme="kyoto"] .pcard::before,[data-theme="kyoto"] .pcard::after,[data-theme="kyoto"] .kc::after{content:"";position:absolute;width:12px;height:12px;pointer-events:none}
+[data-theme="kyoto"] .pcard::before{left:5px;top:5px;border-top:2px solid var(--or);border-left:2px solid var(--or)}
+[data-theme="kyoto"] .pcard::after{right:5px;bottom:5px;border-bottom:2px solid var(--or);border-right:2px solid var(--or)}
+[data-theme="kyoto"] .pcard .th{border-radius:2px}
+[data-theme="kyoto"] .cta{border-radius:4px;letter-spacing:.32em;box-shadow:none;border-bottom:3px solid rgba(0,0,0,.25)}
+[data-theme="kyoto"] .hbtn{border:1px solid var(--dash);box-shadow:none}
+[data-theme="kyoto"] .sheet{border-radius:0;border-top:3px solid var(--navy)}
+[data-theme="kyoto"] .sheet h2,[data-theme="kyoto"] .dtl h2,[data-theme="kyoto"] .top h1{letter-spacing:.14em}
+[data-theme="kyoto"] .bar{height:3px;border-radius:0}
+[data-theme="kyoto"] .sec h3,[data-theme="kyoto"] .h3{letter-spacing:.14em;display:flex;align-items:center}
+[data-theme="kyoto"] .sec h3::before,[data-theme="kyoto"] .h3::before{content:"";width:4px;height:17px;background:var(--or);margin-right:9px}
+[data-theme="kyoto"] .hc,[data-theme="kyoto"] .kc,[data-theme="kyoto"] .tl .pc,[data-theme="kyoto"] .ins{border-radius:4px;box-shadow:none;border:1px solid var(--dash)}
+[data-theme="kyoto"] .box{border-radius:4px}
+[data-theme="kyoto"] .kc .tag{border-radius:2px;background:var(--navy);letter-spacing:.05em}
+[data-theme="kyoto"] .kc .s{right:12px;top:12px;width:40px;height:40px;border:1.5px solid var(--or);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;transform:rotate(-12deg);letter-spacing:0}
+[data-theme="kyoto"] .kc .d{right:62px;top:24px}
+[data-theme="kyoto"] .tl:before{width:1px;background:var(--dash)}
+[data-theme="kyoto"] .tl .d:before{background:var(--or)}
+[data-theme="kyoto"] .tl .pc .im,[data-theme="kyoto"] .car{border-radius:3px}
+[data-theme="kyoto"] .dots i{width:7px;height:7px}
+[data-theme="kyoto"] .dtl h2::after{content:"";display:block;width:28px;height:3px;background:var(--or);margin-top:12px}
+[data-theme="kyoto"] .sum .big{font-weight:700;letter-spacing:.04em}
+[data-theme="kyoto"] .ins .bd{border-radius:3px;letter-spacing:.1em}
+[data-theme="kyoto"] .sel{border-radius:4px;background:var(--surface);border:1px solid var(--dash)}
+[data-theme="kyoto"] .mbox{border-radius:10px 10px 0 0}
+[data-theme="kyoto"] .mbox input,[data-theme="kyoto"] .mbox textarea,[data-theme="kyoto"] .mbox select,[data-theme="kyoto"] .mbox .btns button,[data-theme="kyoto"] .ibn{border-radius:4px}
+[data-theme="european"] .chip.on{background:var(--navy)}

@@ -1,5 +1,6 @@
 """產生五款風格 App（只換背景色與文字顏色）：themes/<key>/index.html + manifest + 圖示 + 風格總覽頁。
 執行（在 interior-design-app/ 底下）：python3 tools/make_themes.py
+圖示來源 SVG 輸出到 img/brand/themes/，再轉成 icons/themes/*.png（192/512/maskable/180/64）。
 顏色定義在 style.css 的 [data-theme=...] 區塊；這裡的色票只用在圖示、manifest 與總覽頁。"""
 import json, os, re, io
 ROOT = os.path.join(os.path.dirname(__file__), "..")
@@ -16,11 +17,18 @@ THEMES = [
 src = open("index.html").read()
 icon_svg = open("img/brand/icon.svg").read()
 icon_mask = open("img/brand/icon-maskable.svg").read()
-os.makedirs("icons/themes", exist_ok=True)
+os.makedirs("icons/themes", exist_ok=True); os.makedirs("img/brand/themes", exist_ok=True)
 
 def recolor(svg, bg, fg):
     return svg.replace('fill="#000"', f'fill="{bg}"').replace('stroke="#fff"', f'stroke="{fg}"')
 
+FONTS = {
+  "industrial": "family=Oswald:wght@500;600&family=IBM+Plex+Mono:wght@500&family=Noto+Sans+TC:wght@400;500;700",
+  "european": "family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Noto+Serif+TC:wght@400;600;700",
+  "tropical": "family=Poppins:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900",
+  "muji": "family=Noto+Sans+TC:wght@300;400;500",
+  "kyoto": "family=Noto+Serif+TC:wght@400;600;700",
+}
 SHORT = {"industrial": "工業", "european": "歐風", "tropical": "熱帶", "muji": "無印", "kyoto": "京都"}
 for key, zh, en, desc, bg, surface, ink, pri, acc in THEMES:
     d = f"themes/{key}"; os.makedirs(d, exist_ok=True)
@@ -34,6 +42,8 @@ for key, zh, en, desc, bg, surface, ink, pri, acc in THEMES:
     h = h.replace('<meta name="apple-mobile-web-app-title" content="ENLIGHT">', f'<meta name="apple-mobile-web-app-title" content="ENLIGHT {SHORT[key]}">')
     h = h.replace('<title>ENLIGHT SPACE DESIGN</title>', f'<title>ENLIGHT SPACE DESIGN · {zh}</title>')
     h = h.replace('POC Demo · 手機版介面', f'{zh} · POC Demo · 手機版介面')
+    h = h.replace('<link rel="stylesheet" href="style.css">', '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+                  f'<link rel="stylesheet" href="https://fonts.googleapis.com/css2?{FONTS[key]}&display=swap">\n<link rel="stylesheet" href="style.css">\n<link rel="stylesheet" href="themes.css">')
     open(f"{d}/index.html", "w").write(h)
     man = json.load(open("manifest.webmanifest"))
     man.update(name=f"ENLIGHT SPACE DESIGN · {zh}", short_name=f"ENLIGHT {SHORT[key]}", start_url="./", scope="./", id="./",
@@ -42,8 +52,8 @@ for key, zh, en, desc, bg, surface, ink, pri, acc in THEMES:
                       {"src": f"../../icons/themes/{key}-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
                       {"src": f"../../icons/themes/{key}-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}])
     json.dump(man, open(f"{d}/manifest.webmanifest", "w"), ensure_ascii=False, indent=2)
-    open(f"icons/themes/{key}.svg", "w").write(recolor(icon_svg, pri, "#fff"))
-    open(f"icons/themes/{key}-maskable.svg", "w").write(recolor(icon_mask, pri, "#fff"))
+    open(f"img/brand/themes/{key}.svg", "w").write(recolor(icon_svg, pri, "#fff"))
+    open(f"img/brand/themes/{key}-maskable.svg", "w").write(recolor(icon_mask, pri, "#fff"))
 
 # 風格總覽頁（選風格、預覽、QR Code）
 import qrcode, qrcode.image.svg
@@ -79,7 +89,7 @@ main{{max-width:1080px;margin:0 auto;padding:24px 16px 60px}}
 .back{{display:inline-block;margin-top:24px;color:var(--mute);font-size:14px}}
 </style></head><body><main>
 <div class="hd"><img src="../img/brand/logo-dark.svg" alt="ENLIGHT SPACE DESIGN"></div>
-<h1>五款風格 App</h1><p class="lead">版面、功能與資料完全一樣，只換背景色與文字顏色。每一款都能各自安裝到主畫面（iPhone 用 Safari → 分享 → 加入主畫面）。</p>
+<h1>五款風格 App</h1><p class="lead">功能、畫面流程與資料完全一樣，五種不同的 UI 風格（字體、形狀、線條、裝飾）。每一款都能各自安裝到主畫面（iPhone 用 Safari → 分享 → 加入主畫面）。</p>
 <div class="grid">{"".join(cards)}</div>
 <a class="back" href="../">← 原版（深藍）</a> · <a class="back" href="../install.html">安裝說明</a>
 </main></body></html>'''
